@@ -69,6 +69,8 @@ public class VolumeDataSet {
         File[] files = dir.listFiles();
         Arrays.sort(files);
         boolean metadataRead = false;
+        boolean zSpacingRead = false;
+        float firstSliceLocation = 0;
         result.zCount = files.length;
         int readCount = 0;
         for (File f : files) {
@@ -119,7 +121,29 @@ public class VolumeDataSet {
                 }
                 result.xCount = dobj.getInt(Tag.Columns);
                 result.yCount = dobj.getInt(Tag.Rows);
+
+                float[] rowCol;
+                if (dobj.contains(Tag.PixelSpacing)) {
+                    rowCol = dobj.getFloats(Tag.PixelSpacing);
+                    if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
+                        throw new RuntimeException("Illegal PixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
+                    }
+                } else if (dobj.contains(Tag.ImagerPixelSpacing)) {
+                    rowCol = dobj.getFloats(Tag.ImagerPixelSpacing);
+                    if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
+                        throw new RuntimeException("Illegal ImagerPixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
+                    }
+                } else {
+                    throw new IOException("DICOM metadata contained neither a PixelSpacing nor an ImagerPixelSpacing tag");
+                }
+                result.xSpacing = rowCol[1];
+                result.ySpacing = rowCol[0];
+                firstSliceLocation = dobj.getFloat(Tag.SliceLocation);
+
                 metadataRead = true;
+            } else if (!zSpacingRead) {
+                result.zSpacing = dobj.getFloat(Tag.SliceLocation) - firstSliceLocation;
+                zSpacingRead = true;
             }
             Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
             result.xyPixelPlaneBuffers.add(b);
