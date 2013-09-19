@@ -28,7 +28,9 @@ import javax.swing.SwingUtilities;
 
 import org.apache.log4j.Logger;
 
+import de.olafklischat.volkit.model.VolumeDataSet;
 import de.sofd.util.IdentityHashSet;
+import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 
 public class SliceViewer extends JPanel {
@@ -38,46 +40,58 @@ public class SliceViewer extends JPanel {
     static {
         System.setProperty("sun.awt.noerasebackground", "true");
     }
-
-    public static final int CELL_BORDER_WIDTH = 2;
     
-    private GLCanvas cellsViewer = null;
+    private final VolumeDataSet volumeDataSet;
+    private float[] volumeToWorldTransform = new float[16];
+    private float[] worldToEyeTransform = new float[16];
+
+    private float navigationCubeLength;
+    private float navigationZ;
+
+    private GLCanvas glCanvas = null;
     
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
 
-    public SliceViewer() {
+    public SliceViewer(VolumeDataSet volumeDataSet) {
         setLayout(new BorderLayout());
         if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
             createGlCanvas();
         }
         instances.add(this);
+        this.volumeDataSet = volumeDataSet;
+        LinAlg.fillIdentity(volumeToWorldTransform);
+        LinAlg.fillIdentity(worldToEyeTransform);
+        navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
+                                                 volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
+                                                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
+        navigationZ = 0;
     }
 
     private void createGlCanvas() {
         GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL2));
         caps.setDoubleBuffered(true);
-        cellsViewer = new GLCanvas(caps, null, sharedContextData.getGlContext(), null);
-        cellsViewer.addGLEventListener(new GLEventHandler());
-        this.add(cellsViewer, BorderLayout.CENTER);
+        glCanvas = new GLCanvas(caps, null, sharedContextData.getGlContext(), null);
+        glCanvas.addGLEventListener(new GLEventHandler());
+        this.add(glCanvas, BorderLayout.CENTER);
         revalidate();
         setupInternalUiInteractions();
         //cellsViewer.addKeyListener(internalMouseEventHandler);
-        cellsViewer.addMouseListener(cellMouseEventDispatcher);
-        cellsViewer.addMouseMotionListener(cellMouseEventDispatcher);
-        cellsViewer.addMouseWheelListener(cellMouseEventDispatcher);
+        glCanvas.addMouseListener(cellMouseEventDispatcher);
+        glCanvas.addMouseMotionListener(cellMouseEventDispatcher);
+        glCanvas.addMouseWheelListener(cellMouseEventDispatcher);
         //cellsViewer.addKeyListener(cellsViewerMouseAndKeyHandler);
     }
 
     public void refreshCells() {
-        if (null == cellsViewer) {
+        if (null == glCanvas) {
             return;
         }
-        cellsViewer.repaint();
+        glCanvas.repaint();
     }
 
     public GLAutoDrawable getCellsViewer() {
-        return cellsViewer;
+        return glCanvas;
     }
 
     protected class GLEventHandler implements GLEventListener {
@@ -117,7 +131,7 @@ public class SliceViewer extends JPanel {
             //gl.glPushMatrix();
             gl.glLoadIdentity();
 
-            Dimension canvasSize = cellsViewer.getSize();
+            Dimension canvasSize = glCanvas.getSize();
 
             gl.glPushAttrib(GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
             gl.glPushMatrix();
@@ -167,7 +181,7 @@ public class SliceViewer extends JPanel {
         private void setupEye2ViewportTransformation(GL2 gl) {
             gl.glMatrixMode(gl.GL_PROJECTION);
             gl.glLoadIdentity();
-            Dimension sz = cellsViewer.getSize();
+            Dimension sz = glCanvas.getSize();
             if (sz != null) {
                 gl.glOrtho(-sz.width / 2,   //  GLdouble    left,
                             sz.width / 2,   //    GLdouble      right,
@@ -261,7 +275,7 @@ public class SliceViewer extends JPanel {
 
     protected void setupInternalUiInteractions() {
         this.setFocusable(true);
-        cellsViewer.addMouseListener(new MouseAdapter() {
+        glCanvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
             }
