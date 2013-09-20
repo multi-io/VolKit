@@ -8,13 +8,7 @@ import java.util.List;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 
-import com.sun.opengl.util.texture.Texture;
-import com.sun.opengl.util.texture.TextureData;
-import com.sun.opengl.util.texture.awt.AWTTextureIO;
-
 import de.olafklischat.volkit.view.SharedContextData;
-import de.sofd.viskit.controllers.cellpaint.ImageTextureManager.TextureRef;
-import de.sofd.viskit.model.RawImage;
 
 public class TextureDebug {
 
@@ -67,9 +61,6 @@ public class TextureDebug {
         final String sharedTexIdKey = "DebugTex" + hashCode();
         TextureRef result = (TextureRef) scd.getAttribute(sharedTexIdKey);
         if (result == null) {
-            Texture imageTexture = null;
-            float preScale = 1.0F, preOffset = 0.0F;
-
             ShortBuffer buf = ShortBuffer.allocate(xCount*yCount);
             for (int x=0; x<xCount; x++) {
                 for (int y=0; y<yCount; y++) {
@@ -80,80 +71,45 @@ public class TextureDebug {
                 }
             }
             
-            TextureData imageTextureData =
-                new TextureData(  GL2.GL_LUMINANCE16, // NOT GL_LUMINANCE12 b/c pixelType is 16-bit and we'd thus lose precision
-                                  xCount, // int width,
-                                  yCount, // int height,
-                                  0,     // int border,
-                                  GL.GL_LUMINANCE, // int pixelFormat,
-                                  GL.GL_UNSIGNED_SHORT, // int pixelType,
-                                  false, // boolean mipmap,
-                                  false, // boolean dataIsCompressed,
-                                  false, // boolean mustFlipVertically,  // TODO: correct?
-                                  buf, // Buffer buffer,
-                                  null // Flusher flusher);
-                                  );
-            imageTextureData.flush();
-            gl.glActiveTexture(GL2.GL_TEXTURE1);
-            imageTexture = new Texture(imageTextureData);
-            preScale = (float) (1<<16) / (1<<12);
-            preOffset = 0.0F;
-
-            /*
-            result = new TextureRef(imageTexture.getTextureObject(),
-                    imageTexture.getImageTexCoords(),
-                    imageTexture.getEstimatedMemorySize(),
-                    preScale,
-                    preOffset);
-            */
             result = new TextureRef();
-            result.texId = imageTexture.getTextureObject();
 
-            
+            //Texture imageTexture = new Texture(imageTextureData);
+            //result.texId = imageTexture.getTextureObject();
 
-            /*
-            result = new TextureRef();
             int[] tmp = new int[1];
             gl.glGenTextures(1, tmp, 0);
             result.texId = tmp[0];
-            scd.setAttribute(sharedTexIdKey, result);
-
             gl.glBindTexture(GL2.GL_TEXTURE_2D, result.getTexId());
 
-            int glInternalFormat, glPixelFormat, glPixelType;
-
-            glPixelFormat = GL.GL_LUMINANCE;
-            glPixelType = GL.GL_UNSIGNED_SHORT;
-            glInternalFormat = GL2.GL_LUMINANCE16; // NOT GL_LUMINANCE12 b/c pixelType is 16-bit and we'd thus lose precision
-            result.preScale = (float) (1<<16) / (1<<12);
-            result.preOffset = 0.0F;
-
-            ShortBuffer buf = ShortBuffer.allocate(xCount*yCount);
-            for (int x=0; x<xCount; x++) {
-                for (int y=0; y<yCount; y++) {
-                    //short val = (short)(32000*x/xCount);
-                    short val = (short)(32000*((x/1000)%2==0?0.8:0.2));
-                    buf.put(y*xCount + x, val);
-                }
-            }
             gl.glTexImage2D(GL2.GL_TEXTURE_2D,    //target
                             0,                    //level
-                            glInternalFormat,     //internalFormat
+                            GL2.GL_LUMINANCE16,   //internalFormat
                             xCount,               //width
                             yCount,               //height
                             0,                    //border
-                            glPixelFormat,        //format
-                            glPixelType,          //type
-                            buf);                //data
+                            GL.GL_LUMINANCE,      // int pixelFormat,
+                            GL.GL_UNSIGNED_SHORT, // int pixelType,
+                            null);                 //data
 
-            gl.glActiveTexture(texUnit);
-            */
+            gl.glTexSubImage2D(GL2.GL_TEXTURE_2D,    //target
+                               0,                    //level
+                               0,  //xoffset
+                               0,  //yoffset
+                               xCount,               //width
+                               yCount,               //height
+                               GL.GL_LUMINANCE,      // int pixelFormat,
+                               GL.GL_UNSIGNED_SHORT, // int pixelType,
+                               buf);                 //data
+            gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
+            gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
+            gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE);
+            gl.glTexParameteri(GL2.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE);
+            
+            scd.setAttribute(sharedTexIdKey, result);
         }
         gl.glEnable(GL2.GL_TEXTURE_2D);
-        gl.glActiveTexture(GL2.GL_TEXTURE1);
+        gl.glActiveTexture(texUnit);
         gl.glBindTexture(GL2.GL_TEXTURE_2D, result.getTexId());
-        //gl.glTexParameteri( GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP );
-        //gl.glTexParameteri( GL2.GL_TEXTURE_2D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP );
         return result;
     }
 

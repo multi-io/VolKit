@@ -7,7 +7,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/de.sofd.swing"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/de.sofd.util"/>
 	<classpathentry kind="lib" path="lib/jogl/gluegen-rt.jar"/>
-	<classpathentry kind="lib" path="lib/jogl/jogl.all.jar"/>
+	<classpathentry kind="lib" path="lib/jogl/jogl.all.jar" sourcepath="/de.sofd.viskit/ext-src/jogl2.0b10-src.jar"/>
 	<classpathentry kind="lib" path="lib/jogl/nativewindow.all.jar"/>
 	<classpathentry kind="lib" path="lib/jogl/newt.all.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-audit-2.0.20.jar"/>
