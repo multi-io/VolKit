@@ -1,0 +1,2 @@
+- separate Einleseroutine für VolumeDataSet; Bilder nach Slice
+  Location vorsortieren

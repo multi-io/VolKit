@@ -300,5 +300,8 @@ public class VolumeDataSet {
         return result;
     }
     
+    public void unbindCurrentTexture(GL2 gl) {
+        gl.glBindTexture(GL.GL_TEXTURE_2D, 0);
+    }
     
 }
