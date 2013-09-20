@@ -181,8 +181,8 @@ public class SliceViewer extends JPanel {
             try {
                 try {
                     //gl.glColor3f(1.0f, 0.0f, 1.0f);
-                    //volumeDataSet.bindTexture(GL2.GL_TEXTURE1, gl, sharedContextData);
-                    tdb.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
+                    volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
+                    //tdb.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
                     //rescaleShader.bind();
                     //rescaleShader.bindUniform("tex", 0);
                     gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
@@ -203,7 +203,7 @@ public class SliceViewer extends JPanel {
             //gl.glPopMatrix();
         }
         
-        private void texturedSlicePoint1(GL2 gl, float x, float y, float z) {
+        private void texturedSlicePoint(GL2 gl, float x, float y, float z) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] pt = new float[]{x,y,z};
             float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
@@ -213,7 +213,7 @@ public class SliceViewer extends JPanel {
             gl.glVertex2f(x, y);
         }
 
-        private void texturedSlicePoint(GL2 gl, float x, float y, float z) {
+        private void texturedSlicePoint2(GL2 gl, float x, float y, float z) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] pt = new float[]{x,y,z};
             float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
