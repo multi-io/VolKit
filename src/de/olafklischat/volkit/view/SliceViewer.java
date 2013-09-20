@@ -42,8 +42,32 @@ public class SliceViewer extends JPanel {
     }
     
     private final VolumeDataSet volumeDataSet;
+
+    /**
+     * transformation from volume system to world system.
+     * volume system = system whose z=0 plane cuts the volume quad in the middle in volume-z direction
+     *     (system whose origin is in the middle of the volume, with x-, y- and z-axes parallel
+     *     to the volume's)
+     *     
+     * 1 unit length = 1 mm in all systems
+     */
     private float[] volumeToWorldTransform = new float[16];
-    private float[] worldToEyeTransform = new float[16];
+    
+     /**
+     * transformation from world to "slice" system, i.e. the system whose z=0 plane
+     * defines "base" slice plane (the actual slice plane is parallel to the
+     * base slice plane, navigationZ unit lenghts
+     * in z axis direction (slice system) away).
+     * <p>
+     * Normally one of three values
+     * corresponding to the three main slice orientations.
+     */
+    private float[] worldToBaseSliceTransform = new float[16];
+    
+    //dependent matrices, updated by recomputeMatrices()
+    private float[] volumeToBaseSliceTransform = new float[16];
+    private float[] baseSliceToVolumeTransform = new float[16];
+    
 
     private float navigationCubeLength;
     private float navigationZ;
@@ -53,6 +77,15 @@ public class SliceViewer extends JPanel {
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
 
+    public SliceViewer() {  // TODO: fake c'tor for debugging
+        setLayout(new BorderLayout());
+        if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
+            createGlCanvas();
+        }
+        instances.add(this);
+        volumeDataSet = null;
+    }
+    
     public SliceViewer(VolumeDataSet volumeDataSet) {
         setLayout(new BorderLayout());
         if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
@@ -60,12 +93,13 @@ public class SliceViewer extends JPanel {
         }
         instances.add(this);
         this.volumeDataSet = volumeDataSet;
-        LinAlg.fillIdentity(volumeToWorldTransform);
-        LinAlg.fillIdentity(worldToEyeTransform);
         navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
-                                                 volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
-                                                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
+                volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
+                volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
+        LinAlg.fillIdentity(volumeToWorldTransform);
+        LinAlg.fillIdentity(worldToBaseSliceTransform);
         navigationZ = 0;
+        recomputeMatrices();
     }
 
     private void createGlCanvas() {
@@ -92,6 +126,11 @@ public class SliceViewer extends JPanel {
 
     public GLAutoDrawable getCellsViewer() {
         return glCanvas;
+    }
+    
+    protected void recomputeMatrices() {
+        LinAlg.fillMultiplication(worldToBaseSliceTransform, volumeToWorldTransform, volumeToBaseSliceTransform);
+        LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
     }
 
     protected class GLEventHandler implements GLEventListener {
@@ -131,13 +170,8 @@ public class SliceViewer extends JPanel {
             //gl.glPushMatrix();
             gl.glLoadIdentity();
 
-            Dimension canvasSize = glCanvas.getSize();
-
             gl.glPushAttrib(GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
-            gl.glPushMatrix();
             try {
-                gl.glLoadIdentity();
-
                 try {
                     gl.glColor3f(1.0f, 0.0f, 1.0f);
                     gl.glBegin(gl.GL_POLYGON);
@@ -148,7 +182,6 @@ public class SliceViewer extends JPanel {
                 } finally {
                 }
             } finally {
-                gl.glPopMatrix();
                 gl.glPopAttrib();
             }
             
@@ -183,6 +216,7 @@ public class SliceViewer extends JPanel {
             gl.glLoadIdentity();
             Dimension sz = glCanvas.getSize();
             if (sz != null) {
+                // TODO: fixed view of size navigationCubeLength
                 gl.glOrtho(-sz.width / 2,   //  GLdouble    left,
                             sz.width / 2,   //    GLdouble      right,
                            -sz.height / 2,  //    GLdouble      bottom,
