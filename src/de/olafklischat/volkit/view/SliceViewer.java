@@ -28,9 +28,13 @@ import javax.swing.SwingUtilities;
 
 import org.apache.log4j.Logger;
 
+import de.olafklischat.volkit.model.TextureDebug;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.sofd.util.IdentityHashSet;
+import de.sofd.viskit.controllers.cellpaint.ImageTextureManager;
+import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
+import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 
 public class SliceViewer extends JPanel {
@@ -39,9 +43,12 @@ public class SliceViewer extends JPanel {
 
     static {
         System.setProperty("sun.awt.noerasebackground", "true");
+        ShaderManager.init("shader");
     }
     
     private final VolumeDataSet volumeDataSet;
+    
+    private final TextureDebug tdb = new TextureDebug();
 
     /**
      * transformation from volume system to world system.
@@ -73,19 +80,12 @@ public class SliceViewer extends JPanel {
     private float navigationZ;
 
     private GLCanvas glCanvas = null;
+
+    private GLShader rescaleShader;
     
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
 
-    public SliceViewer() {  // TODO: fake c'tor for debugging
-        setLayout(new BorderLayout());
-        if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
-            createGlCanvas();
-        }
-        instances.add(this);
-        volumeDataSet = null;
-    }
-    
     public SliceViewer(VolumeDataSet volumeDataSet) {
         setLayout(new BorderLayout());
         if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
@@ -158,13 +158,20 @@ public class SliceViewer extends JPanel {
                     }
                 });
             }
+
+            try {
+                ShaderManager.read(gl, "sliceviewer");
+                rescaleShader = ShaderManager.get("sliceviewer");
+                rescaleShader.addProgramUniform("tex");
+            } catch (Exception e) {
+                throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
+            }
         }
 
         @Override
         public void display(GLAutoDrawable glAutoDrawable) {
             //System.out.println("DISP " + drawableToString(glAutoDrawable));
             GL2 gl = glAutoDrawable.getGL().getGL2();
-            
             gl.glClear(gl.GL_COLOR_BUFFER_BIT);
             gl.glMatrixMode(gl.GL_MODELVIEW);
             //gl.glPushMatrix();
@@ -173,13 +180,20 @@ public class SliceViewer extends JPanel {
             gl.glPushAttrib(GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
             try {
                 try {
-                    gl.glColor3f(1.0f, 0.0f, 1.0f);
+                    //gl.glColor3f(1.0f, 0.0f, 1.0f);
+                    //volumeDataSet.bindTexture(GL2.GL_TEXTURE1, gl, sharedContextData);
+                    tdb.bindTexture(GL2.GL_TEXTURE1, gl, sharedContextData);
+                    rescaleShader.bind();
+                    rescaleShader.bindUniform("tex", 1);
+                    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
                     gl.glBegin(GL2.GL_QUADS);
-                    gl.glVertex2f(-navigationCubeLength/2, -navigationCubeLength/2);
-                    gl.glVertex2f( navigationCubeLength/2, -navigationCubeLength/2);
-                    gl.glVertex2f( navigationCubeLength/2,  navigationCubeLength/2);
-                    gl.glVertex2f(-navigationCubeLength/2,  navigationCubeLength/2);
+                    texturedSlicePoint(gl,-navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
+                    texturedSlicePoint(gl, navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
+                    texturedSlicePoint(gl, navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
+                    texturedSlicePoint(gl,-navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
                     gl.glEnd();
+                    tdb.unbindCurrentTexture(gl);
+                    rescaleShader.unbind();
                 } finally {
                 }
             } finally {
@@ -188,7 +202,26 @@ public class SliceViewer extends JPanel {
             
             //gl.glPopMatrix();
         }
+        
+        private void texturedSlicePoint1(GL2 gl, float x, float y, float z) {
+            // TODO: use the texture matrix rather than calculating the tex coordinates in here
+            float[] pt = new float[]{x,y,z};
+            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
+            LinAlg.stimesv(1.0f/navigationCubeLength, ptInVolume, ptInVolume);
+            LinAlg.vplusv(ptInVolume, new float[]{0.5f,0.5f,0.5f}, ptInVolume);
+            gl.glTexCoord3fv(ptInVolume, 0);
+            gl.glVertex2f(x, y);
+        }
 
+        private void texturedSlicePoint(GL2 gl, float x, float y, float z) {
+            // TODO: use the texture matrix rather than calculating the tex coordinates in here
+            float[] pt = new float[]{x,y,z};
+            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
+            LinAlg.stimesv(1.0f/navigationCubeLength, ptInVolume, ptInVolume);
+            LinAlg.vplusv(ptInVolume, new float[]{0.5f,0.5f,0.5f}, ptInVolume);
+            gl.glTexCoord2fv(ptInVolume, 0);
+            gl.glVertex2f(x, y);
+        }
         
 
         @Override

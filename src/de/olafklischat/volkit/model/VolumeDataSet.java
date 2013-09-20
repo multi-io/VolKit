@@ -227,7 +227,7 @@ public class VolumeDataSet {
 
     public TextureRef bindTexture(int texUnit, GL gl1, SharedContextData scd) {
         GL2 gl = gl1.getGL2();
-        final String sharedTexIdKey = "VolumeDateSetTex" + hashCode();
+        final String sharedTexIdKey = "VolumeDataSetTex" + hashCode();
         TextureRef result = (TextureRef) scd.getAttribute(sharedTexIdKey);
         if (result == null) {
             result = new TextureRef();
@@ -288,10 +288,15 @@ public class VolumeDataSet {
                                    glPixelType,
                                    planeBuffer);
             }
+            gl.glActiveTexture(texUnit);
         }
         gl.glEnable(GL2.GL_TEXTURE_3D);
         gl.glActiveTexture(texUnit);
+        gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
         gl.glBindTexture(GL2.GL_TEXTURE_3D, result.getTexId());
+        gl.glTexParameteri( GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP );
+        gl.glTexParameteri( GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP );
+        gl.glTexParameteri( GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP );
         return result;
     }
     
