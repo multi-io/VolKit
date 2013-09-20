@@ -104,7 +104,7 @@ public class SliceViewer extends JPanel {
 
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
-        navigationZ = 100;
+        navigationZ = 0;
         recomputeMatrices();
         
         navZslider.getModel().addChangeListener(navZsliderChangeListener);
