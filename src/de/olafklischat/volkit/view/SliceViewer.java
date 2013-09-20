@@ -182,9 +182,9 @@ public class SliceViewer extends JPanel {
                 try {
                     //gl.glColor3f(1.0f, 0.0f, 1.0f);
                     //volumeDataSet.bindTexture(GL2.GL_TEXTURE1, gl, sharedContextData);
-                    tdb.bindTexture(GL2.GL_TEXTURE1, gl, sharedContextData);
-                    rescaleShader.bind();
-                    rescaleShader.bindUniform("tex", 1);
+                    tdb.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
+                    //rescaleShader.bind();
+                    //rescaleShader.bindUniform("tex", 0);
                     gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
                     gl.glBegin(GL2.GL_QUADS);
                     texturedSlicePoint(gl,-navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
@@ -193,7 +193,7 @@ public class SliceViewer extends JPanel {
                     texturedSlicePoint(gl,-navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
                     gl.glEnd();
                     tdb.unbindCurrentTexture(gl);
-                    rescaleShader.unbind();
+                    //rescaleShader.unbind();
                 } finally {
                 }
             } finally {
