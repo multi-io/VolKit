@@ -174,10 +174,11 @@ public class SliceViewer extends JPanel {
             try {
                 try {
                     gl.glColor3f(1.0f, 0.0f, 1.0f);
-                    gl.glBegin(gl.GL_POLYGON);
-                    gl.glVertex2f(150f, 100f);
-                    gl.glVertex2f(400f, 500f);
-                    gl.glVertex2f(100f, 350f);
+                    gl.glBegin(GL2.GL_QUADS);
+                    gl.glVertex2f(-navigationCubeLength/2, -navigationCubeLength/2);
+                    gl.glVertex2f( navigationCubeLength/2, -navigationCubeLength/2);
+                    gl.glVertex2f( navigationCubeLength/2,  navigationCubeLength/2);
+                    gl.glVertex2f(-navigationCubeLength/2,  navigationCubeLength/2);
                     gl.glEnd();
                 } finally {
                 }
@@ -216,11 +217,30 @@ public class SliceViewer extends JPanel {
             gl.glLoadIdentity();
             Dimension sz = glCanvas.getSize();
             if (sz != null) {
-                // TODO: fixed view of size navigationCubeLength
+                /*
+                 // visible area depending on canvas size
                 gl.glOrtho(-sz.width / 2,   //  GLdouble    left,
-                            sz.width / 2,   //    GLdouble      right,
-                           -sz.height / 2,  //    GLdouble      bottom,
-                            sz.height / 2,  //    GLdouble      top,
+                        sz.width / 2,   //    GLdouble      right,
+                       -sz.height / 2,  //    GLdouble      bottom,
+                        sz.height / 2,  //    GLdouble      top,
+                       -1000, //  GLdouble      nearVal,
+                        1000   //  GLdouble     farVal
+                       );
+                */
+                
+                // fixed visible area of size navigationCubeLength
+                float viewWidth, viewHeight;
+                if (sz.width > sz.height) {
+                    viewHeight = navigationCubeLength;
+                    viewWidth = viewHeight * sz.width / sz.height;
+                } else {
+                    viewWidth = navigationCubeLength;
+                    viewHeight = viewWidth * sz.height / sz.width;
+                }
+                gl.glOrtho(-viewWidth / 2,   //  GLdouble    left,
+                            viewWidth / 2,   //    GLdouble      right,
+                           -viewHeight / 2,  //    GLdouble      bottom,
+                            viewHeight / 2,  //    GLdouble      top,
                            -1000, //  GLdouble      nearVal,
                             1000   //  GLdouble     farVal
                            );
