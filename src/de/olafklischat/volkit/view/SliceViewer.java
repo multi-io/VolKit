@@ -3,12 +3,17 @@ package de.olafklischat.volkit.view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.util.ArrayList;
+import java.util.EventListener;
+import java.util.List;
 import java.util.Set;
 
 import javax.media.opengl.DebugGL2;
@@ -357,7 +362,6 @@ public class SliceViewer extends JPanel {
 
     };
 
-    
     private MouseAdapter cellMouseEventDispatcher = new MouseAdapter() {
 
         @Override
@@ -374,10 +378,6 @@ public class SliceViewer extends JPanel {
         public void mouseReleased(final MouseEvent evt) {
              dispatchEventToCell(evt);
         }
-
-        // TODO: generate correct enter/exit events for the cells?
-        //       this is something that would be much easier with per-cell
-        //       mouse listeners of course... (see TODO in commted-out block above)
 
         @Override
         public void mouseEntered(MouseEvent evt) {
@@ -407,10 +407,127 @@ public class SliceViewer extends JPanel {
     };
 
     protected void dispatchEventToCell(MouseEvent evt) {
-        Point mousePosInCell = new Point();
+        if (evt instanceof MouseWheelEvent) {
+            fireCellMouseWheelEvent((MouseWheelEvent) evt);
+        } else {
+            fireCellMouseEvent(evt);
+        }
+    }
+
+    public void addCellMouseListener(MouseListener listener) {
+        addAnyCellMouseListener(listener);
+    }
+    
+    public void removeCellMouseListener(MouseListener listener) {
+        removeAnyCellMouseListener(listener);
+    }
+    
+    protected void fireCellMouseEvent(MouseEvent e) {
+        fireAnyCellMouseEvent(e);
+    }
+
+    /**
+     * Like {@link #addCellMouseListener(int, java.awt.event.MouseListener) }, but for
+     * MouseMotionListeners.
+     *
+     * @param zOrder
+     * @param listener
+     */
+    public void addCellMouseMotionListener(int zOrder, MouseMotionListener listener) {
+        addAnyCellMouseListener(listener);
+    }
+
+    public void removeCellMouseMotionListener(MouseMotionListener listener) {
+        removeAnyCellMouseListener(listener);
+    }
+
+    protected void fireCellMouseMotionEvent(MouseEvent e) {
+        fireAnyCellMouseEvent(e);
+    }
+
+    public void addCellMouseWheelListener(int zOrder, MouseWheelListener listener) {
+        addAnyCellMouseListener(listener);
+    }
+    
+    public void removeCellMouseWheelListener(MouseWheelListener listener) {
+        removeAnyCellMouseListener(listener);
+    }
+
+    protected void fireCellMouseWheelEvent(MouseWheelEvent e) {
+        fireAnyCellMouseEvent(e);
     }
 
 
+    
+    private List<EventListener> cellMouseListeners = new ArrayList<EventListener>();
+    
+    protected void addAnyCellMouseListener(EventListener listener) {
+        // check if it's been added before already. TODO: this is not really correct, get rid of it?
+        //   (it was added for compatibility with clients that call all three add methods with just
+        //   one listener instance (extending MouseHandler and thus implementing all Mouse*Listener interfaces),
+        //   and expect the listener to be called only once per event.
+        //   Check how standard Swing components handle this)
+        for (EventListener l : cellMouseListeners) {
+            if (l == listener) {
+                return;
+            }
+        }
+        cellMouseListeners.add(listener);
+    }
+
+    protected void removeAnyCellMouseListener(EventListener listener) {
+        cellMouseListeners.remove(listener);
+    }
+
+    protected void fireAnyCellMouseEvent(MouseEvent e) {
+        for (EventListener listener : cellMouseListeners) {
+            boolean eventProcessed = false;
+            if (listener instanceof MouseWheelListener && e instanceof MouseWheelEvent) {
+                MouseWheelListener l = (MouseWheelListener) listener;
+                l.mouseWheelMoved((MouseWheelEvent) e);
+                eventProcessed = true;
+            }
+            if (!eventProcessed && listener instanceof MouseMotionListener) {
+                MouseMotionListener l = (MouseMotionListener) listener;
+                switch (e.getID()) {
+                case MouseEvent.MOUSE_MOVED:
+                    l.mouseMoved(e);
+                    eventProcessed = true;
+                    break;
+                case MouseEvent.MOUSE_DRAGGED:
+                    l.mouseDragged(e);
+                    eventProcessed = true;
+                    break;
+                }
+            }
+            if (!eventProcessed) {
+                MouseListener l = (MouseListener) listener;
+                switch (e.getID()) {
+                case MouseEvent.MOUSE_CLICKED:
+                    l.mouseClicked(e);
+                    break;
+                case MouseEvent.MOUSE_PRESSED:
+                    l.mousePressed(e);
+                    break;
+                case MouseEvent.MOUSE_RELEASED:
+                    l.mouseReleased(e);
+                    break;
+                case MouseEvent.MOUSE_ENTERED:
+                    l.mouseEntered(e);
+                    break;
+                case MouseEvent.MOUSE_EXITED:
+                    l.mouseExited(e);
+                    break;
+                }
+            }
+            if (e.isConsumed()) {
+                break;
+            }
+        }
+    }
+
+    
+    
     /**
      * need our own valueIsAdjusting for navZslider instead of using
      * navZslider.getModel().getValueIsAdjusting() because we want to be able to
