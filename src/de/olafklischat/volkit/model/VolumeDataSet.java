@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.nio.Buffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
@@ -17,6 +20,7 @@ import org.dcm4che2.io.DicomInputStream;
 import com.sun.opengl.util.BufferUtil;
 
 import de.olafklischat.volkit.view.SharedContextData;
+import de.sofd.viskit.image.DicomInputOutput;
 import de.sofd.viskit.model.RawImage;
 
 public class VolumeDataSet {
@@ -99,92 +103,91 @@ public class VolumeDataSet {
     protected VolumeDataSet() {
     }
     
-    public static VolumeDataSet readFromDirectory(File dir) throws IOException {  // TODO move I/O into separate class
+    public static VolumeDataSet readFromDirectory(String dirName) throws Exception {  // TODO move I/O into separate class
         VolumeDataSet result = new VolumeDataSet();
-        File[] files = dir.listFiles();
-        Arrays.sort(files);
-        boolean metadataRead = false;
-        boolean zSpacingRead = false;
-        float firstSliceLocation = 0;
-        result.zCount = files.length;
-        int readCount = 0;
-        for (File f : files) {
-            if (!f.getName().toLowerCase().endsWith(".dcm")) {
-                continue;
-            }
-
-            DicomObject dobj;
-            DicomInputStream din = new DicomInputStream(f);
-            try {
-                dobj = din.readDicomObject();
-            } finally {
-                din.close();
-            }
-
-            if (!metadataRead) {
-                int bitsAllocated = dobj.getInt(Tag.BitsAllocated);
-                if (bitsAllocated <= 0) {
-                    return null;
+        NavigableSet<DicomObject> dobjs = new TreeSet<DicomObject>(new Comparator<DicomObject>() {
+            @Override
+            public int compare(DicomObject o1, DicomObject o2) {
+                if (o1.contains(Tag.SliceLocation) && o2.contains(Tag.SliceLocation)) {
+                    return Float.compare(o1.getFloat(Tag.SliceLocation), o2.getFloat(Tag.SliceLocation));
+                } else {
+                    return ((Integer)o1.getInt(Tag.InstanceNumber)).compareTo(o2.getInt(Tag.InstanceNumber));
                 }
-                int bitsStored = dobj.getInt(Tag.BitsStored);
-                if (bitsStored <= 0) {
-                    return null;
-                }
-                boolean isSigned = (1 == dobj.getInt(Tag.PixelRepresentation));
-                // TODO: fail if compressed
-                // TODO: support for RGB? (at least don't misinterpret it as luminance)
-                // TODO: account for endianness (Tag.HighBit)
-                // TODO: maybe use static multidimensional tables instead of nested switch statements
-                switch (bitsAllocated) {
-                    case 8:
-                        throw new IOException("8-bit DICOM images not supported for now");
+            }
+        });
+        
+        dobjs.addAll(DicomInputOutput.readDir(dirName, null));
+        
+        // read metadata
+        
+        result.zCount = dobjs.size();
+
+        DicomObject firstDobj = dobjs.first();
+        DicomObject lastDobj = dobjs.last();
+        
+        result.zSpacingInMm = (lastDobj.getFloat(Tag.SliceLocation) - firstDobj.getFloat(Tag.SliceLocation)) / (result.zCount - 1);
+
+        int bitsAllocated = firstDobj.getInt(Tag.BitsAllocated);
+        if (bitsAllocated <= 0) {
+            return null;
+        }
+        int bitsStored = firstDobj.getInt(Tag.BitsStored);
+        if (bitsStored <= 0) {
+            return null;
+        }
+        boolean isSigned = (1 == firstDobj.getInt(Tag.PixelRepresentation));
+        // TODO: fail if compressed
+        // TODO: support for RGB? (at least don't misinterpret it as luminance)
+        // TODO: account for endianness (Tag.HighBit)
+        // TODO: maybe use static multidimensional tables instead of nested switch statements
+        switch (bitsAllocated) {
+            case 8:
+                throw new IOException("8-bit DICOM images not supported for now");
+            case 16:
+                result.pixelFormat = RawImage.PIXEL_FORMAT_LUMINANCE;
+                switch (bitsStored) {
+                    case 12:
+                        result.pixelType = (isSigned ? PIXEL_TYPE_SIGNED_12BIT : PIXEL_TYPE_UNSIGNED_12BIT);
+                        break;
                     case 16:
-                        result.pixelFormat = RawImage.PIXEL_FORMAT_LUMINANCE;
-                        switch (bitsStored) {
-                            case 12:
-                                result.pixelType = (isSigned ? PIXEL_TYPE_SIGNED_12BIT : PIXEL_TYPE_UNSIGNED_12BIT);
-                                break;
-                            case 16:
-                                result.pixelType = (isSigned ? PIXEL_TYPE_SIGNED_16BIT : PIXEL_TYPE_UNSIGNED_16BIT);
-                                break;
-                            default:
-                                throw new IOException("unsupported DICOM stored bit count: " + bitsStored);
-                        }
+                        result.pixelType = (isSigned ? PIXEL_TYPE_SIGNED_16BIT : PIXEL_TYPE_UNSIGNED_16BIT);
                         break;
                     default:
-                        throw new IOException("unsupported DICOM allocated bit count: " + bitsAllocated);
+                        throw new IOException("unsupported DICOM stored bit count: " + bitsStored);
                 }
-                result.xCount = dobj.getInt(Tag.Columns);
-                result.yCount = dobj.getInt(Tag.Rows);
+                break;
+            default:
+                throw new IOException("unsupported DICOM allocated bit count: " + bitsAllocated);
+        }
+        result.xCount = firstDobj.getInt(Tag.Columns);
+        result.yCount = firstDobj.getInt(Tag.Rows);
 
-                float[] rowCol;
-                if (dobj.contains(Tag.PixelSpacing)) {
-                    rowCol = dobj.getFloats(Tag.PixelSpacing);
-                    if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
-                        throw new RuntimeException("Illegal PixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
-                    }
-                } else if (dobj.contains(Tag.ImagerPixelSpacing)) {
-                    rowCol = dobj.getFloats(Tag.ImagerPixelSpacing);
-                    if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
-                        throw new RuntimeException("Illegal ImagerPixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
-                    }
-                } else {
-                    throw new IOException("DICOM metadata contained neither a PixelSpacing nor an ImagerPixelSpacing tag");
-                }
-                result.xSpacingInMm = rowCol[1];
-                result.ySpacingInMm = rowCol[0];
-                firstSliceLocation = dobj.getFloat(Tag.SliceLocation);
-
-                metadataRead = true;
-            } else if (!zSpacingRead) {
-                result.zSpacingInMm = dobj.getFloat(Tag.SliceLocation) - firstSliceLocation;
-                zSpacingRead = true;
+        float[] rowCol;
+        if (firstDobj.contains(Tag.PixelSpacing)) {
+            rowCol = firstDobj.getFloats(Tag.PixelSpacing);
+            if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
+                throw new RuntimeException("Illegal PixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
             }
+        } else if (firstDobj.contains(Tag.ImagerPixelSpacing)) {
+            rowCol = firstDobj.getFloats(Tag.ImagerPixelSpacing);
+            if ((rowCol.length != 2) || (rowCol[0] <= 0) || (rowCol[1] <= 0)) {
+                throw new RuntimeException("Illegal ImagerPixelSpacing tag in DICOM metadata (2 positive real numbers expected)");
+            }
+        } else {
+            throw new IOException("DICOM metadata contained neither a PixelSpacing nor an ImagerPixelSpacing tag");
+        }
+        result.xSpacingInMm = rowCol[1];
+        result.ySpacingInMm = rowCol[0];
+
+        // read pixel data
+        int readCount = 0;
+        for (DicomObject dobj: dobjs) {
             Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
             result.xyPixelPlaneBuffers.add(b);
             System.out.println("read " + readCount + "/" + result.zCount + " (" + (100 * readCount/result.zCount) + "%). SL=" + dobj.getFloat(Tag.SliceLocation));
             readCount++;
         }
+        
         return result;
     }
 

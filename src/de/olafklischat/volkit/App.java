@@ -2,8 +2,6 @@ package de.olafklischat.volkit;
 
 import java.awt.Color;
 import java.awt.GridLayout;
-import java.io.File;
-import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -22,7 +20,10 @@ public class App {
             @Override
             public void run() {
                 try {
-                    VolumeDataSet vds = VolumeDataSet.readFromDirectory(new File("/home/olaf/oliverdicom/INCISIX"));
+                    long t0 = System.currentTimeMillis();
+                    VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/oliverdicom/INCISIX");
+                    long t1 = System.currentTimeMillis();
+                    System.out.println("time for reading: " + (t1-t0) + " ms.");
                     JFrame f = new JFrame("SliceView");
                     f.getContentPane().setBackground(Color.GRAY);
                     f.getContentPane().setLayout(new GridLayout(2, 2, 5, 5));
@@ -47,7 +48,7 @@ public class App {
                     f.setSize(1200,900);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
