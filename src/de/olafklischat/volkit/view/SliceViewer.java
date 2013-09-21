@@ -135,13 +135,6 @@ public class SliceViewer extends JPanel {
         //cellsViewer.addKeyListener(cellsViewerMouseAndKeyHandler);
     }
 
-    public void refreshCells() {
-        if (null == glCanvas) {
-            return;
-        }
-        glCanvas.repaint();
-    }
-
     public GLAutoDrawable getGlCanvas() {
         return glCanvas;
     }
@@ -154,7 +147,7 @@ public class SliceViewer extends JPanel {
         this.navigationZ = navigationZ;
         recomputeMatrices();
         updateNavZslider();
-        glCanvas.repaint();
+        refresh();
     }
     
     public float[] getVolumeToWorldTransform() {
@@ -164,7 +157,7 @@ public class SliceViewer extends JPanel {
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
         recomputeMatrices();
-        glCanvas.repaint();
+        refresh();
     }
     
     public float[] getWorldToBaseSliceTransform() {
@@ -174,12 +167,18 @@ public class SliceViewer extends JPanel {
     public void setWorldToBaseSliceTransform(float[] worldToBaseSliceTransform) {
         LinAlg.copyArr(worldToBaseSliceTransform, this.worldToBaseSliceTransform);
         recomputeMatrices();
-        glCanvas.repaint();
+        refresh();
     }
     
     protected void recomputeMatrices() {
         LinAlg.fillMultiplication(worldToBaseSliceTransform, volumeToWorldTransform, volumeToBaseSliceTransform);
         LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
+    }
+    
+    public void refresh() {
+        if (glCanvas != null) {
+            glCanvas.repaint();
+        }
     }
 
     protected class GLEventHandler implements GLEventListener {
