@@ -266,10 +266,10 @@ public class VolumeDataSet {
             gl.glTexImage3D(GL2.GL_TEXTURE_3D,    //target
                             0,                    //level
                             glInternalFormat,     //internalFormat
-                            xCount,               //width
-                            yCount,               //height
-                            zCount,               //depth
-                            0,                    //border
+                            xCount+2,               //width
+                            yCount+2,               //height
+                            zCount+2,               //depth
+                            1,                    //border
                             glPixelFormat,        //format
                             glPixelType,          //type
                             null);                //data
@@ -290,9 +290,9 @@ public class VolumeDataSet {
             }
             gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
             gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP );
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP );
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP );
+            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_BORDER );
+            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_BORDER );
+            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP_TO_BORDER );
         }
         gl.glEnable(GL2.GL_TEXTURE_3D);
         gl.glActiveTexture(texUnit);
