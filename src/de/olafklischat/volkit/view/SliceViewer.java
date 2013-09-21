@@ -77,7 +77,7 @@ public class SliceViewer extends JPanel {
     static {
         // TODO: verify
         LinAlg.fillIdentity(BASE_SLICE_XY);
-        LinAlg.fillRotation(BASE_SLICE_XY, 90, 1, 0, 0, BASE_SLICE_XZ);
+        LinAlg.fillRotation(BASE_SLICE_XY, -90, 1, 0, 0, BASE_SLICE_XZ);
         LinAlg.fillRotation(BASE_SLICE_XZ, 90, 0, 0, 1, BASE_SLICE_YZ);
     }
     
@@ -239,6 +239,8 @@ public class SliceViewer extends JPanel {
                     texturedSlicePoint(gl, navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
                     texturedSlicePoint(gl, navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
                     texturedSlicePoint(gl,-navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
+                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
+                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
                     gl.glEnd();
                     fragShader.unbind();
                     volumeDataSet.unbindCurrentTexture(gl);
@@ -263,11 +265,17 @@ public class SliceViewer extends JPanel {
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
             gl.glTexCoord3fv(ptInTex, 0);
-            System.out.println("texCoord.Z="+ptInTex[2]);
+            //System.out.println("texCoord.Z="+ptInTex[2]);
             gl.glVertex2f(x, y);
         }
         
+        private void outputSlicePoint(String caption, float x, float y, float z) {
+            float[] pt = new float[]{x,y,z};
+            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
+            System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
+        }
 
+        
         @Override
         public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
             GL2 gl = (GL2) glAutoDrawable.getGL();

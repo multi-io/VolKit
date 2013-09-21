@@ -1,10 +1,8 @@
 package de.olafklischat.volkit.model;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.Buffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableSet;
@@ -15,7 +13,6 @@ import javax.media.opengl.GL2;
 
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
-import org.dcm4che2.io.DicomInputStream;
 
 import com.sun.opengl.util.BufferUtil;
 

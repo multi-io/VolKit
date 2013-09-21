@@ -30,21 +30,21 @@ public class App {
                     
                     SliceViewer sv1 = new SliceViewer(vds);
                     sv1.setBackground(Color.DARK_GRAY);
-                    sv1.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
+                    sv1.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XZ);
                     f.getContentPane().add(sv1);
 
-                    f.getContentPane().add(new JLabel(":-)", JLabel.CENTER));
-                    
                     SliceViewer sv2 = new SliceViewer(vds);
-                    sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XZ);
+                    sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
                     sv2.setBackground(Color.DARK_GRAY);
                     f.getContentPane().add(sv2);
 
                     SliceViewer sv3 = new SliceViewer(vds);
                     sv3.setBackground(Color.DARK_GRAY);
-                    sv3.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
+                    sv3.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
                     f.getContentPane().add(sv3);
 
+                    f.getContentPane().add(new JLabel(":-)", JLabel.CENTER));
+                    
                     f.setSize(1200,900);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
