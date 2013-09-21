@@ -133,11 +133,11 @@ public class SliceViewer extends JPanel {
         this.add(glCanvas, BorderLayout.CENTER);
         revalidate();
         setupInternalUiInteractions();
-        //cellsViewer.addKeyListener(internalMouseEventHandler);
-        glCanvas.addMouseListener(cellMouseEventDispatcher);
-        glCanvas.addMouseMotionListener(cellMouseEventDispatcher);
-        glCanvas.addMouseWheelListener(cellMouseEventDispatcher);
-        //cellsViewer.addKeyListener(cellsViewerMouseAndKeyHandler);
+        //glCanvas.addKeyListener(internalMouseEventHandler);
+        glCanvas.addMouseListener(canvasMouseEventDispatcher);
+        glCanvas.addMouseMotionListener(canvasMouseEventDispatcher);
+        glCanvas.addMouseWheelListener(canvasMouseEventDispatcher);
+        //glCanvas.addKeyListener(canvasMouseAndKeyHandler);
     }
 
     public GLAutoDrawable getGlCanvas() {
@@ -362,21 +362,21 @@ public class SliceViewer extends JPanel {
 
     };
 
-    private MouseAdapter cellMouseEventDispatcher = new MouseAdapter() {
+    private MouseAdapter canvasMouseEventDispatcher = new MouseAdapter() {
 
         @Override
         public void mouseClicked(MouseEvent evt) {
-            dispatchEventToCell(evt);
+            dispatchEventToCanvas(evt);
         }
 
         @Override
         public void mousePressed(MouseEvent evt) {
-            dispatchEventToCell(evt);
+            dispatchEventToCanvas(evt);
         }
 
         @Override
         public void mouseReleased(final MouseEvent evt) {
-             dispatchEventToCell(evt);
+             dispatchEventToCanvas(evt);
         }
 
         @Override
@@ -391,96 +391,89 @@ public class SliceViewer extends JPanel {
 
         @Override
         public void mouseMoved(MouseEvent evt) {
-             dispatchEventToCell(evt);
+             dispatchEventToCanvas(evt);
         }
 
         @Override
         public void mouseDragged(MouseEvent evt) {
-             dispatchEventToCell(evt);
+             dispatchEventToCanvas(evt);
         }
 
         @Override
         public void mouseWheelMoved(MouseWheelEvent evt) {
-             dispatchEventToCell(evt);
+             dispatchEventToCanvas(evt);
         }
 
     };
 
-    protected void dispatchEventToCell(MouseEvent evt) {
+    protected void dispatchEventToCanvas(MouseEvent evt) {
         if (evt instanceof MouseWheelEvent) {
-            fireCellMouseWheelEvent((MouseWheelEvent) evt);
+            fireCanvasMouseWheelEvent((MouseWheelEvent) evt);
         } else {
-            fireCellMouseEvent(evt);
+            fireCanvasMouseEvent(evt);
         }
     }
 
-    public void addCellMouseListener(MouseListener listener) {
-        addAnyCellMouseListener(listener);
+    public void addCanvasMouseListener(MouseListener listener) {
+        addAnyCanvasMouseListener(listener);
     }
     
-    public void removeCellMouseListener(MouseListener listener) {
-        removeAnyCellMouseListener(listener);
+    public void removeCanvasMouseListener(MouseListener listener) {
+        removeAnyCanvasMouseListener(listener);
     }
     
-    protected void fireCellMouseEvent(MouseEvent e) {
-        fireAnyCellMouseEvent(e);
+    protected void fireCanvasMouseEvent(MouseEvent e) {
+        fireAnyCanvasMouseEvent(e);
     }
 
-    /**
-     * Like {@link #addCellMouseListener(int, java.awt.event.MouseListener) }, but for
-     * MouseMotionListeners.
-     *
-     * @param zOrder
-     * @param listener
-     */
-    public void addCellMouseMotionListener(int zOrder, MouseMotionListener listener) {
-        addAnyCellMouseListener(listener);
+    public void addCanvasMouseMotionListener(MouseMotionListener listener) {
+        addAnyCanvasMouseListener(listener);
     }
 
-    public void removeCellMouseMotionListener(MouseMotionListener listener) {
-        removeAnyCellMouseListener(listener);
+    public void removeCanvasMouseMotionListener(MouseMotionListener listener) {
+        removeAnyCanvasMouseListener(listener);
     }
 
-    protected void fireCellMouseMotionEvent(MouseEvent e) {
-        fireAnyCellMouseEvent(e);
+    protected void fireCanvasMouseMotionEvent(MouseEvent e) {
+        fireAnyCanvasMouseEvent(e);
     }
 
-    public void addCellMouseWheelListener(int zOrder, MouseWheelListener listener) {
-        addAnyCellMouseListener(listener);
+    public void addCanvasMouseWheelListener(int zOrder, MouseWheelListener listener) {
+        addAnyCanvasMouseListener(listener);
     }
     
-    public void removeCellMouseWheelListener(MouseWheelListener listener) {
-        removeAnyCellMouseListener(listener);
+    public void removeCanvasMouseWheelListener(MouseWheelListener listener) {
+        removeAnyCanvasMouseListener(listener);
     }
 
-    protected void fireCellMouseWheelEvent(MouseWheelEvent e) {
-        fireAnyCellMouseEvent(e);
+    protected void fireCanvasMouseWheelEvent(MouseWheelEvent e) {
+        fireAnyCanvasMouseEvent(e);
     }
 
 
     
-    private List<EventListener> cellMouseListeners = new ArrayList<EventListener>();
+    private List<EventListener> canvasMouseListeners = new ArrayList<EventListener>();
     
-    protected void addAnyCellMouseListener(EventListener listener) {
+    protected void addAnyCanvasMouseListener(EventListener listener) {
         // check if it's been added before already. TODO: this is not really correct, get rid of it?
         //   (it was added for compatibility with clients that call all three add methods with just
         //   one listener instance (extending MouseHandler and thus implementing all Mouse*Listener interfaces),
         //   and expect the listener to be called only once per event.
         //   Check how standard Swing components handle this)
-        for (EventListener l : cellMouseListeners) {
+        for (EventListener l : canvasMouseListeners) {
             if (l == listener) {
                 return;
             }
         }
-        cellMouseListeners.add(listener);
+        canvasMouseListeners.add(listener);
     }
 
-    protected void removeAnyCellMouseListener(EventListener listener) {
-        cellMouseListeners.remove(listener);
+    protected void removeAnyCanvasMouseListener(EventListener listener) {
+        canvasMouseListeners.remove(listener);
     }
 
-    protected void fireAnyCellMouseEvent(MouseEvent e) {
-        for (EventListener listener : cellMouseListeners) {
+    protected void fireAnyCanvasMouseEvent(MouseEvent e) {
+        for (EventListener listener : canvasMouseListeners) {
             boolean eventProcessed = false;
             if (listener instanceof MouseWheelListener && e instanceof MouseWheelEvent) {
                 MouseWheelListener l = (MouseWheelListener) listener;

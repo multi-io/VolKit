@@ -16,6 +16,7 @@ public class TripleSliceViewerController {
         sv1.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XZ);
         sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
         sv3.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
+        //sv1.addCellMouseListener(null);
     }
     
 }
