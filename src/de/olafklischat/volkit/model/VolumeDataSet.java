@@ -182,7 +182,7 @@ public class VolumeDataSet {
             }
             Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
             result.xyPixelPlaneBuffers.add(b);
-            System.out.println("read " + readCount + "/" + result.zCount + " (" + (100 * readCount/result.zCount) + "%)");
+            System.out.println("read " + readCount + "/" + result.zCount + " (" + (100 * readCount/result.zCount) + "%). SL=" + dobj.getFloat(Tag.SliceLocation));
             readCount++;
         }
         return result;

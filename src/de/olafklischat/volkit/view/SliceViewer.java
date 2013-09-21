@@ -52,9 +52,8 @@ public class SliceViewer extends JPanel {
     
     /**
      * transformation from volume system to world system.
-     * volume system = system whose z=0 plane cuts the volume quad in the middle in volume-z direction
-     *     (system whose origin is in the middle of the volume, with x-, y- and z-axes parallel
-     *     to the volume's)
+     * volume system = system whose origin is in the middle of the volume, with x-, y- and z-axes parallel
+     *                 to the volume's
      *     
      * 1 unit length = 1 mm in all systems
      */
@@ -67,14 +66,24 @@ public class SliceViewer extends JPanel {
      * in z axis direction (slice system) away).
      * <p>
      * Normally one of three values
-     * corresponding to the three main slice orientations.
+     * corresponding to the three main slice orientations (BASE_SLICE_xx constants).
      */
     private float[] worldToBaseSliceTransform = new float[16];
+    
+    public static final float[] BASE_SLICE_XY = new float[16];
+    public static final float[] BASE_SLICE_XZ = new float[16];
+    public static final float[] BASE_SLICE_YZ = new float[16];
+    
+    static {
+        // TODO: verify
+        LinAlg.fillIdentity(BASE_SLICE_XY);
+        LinAlg.fillRotation(BASE_SLICE_XY, 90, 1, 0, 0, BASE_SLICE_XZ);
+        LinAlg.fillRotation(BASE_SLICE_XZ, 90, 0, 0, 1, BASE_SLICE_YZ);
+    }
     
     //dependent matrices, updated by recomputeMatrices()
     private float[] volumeToBaseSliceTransform = new float[16];
     private float[] baseSliceToVolumeTransform = new float[16];
-    
 
     private float navigationCubeLength;
     private float navigationZ;
@@ -245,10 +254,17 @@ public class SliceViewer extends JPanel {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] pt = new float[]{x,y,z};
             float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
-            LinAlg.stimesv(1.0f/navigationCubeLength, ptInVolume, ptInVolume);
-            LinAlg.vplusv(ptInVolume, new float[]{0.5f,0.5f,0.5f}, ptInVolume);
-            gl.glTexCoord3fv(ptInVolume, 0);
-            System.out.println("texCoord.Z="+ptInVolume[2]);
+            float[] vol2tex = new float[16];
+            LinAlg.fillIdentity(vol2tex);
+            LinAlg.fillTranslation(vol2tex, 0.5f, 0.5f, 0.5f, vol2tex);
+            LinAlg.fillScale(vol2tex,
+                             1.0f/volumeDataSet.getWidthInMm(),
+                             1.0f/volumeDataSet.getHeightInMm(),
+                             1.0f/volumeDataSet.getDepthInMm(),
+                             vol2tex);
+            float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
+            gl.glTexCoord3fv(ptInTex, 0);
+            System.out.println("texCoord.Z="+ptInTex[2]);
             gl.glVertex2f(x, y);
         }
         

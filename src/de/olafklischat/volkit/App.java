@@ -1,5 +1,6 @@
 package de.olafklischat.volkit;
 
+import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 
@@ -23,7 +24,11 @@ public class App {
                     VolumeDataSet vds = VolumeDataSet.readFromDirectory(new File("/home/olaf/oliverdicom/INCISIX"));
                     JFrame f = new JFrame("SliceView");
                     f.setSize(900,700);
+                    //f.getContentPane().setLayout(new GridLayout(2, 2));
                     SliceViewer sv = new SliceViewer(vds);
+                    //sv.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
+                    //sv.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XZ);
+                    sv.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
                     f.getContentPane().add(sv, BorderLayout.CENTER);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
