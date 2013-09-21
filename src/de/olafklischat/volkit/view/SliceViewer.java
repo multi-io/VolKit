@@ -446,7 +446,14 @@ public class SliceViewer extends JPanel {
             }
         }
     };
-    
+
+    @Override
+    public void setBackground(java.awt.Color bg) {
+        super.setBackground(bg);
+        if (navZslider != null) {
+            navZslider.setBackground(bg);
+        }
+    }
     
     protected void setupInternalUiInteractions() {
         this.setFocusable(true);
