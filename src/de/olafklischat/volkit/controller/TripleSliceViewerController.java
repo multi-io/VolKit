@@ -83,4 +83,18 @@ public class TripleSliceViewerController {
 
     }
     
+    public void resetVolumeToWorldTransform() {
+        float[] identity = new float[16];
+        LinAlg.fillIdentity(identity);
+        sv1.setVolumeToWorldTransform(identity);
+        sv2.setVolumeToWorldTransform(identity);
+        sv3.setVolumeToWorldTransform(identity);
+    }
+    
+    public void resetZNavigations() {
+        sv1.setNavigationZ(0f);
+        sv2.setNavigationZ(0f);
+        sv3.setNavigationZ(0f);
+    }
+    
 }
