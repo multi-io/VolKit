@@ -249,6 +249,9 @@ public class VolumeDataSet {
                 glInternalFormat = GL2.GL_LUMINANCE16F;
                 result.preScale = 0.5F;
                 result.preOffset = 0.5F;
+                
+                result.preScale = 0.7F;
+                result.preOffset = 0.1F;
             } else if (pixelFormat == PIXEL_FORMAT_LUMINANCE && pixelType == PIXEL_TYPE_UNSIGNED_16BIT) {
                 glPixelFormat = GL.GL_LUMINANCE;
                 glPixelType = GL.GL_UNSIGNED_SHORT;

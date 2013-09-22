@@ -29,15 +29,15 @@ public class TripleSliceViewerController {
         sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
         sv3.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
 
-        VolumeRotatingMouseHandler rhxz = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,0,1});
+        VolumeRotatingMouseHandler rhxz = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,0,1}, false, true);
         sv1.addCanvasMouseListener(rhxz);
         sv1.addCanvasMouseMotionListener(rhxz);
         
-        VolumeRotatingMouseHandler rhyz = new VolumeRotatingMouseHandler(new float[]{0,-1,0}, new float[]{0,0,1});
+        VolumeRotatingMouseHandler rhyz = new VolumeRotatingMouseHandler(new float[]{0,-1,0}, new float[]{0,0,1}, false, true);
         sv2.addCanvasMouseListener(rhyz);
         sv2.addCanvasMouseMotionListener(rhyz);
 
-        VolumeRotatingMouseHandler rhxy = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,1,0});
+        VolumeRotatingMouseHandler rhxy = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,1,0}, true, false);
         sv3.addCanvasMouseListener(rhxy);
         sv3.addCanvasMouseMotionListener(rhxy);
     }
@@ -50,10 +50,14 @@ public class TripleSliceViewerController {
          */
         float[] horizAxis;
         float[] vertAxis;
+        boolean horizRotEnabled;
+        boolean vertRotEnabled;
         
-        public VolumeRotatingMouseHandler(float[] horizAxis, float[] vertAxis) {
+        public VolumeRotatingMouseHandler(float[] horizAxis, float[] vertAxis, boolean horizRotEnabled, boolean vertRotEnabled) {
             this.horizAxis = horizAxis;
             this.vertAxis = vertAxis;
+            this.horizRotEnabled = horizRotEnabled;
+            this.vertRotEnabled = vertRotEnabled;
         }
         
         private Point lastPos = null;
@@ -70,8 +74,12 @@ public class TripleSliceViewerController {
                 float rotx = - ((float)pos.y - lastPos.y) / 400 * 180;
                 float[] volumeDeltaTransform = new float[16];
                 LinAlg.fillIdentity(volumeDeltaTransform);
-                LinAlg.fillRotation(volumeDeltaTransform, rotx, horizAxis[0], horizAxis[1], horizAxis[2], volumeDeltaTransform);
-                LinAlg.fillRotation(volumeDeltaTransform, roty, vertAxis[0], vertAxis[1], vertAxis[2], volumeDeltaTransform);
+                if (horizRotEnabled) {
+                    LinAlg.fillRotation(volumeDeltaTransform, rotx, horizAxis[0], horizAxis[1], horizAxis[2], volumeDeltaTransform);
+                }
+                if (vertRotEnabled) {
+                    LinAlg.fillRotation(volumeDeltaTransform, roty, vertAxis[0], vertAxis[1], vertAxis[2], volumeDeltaTransform);
+                }
                 float[] vol2worlTx = sv1.getVolumeToWorldTransform();
                 LinAlg.fillMultiplication(volumeDeltaTransform, vol2worlTx, vol2worlTx);
                 sv1.setVolumeToWorldTransform(vol2worlTx);
