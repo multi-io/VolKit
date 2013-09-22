@@ -100,7 +100,7 @@ public class VolumeDataSet {
     protected VolumeDataSet() {
     }
     
-    public static VolumeDataSet readFromDirectory(String dirName) throws Exception {  // TODO move I/O into separate class
+    public static VolumeDataSet readFromDirectory(String dirName, int stride) throws Exception {  // TODO move I/O into separate class
         VolumeDataSet result = new VolumeDataSet();
         NavigableSet<DicomObject> dobjs = new TreeSet<DicomObject>(new Comparator<DicomObject>() {
             @Override
@@ -113,7 +113,7 @@ public class VolumeDataSet {
             }
         });
         
-        dobjs.addAll(DicomInputOutput.readDir(dirName, null));
+        dobjs.addAll(DicomInputOutput.readDir(dirName, null, stride));
         
         // read metadata
         
@@ -235,6 +235,8 @@ public class VolumeDataSet {
             gl.glGenTextures(1, tmp, 0);
             result.texId = tmp[0];
             scd.setAttribute(sharedTexIdKey, result);
+
+            gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
 
             gl.glBindTexture(GL2.GL_TEXTURE_3D, result.getTexId());
 
