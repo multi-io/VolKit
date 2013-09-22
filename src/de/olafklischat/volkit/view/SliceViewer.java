@@ -156,7 +156,7 @@ public class SliceViewer extends JPanel {
     }
     
     public float[] getVolumeToWorldTransform() {
-        return volumeToWorldTransform;
+        return LinAlg.copyArr(volumeToWorldTransform, null);
     }
     
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
@@ -166,7 +166,7 @@ public class SliceViewer extends JPanel {
     }
     
     public float[] getWorldToBaseSliceTransform() {
-        return worldToBaseSliceTransform;
+        return LinAlg.copyArr(worldToBaseSliceTransform, null);
     }
     
     public void setWorldToBaseSliceTransform(float[] worldToBaseSliceTransform) {
