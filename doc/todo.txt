@@ -1,2 +1,9 @@
-- separate Einleseroutine für VolumeDataSet; Bilder nach Slice
-  Location vorsortieren
+- Slice-Ebenen anzeigen
+
+- Längenmessungen in Slices
+
+  - pro Messung speichern: Zahndatensatzname, Farbe,
+    Slice-Orientierungen, Navigationsposition, Anfangs- und Endpunkt
+    (=>Länge)
+
+  - Export in Textdatei
