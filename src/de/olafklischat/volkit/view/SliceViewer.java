@@ -89,6 +89,7 @@ public class SliceViewer extends JPanel {
     //dependent matrices, updated by recomputeMatrices()
     private float[] volumeToBaseSliceTransform = new float[16];
     private float[] baseSliceToVolumeTransform = new float[16];
+    private float[] baseSliceToWorldTransform = new float[16];
 
     private float navigationCubeLength;
     private float navigationZ;
@@ -97,6 +98,8 @@ public class SliceViewer extends JPanel {
     private GLShader fragShader;
     
     private JSlider navZslider;
+    
+    protected List<SliceViewer> trackedViewers = new ArrayList<SliceViewer>();
     
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
@@ -175,7 +178,13 @@ public class SliceViewer extends JPanel {
         refresh();
     }
     
+    public void addTrackedViewer(SliceViewer sv) {
+        trackedViewers.add(sv);
+        refresh();
+    }
+    
     protected void recomputeMatrices() {
+        LinAlg.inverse(worldToBaseSliceTransform, baseSliceToWorldTransform);
         LinAlg.fillMultiplication(worldToBaseSliceTransform, volumeToWorldTransform, volumeToBaseSliceTransform);
         LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
     }
@@ -230,7 +239,7 @@ public class SliceViewer extends JPanel {
             gl.glMatrixMode(gl.GL_MODELVIEW);
             gl.glLoadIdentity();
 
-            gl.glPushAttrib(GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
+            gl.glPushAttrib(gl.GL_COLOR_BUFFER_BIT|GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
             try {
                 try {
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
@@ -249,6 +258,20 @@ public class SliceViewer extends JPanel {
                     gl.glEnd();
                     fragShader.unbind();
                     volumeDataSet.unbindCurrentTexture(gl);
+                    gl.glShadeModel(gl.GL_FLAT);
+                    for (SliceViewer trackedViewer : trackedViewers) {
+                        gl.glColor3f(1f, 0f, 0f);
+                        float[] siblingToOurBaseSlice = new float[16];
+                        LinAlg.fillIdentity(siblingToOurBaseSlice);
+                        LinAlg.fillMultiplication(trackedViewer.baseSliceToWorldTransform, siblingToOurBaseSlice, siblingToOurBaseSlice);
+                        LinAlg.fillMultiplication(worldToBaseSliceTransform, siblingToOurBaseSlice, siblingToOurBaseSlice);
+                        float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
+                        float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
+                        gl.glBegin(gl.GL_LINES);
+                        gl.glVertex3fv(LinAlg.mtimesv(siblingToOurBaseSlice, pt1, null), 0);
+                        gl.glVertex3fv(LinAlg.mtimesv(siblingToOurBaseSlice, pt2, null), 0);
+                        gl.glEnd();
+                    }
                 } finally {
                 }
             } finally {
@@ -275,8 +298,9 @@ public class SliceViewer extends JPanel {
         }
         
         private void outputSlicePoint(String caption, float x, float y, float z) {
-            float[] pt = new float[]{x,y,z};
-            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
+            float[] ptInBase = new float[]{x,y,z};
+            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, ptInBase, null);
+            //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
             System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
 
