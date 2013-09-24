@@ -11,6 +11,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
@@ -45,6 +47,8 @@ import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 
 public class SliceViewer extends JPanel {
+
+    private static final long serialVersionUID = 3961980093372280907L;
 
     static final Logger logger = Logger.getLogger(SliceViewer.class);
 
@@ -93,6 +97,8 @@ public class SliceViewer extends JPanel {
 
     private float navigationCubeLength;
     private float navigationZ;
+    
+    public static final String PROP_NAVIGATION_Z = "navigationZ";
 
     private GLCanvas glCanvas = null;
     private GLShader fragShader;
@@ -152,9 +158,11 @@ public class SliceViewer extends JPanel {
     }
     
     public void setNavigationZ(float navigationZ) {
+        float oldValue = this.navigationZ;
         this.navigationZ = navigationZ;
         recomputeMatrices();
         updateNavZslider();
+        firePropertyChange(PROP_NAVIGATION_Z, oldValue, navigationZ);
         refresh();
     }
     
@@ -180,8 +188,22 @@ public class SliceViewer extends JPanel {
     
     public void addTrackedViewer(SliceViewer sv) {
         trackedViewers.add(sv);
+        sv.addPropertyChangeListener(trackedViewersPropChangeHandler);
         refresh();
     }
+    
+    public void removeTrackedViewer(SliceViewer sv) {
+        sv.removePropertyChangeListener(trackedViewersPropChangeHandler);
+        trackedViewers.remove(sv);
+        refresh();
+    }
+    
+    private PropertyChangeListener trackedViewersPropChangeHandler = new PropertyChangeListener() {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            refresh();
+        }
+    };
     
     protected void recomputeMatrices() {
         LinAlg.inverse(worldToBaseSliceTransform, baseSliceToWorldTransform);
