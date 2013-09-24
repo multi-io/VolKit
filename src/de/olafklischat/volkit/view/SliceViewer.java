@@ -261,15 +261,15 @@ public class SliceViewer extends JPanel {
                     gl.glShadeModel(gl.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
                         gl.glColor3f(1f, 0f, 0f);
-                        float[] siblingToOurBaseSlice = new float[16];
-                        LinAlg.fillIdentity(siblingToOurBaseSlice);
-                        LinAlg.fillMultiplication(trackedViewer.baseSliceToWorldTransform, siblingToOurBaseSlice, siblingToOurBaseSlice);
-                        LinAlg.fillMultiplication(worldToBaseSliceTransform, siblingToOurBaseSlice, siblingToOurBaseSlice);
+                        float[] trackedToOurBaseSlice = new float[16];
+                        LinAlg.fillIdentity(trackedToOurBaseSlice);
+                        LinAlg.fillMultiplication(trackedViewer.baseSliceToWorldTransform, trackedToOurBaseSlice, trackedToOurBaseSlice);
+                        LinAlg.fillMultiplication(worldToBaseSliceTransform, trackedToOurBaseSlice, trackedToOurBaseSlice);
                         float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         gl.glBegin(gl.GL_LINES);
-                        gl.glVertex3fv(LinAlg.mtimesv(siblingToOurBaseSlice, pt1, null), 0);
-                        gl.glVertex3fv(LinAlg.mtimesv(siblingToOurBaseSlice, pt2, null), 0);
+                        gl.glVertex3fv(LinAlg.mtimesv(trackedToOurBaseSlice, pt1, null), 0);
+                        gl.glVertex3fv(LinAlg.mtimesv(trackedToOurBaseSlice, pt2, null), 0);
                         gl.glEnd();
                     }
                 } finally {
