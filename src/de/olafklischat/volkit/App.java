@@ -42,15 +42,15 @@ public class App {
                     
                     mainPane.setLayout(new GridLayout(2, 2, 5, 5));
                     
-                    SliceViewer sv1 = new SliceViewer(vds);
+                    SliceViewer sv1 = new SliceViewer();
                     sv1.setBackground(Color.DARK_GRAY);
                     mainPane.add(sv1);
 
-                    SliceViewer sv2 = new SliceViewer(vds);
+                    SliceViewer sv2 = new SliceViewer();
                     sv2.setBackground(Color.DARK_GRAY);
                     mainPane.add(sv2);
 
-                    SliceViewer sv3 = new SliceViewer(vds);
+                    SliceViewer sv3 = new SliceViewer();
                     sv3.setBackground(Color.DARK_GRAY);
                     mainPane.add(sv3);
                     

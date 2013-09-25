@@ -103,6 +103,7 @@ public class SliceViewer extends JPanel {
 
     private float navigationCubeLength;
     private float navigationZ;
+    private boolean needViewportReset = false;
     
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
@@ -197,6 +198,7 @@ public class SliceViewer extends JPanel {
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
         recomputeMatrices();
+        needViewportReset = true;
         refresh();
     }
     
@@ -288,6 +290,9 @@ public class SliceViewer extends JPanel {
             if (null == volumeDataSet) {
                 return;
             }
+            if (needViewportReset) {
+                setupEye2ViewportTransformation(gl);
+            }
             gl.glClear(gl.GL_COLOR_BUFFER_BIT);
             gl.glMatrixMode(gl.GL_MODELVIEW);
             gl.glLoadIdentity();
@@ -362,6 +367,13 @@ public class SliceViewer extends JPanel {
         @Override
         public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
             GL2 gl = (GL2) glAutoDrawable.getGL();
+            if (null != previousvolumeDataSet) {
+                previousvolumeDataSet.dispose(gl, sharedContextData);
+                previousvolumeDataSet = null;
+            }
+            if (null == volumeDataSet) {
+                return;
+            }
             setupEye2ViewportTransformation(gl);
             Runnable r = new Runnable() {
                 @Override
@@ -426,6 +438,7 @@ public class SliceViewer extends JPanel {
                               );
                 */
                 gl.glDepthRange(0,1);
+                needViewportReset = false;
             }
         }
 
