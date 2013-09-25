@@ -115,8 +115,7 @@ public class TripleSliceViewerController {
     
     public void loadVolumeDataSet(String pathName) throws Exception {
         long t0 = System.currentTimeMillis();
-        VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/oliverdicom/INCISIX", 1);
-        //VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
+        VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, 1);
         long t1 = System.currentTimeMillis();
         System.out.println("time for reading: " + (t1-t0) + " ms.");
         sv1.setVolumeDataSet(vds);

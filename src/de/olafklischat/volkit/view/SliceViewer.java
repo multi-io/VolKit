@@ -150,7 +150,6 @@ public class SliceViewer extends JPanel {
         }
         previousvolumeDataSet = this.volumeDataSet;
         this.volumeDataSet = volumeDataSet;
-        this.volumeDataSet = volumeDataSet;
         navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
                 volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
@@ -159,6 +158,7 @@ public class SliceViewer extends JPanel {
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
+        needViewportReset = true;
         refresh();
     }
 

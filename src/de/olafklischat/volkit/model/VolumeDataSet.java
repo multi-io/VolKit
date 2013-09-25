@@ -314,6 +314,7 @@ public class VolumeDataSet {
         TextureRef texRef = (TextureRef) scd.getAttribute(sharedTexIdKey);
         if (texRef != null) {
             gl.glDeleteTextures(1, new int[]{texRef.getTexId()}, 0);
+            scd.removeAttribute(sharedTexIdKey);
         }
     }
     
