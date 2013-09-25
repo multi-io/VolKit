@@ -16,9 +16,13 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.media.opengl.DebugGL2;
+import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
@@ -40,6 +44,7 @@ import javax.swing.event.ChangeListener;
 import org.apache.log4j.Logger;
 
 import de.olafklischat.volkit.model.VolumeDataSet;
+import de.olafklischat.lang.Runnable1;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
@@ -294,6 +299,7 @@ public class SliceViewer extends JPanel {
                         gl.glVertex3fv(LinAlg.mtimesv(trackedToOurBaseSlice, pt2, null), 0);
                         gl.glEnd();
                     }
+                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
                 } finally {
                 }
             } finally {
@@ -566,6 +572,77 @@ public class SliceViewer extends JPanel {
     }
 
     
+    
+    /**
+     * NOT A PUBLIC API! DON'T CALL.
+     * 
+     * (method is defined public so internal classes in subpackages can call it)
+     * @param e
+     */
+    public void firePaintEvent(SlicePaintEvent e) {
+        for (ListenerRecord<SlicePaintListener> rec : paintListeners) {
+            rec.listener.onPaint(e);
+            if (e.isConsumed()) {
+                break;
+            }
+        }
+    }
+
+    protected void forEachPaintListenerInZOrder(Runnable1<SlicePaintListener> callback) {
+        for (ListenerRecord<SlicePaintListener> rec : paintListeners) {
+            callback.run(rec.listener);
+        }
+    }
+    
+    protected void firePaintEvent(SlicePaintEvent e, int minZ, int maxZ) {
+        SlicePaintListener dummy = new SlicePaintListener() {
+            @Override
+            public void glSharedContextDataInitialization(GL gl,
+                    Map<String, Object> sharedData) {
+            }
+            @Override
+            public void glDrawableInitialized(GLAutoDrawable glAutoDrawable) {
+            }
+            @Override
+            public void onPaint(SlicePaintEvent e) {
+            }
+            @Override
+            public void glDrawableDisposing(GLAutoDrawable glAutoDrawable) {
+            }
+        };
+        ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);
+        ListenerRecord<SlicePaintListener> max = new ListenerRecord<SlicePaintListener>(dummy, maxZ);
+        for (ListenerRecord<SlicePaintListener> rec : paintListeners.subSet(min, max)) {
+            rec.listener.onPaint(e);
+            if (e.isConsumed()) {
+                break;
+            }
+        }
+    }
+
+    private NavigableSet<ListenerRecord<SlicePaintListener>> paintListeners = new TreeSet<ListenerRecord<SlicePaintListener>>();
+    
+    private static class ListenerRecord<ListenerType> implements Comparable<ListenerRecord<ListenerType>> {
+        ListenerType listener;
+        Integer zOrder;
+        Integer instanceNumber;
+        private static int lastInstanceNumber;
+        public ListenerRecord(ListenerType listener, int zOrder) {
+            this.listener = listener;
+            this.zOrder = zOrder;
+            this.instanceNumber = lastInstanceNumber++;
+        }
+        @Override
+        public int compareTo(ListenerRecord<ListenerType> o) {
+            int res = zOrder.compareTo(o.zOrder);
+            if (res == 0) {
+                return instanceNumber.compareTo(o.instanceNumber);
+            } else {
+                return res;
+            }
+        }
+    }
+
     
     /**
      * need our own valueIsAdjusting for navZslider instead of using
