@@ -309,4 +309,12 @@ public class VolumeDataSet {
         gl.glBindTexture(GL2.GL_TEXTURE_3D, 0);
     }
     
+    public void dispose(GL gl, SharedContextData scd) {
+        final String sharedTexIdKey = "VolumeDataSetTex" + hashCode();
+        TextureRef texRef = (TextureRef) scd.getAttribute(sharedTexIdKey);
+        if (texRef != null) {
+            gl.glDeleteTextures(1, new int[]{texRef.getTexId()}, 0);
+        }
+    }
+    
 }

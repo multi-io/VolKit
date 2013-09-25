@@ -62,7 +62,8 @@ public class SliceViewer extends JPanel {
         ShaderManager.init("shader");
     }
     
-    private final VolumeDataSet volumeDataSet;
+    private VolumeDataSet volumeDataSet;
+    private VolumeDataSet previousvolumeDataSet;
     
     /**
      * transformation from volume system to world system.
@@ -115,28 +116,46 @@ public class SliceViewer extends JPanel {
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
 
-    public SliceViewer(VolumeDataSet volumeDataSet) {
+    public SliceViewer() {
         setLayout(new BorderLayout());
         if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
             createGlCanvas();
         }
         instances.add(this);
-        this.volumeDataSet = volumeDataSet;
-        navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
-                volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
-                volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
         navZslider = new JSlider(JSlider.HORIZONTAL);
         this.add(navZslider, BorderLayout.SOUTH);
         navZslider.getModel().setMinimum(0);
         navZslider.getModel().setMaximum(10000);
+        navZslider.getModel().addChangeListener(navZsliderChangeListener);
+        updateNavZslider();
+    }
+    
+    public SliceViewer(VolumeDataSet volumeDataSet) {
+        this();
+        setVolumeDataSet(volumeDataSet);
+    }
+
+    public VolumeDataSet getVolumeDataSet() {
+        return volumeDataSet;
+    }
+    
+    public void setVolumeDataSet(VolumeDataSet volumeDataSet) {
+        if (previousvolumeDataSet != null) {
+            System.err.println("WARNING: previousvolumeDataSet wasn't disposed. Unused texture memory may not have been freed.");
+        }
+        previousvolumeDataSet = this.volumeDataSet;
+        this.volumeDataSet = volumeDataSet;
+        this.volumeDataSet = volumeDataSet;
+        navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
+                volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
+                volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
 
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
         navigationZ = 0;
         recomputeMatrices();
-        
-        navZslider.getModel().addChangeListener(navZsliderChangeListener);
         updateNavZslider();
+        refresh();
     }
 
     private void createGlCanvas() {
@@ -262,6 +281,13 @@ public class SliceViewer extends JPanel {
         @Override
         public void display(GLAutoDrawable glAutoDrawable) {
             GL2 gl = glAutoDrawable.getGL().getGL2();
+            if (null != previousvolumeDataSet) {
+                previousvolumeDataSet.dispose(gl, sharedContextData);
+                previousvolumeDataSet = null;
+            }
+            if (null == volumeDataSet) {
+                return;
+            }
             gl.glClear(gl.GL_COLOR_BUFFER_BIT);
             gl.glMatrixMode(gl.GL_MODELVIEW);
             gl.glLoadIdentity();
