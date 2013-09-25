@@ -316,6 +316,7 @@ public class VolumeDataSet {
             gl.glDeleteTextures(1, new int[]{texRef.getTexId()}, 0);
             scd.removeAttribute(sharedTexIdKey);
         }
+        // TODO: reference count to detect when we can actually free the texture?
     }
     
 }

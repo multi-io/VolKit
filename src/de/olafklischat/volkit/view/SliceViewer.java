@@ -287,7 +287,7 @@ public class SliceViewer extends JPanel {
         public void display(GLAutoDrawable glAutoDrawable) {
             GL2 gl = glAutoDrawable.getGL().getGL2();
             if (null != previousvolumeDataSet) {
-                previousvolumeDataSet.dispose(gl, sharedContextData);
+                previousvolumeDataSet.dispose(gl, sharedContextData);  // TODO: reference count on the VolumeDataSet
                 previousvolumeDataSet = null;
             }
             if (null == volumeDataSet) {

@@ -81,7 +81,7 @@ public class App {
                                 File dir = fc.getSelectedFile();
                                 if (dir.isDirectory()) {
                                     try {
-                                        slicesController.loadVolumeDataSet(dir.getAbsolutePath());
+                                        slicesController.loadVolumeDataSet(dir.getAbsolutePath(), 1);
                                     } catch (Exception ex) {
                                         JOptionPane.showMessageDialog(f, "Error loading " + dir + ": "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                                     }
@@ -95,7 +95,7 @@ public class App {
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             try {
-                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX");
+                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
                             } catch (Exception ex) {
                                 JOptionPane.showMessageDialog(f, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                             }
@@ -105,7 +105,7 @@ public class App {
                         @Override
                         public void actionPerformed(ActionEvent e) {
                             try {
-                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM cérébrale, neuro-crâne/T1-3D-FFE-C - 801");
+                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM cérébrale, neuro-crâne/T1-3D-FFE-C - 801", 1);
                             } catch (Exception ex) {
                                 JOptionPane.showMessageDialog(f, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                             }
@@ -116,7 +116,7 @@ public class App {
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
                     
-                    //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX");
+                    //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
                     //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
                 } catch (Exception e) {
                     throw new RuntimeException(e);

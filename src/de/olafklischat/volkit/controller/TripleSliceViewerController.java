@@ -113,7 +113,7 @@ public class TripleSliceViewerController {
         sv3.setNavigationZ(0f);
     }
     
-    public void loadVolumeDataSet(String pathName) throws Exception {
+    public void loadVolumeDataSet(String pathName, int stride) throws Exception {
         long t0 = System.currentTimeMillis();
         VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, 1);
         long t1 = System.currentTimeMillis();
