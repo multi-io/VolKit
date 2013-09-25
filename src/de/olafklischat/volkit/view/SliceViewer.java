@@ -128,6 +128,10 @@ public class SliceViewer extends JPanel {
         navZslider.getModel().setMinimum(0);
         navZslider.getModel().setMaximum(10000);
         navZslider.getModel().addChangeListener(navZsliderChangeListener);
+        LinAlg.fillIdentity(volumeToWorldTransform);
+        LinAlg.fillIdentity(worldToBaseSliceTransform);
+        navigationZ = 0;
+        recomputeMatrices();
         updateNavZslider();
     }
     
@@ -152,7 +156,6 @@ public class SliceViewer extends JPanel {
                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
 
         LinAlg.fillIdentity(volumeToWorldTransform);
-        LinAlg.fillIdentity(worldToBaseSliceTransform);
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();

@@ -13,7 +13,6 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
-import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
 
 public class App {
@@ -26,11 +25,6 @@ public class App {
             @Override
             public void run() {
                 try {
-                    long t0 = System.currentTimeMillis();
-                    VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/oliverdicom/INCISIX", 1);
-                    //VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
-                    long t1 = System.currentTimeMillis();
-                    System.out.println("time for reading: " + (t1-t0) + " ms.");
                     JFrame f = new JFrame("SliceView");
                     
                     f.getContentPane().setBackground(Color.GRAY);
@@ -78,6 +72,8 @@ public class App {
                     f.setSize(1200,900);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
+                    
+                    slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

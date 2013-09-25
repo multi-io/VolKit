@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
@@ -110,6 +111,17 @@ public class TripleSliceViewerController {
         sv1.setNavigationZ(0f);
         sv2.setNavigationZ(0f);
         sv3.setNavigationZ(0f);
+    }
+    
+    public void loadVolumeDataSet(String pathName) throws Exception {
+        long t0 = System.currentTimeMillis();
+        VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/oliverdicom/INCISIX", 1);
+        //VolumeDataSet vds = VolumeDataSet.readFromDirectory("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
+        long t1 = System.currentTimeMillis();
+        System.out.println("time for reading: " + (t1-t0) + " ms.");
+        sv1.setVolumeDataSet(vds);
+        sv2.setVolumeDataSet(vds);
+        sv3.setVolumeDataSet(vds);
     }
     
 }
