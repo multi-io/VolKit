@@ -80,11 +80,7 @@ public class App {
                             if (returnVal == JFileChooser.APPROVE_OPTION) {
                                 File dir = fc.getSelectedFile();
                                 if (dir.isDirectory()) {
-                                    try {
-                                        slicesController.loadVolumeDataSet(dir.getAbsolutePath(), 1);
-                                    } catch (Exception ex) {
-                                        JOptionPane.showMessageDialog(f, "Error loading " + dir + ": "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                                    }
+                                    slicesController.startLoadingVolumeDataSetInBackground(dir.getAbsolutePath(), 1);
                                 } else {
                                     JOptionPane.showMessageDialog(f, "not a directory: " + dir, "Error", JOptionPane.ERROR_MESSAGE);
                                 }
@@ -94,21 +90,13 @@ public class App {
                     toolbar.add(new AbstractAction("incisx") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            try {
-                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
-                            } catch (Exception ex) {
-                                JOptionPane.showMessageDialog(f, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                            }
+                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/INCISIX", 1);
                         }
                     });
                     toolbar.add(new AbstractAction("brainix") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            try {
-                                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM cérébrale, neuro-crâne/T1-3D-FFE-C - 801", 1);
-                            } catch (Exception ex) {
-                                JOptionPane.showMessageDialog(f, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                            }
+                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM cérébrale, neuro-crâne/T1-3D-FFE-C - 801", 1);
                         }
                     });
                     

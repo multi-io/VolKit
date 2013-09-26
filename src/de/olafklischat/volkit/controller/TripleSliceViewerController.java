@@ -3,9 +3,16 @@ package de.olafklischat.volkit.controller;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import javax.swing.JOptionPane;
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingWorker;
 
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.sofd.util.ProgressReportage;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 
@@ -115,7 +122,7 @@ public class TripleSliceViewerController {
     
     public void loadVolumeDataSet(String pathName, int stride) throws Exception {
         long t0 = System.currentTimeMillis();
-        VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, 1);
+        VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, stride);
         long t1 = System.currentTimeMillis();
         System.out.println("time for reading: " + (t1-t0) + " ms.");
         sv1.setVolumeDataSet(vds);
@@ -123,4 +130,59 @@ public class TripleSliceViewerController {
         sv3.setVolumeDataSet(vds);
     }
     
+    public void startLoadingVolumeDataSetInBackground(final String pathName, final int stride) {
+        final SwingWorker<VolumeDataSet, Void> bkgTask = new SwingWorker<VolumeDataSet, Void>() {
+            private void doSetProgress(int p) {  // make doSetProgress callable...
+                super.setProgress(p);
+            }
+            @Override
+            protected VolumeDataSet doInBackground() throws Exception {
+                //runs in bkg thread
+                setProgress(0);
+                return VolumeDataSet.readFromDirectory(pathName, stride, new ProgressReportage() {
+                    @Override
+                    public void setProgress(int zeroTo100) {
+                        doSetProgress(zeroTo100);
+                    }
+                });
+            }
+            @Override
+            protected void done() {
+                // runs in EDT
+                if (!isCancelled()) {  // TODO: isCancelled() is set to true even if the bkg thread keeps running -- mechanism to react to "cancel request"?
+                    VolumeDataSet vds = null;
+                    try {
+                        vds = get();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(sv1, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    sv1.setVolumeDataSet(vds);
+                    sv2.setVolumeDataSet(vds);
+                    sv3.setVolumeDataSet(vds);
+                }
+            }
+        };
+        final ProgressMonitor progressMonitor = new ProgressMonitor(sv1, "Loading DICOM data...", "", 0, 100);
+        bkgTask.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                // runs in EDT
+                if ("progress" == evt.getPropertyName() ) {
+                    int progress = (Integer) evt.getNewValue();
+                    progressMonitor.setProgress(progress);
+                    String message = String.format("Completed %d%%.\n", progress);
+                    progressMonitor.setNote(message);
+                    if (progressMonitor.isCanceled() || bkgTask.isDone()) {
+                        if (progressMonitor.isCanceled()) {
+                            bkgTask.cancel(true);
+                        }
+                    }
+                }
+            }
+        });
+        bkgTask.execute();
+    }
+
 }

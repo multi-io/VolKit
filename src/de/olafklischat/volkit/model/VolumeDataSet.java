@@ -10,6 +10,7 @@ import java.util.TreeSet;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
+import javax.swing.SwingWorker;
 
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -17,6 +18,7 @@ import org.dcm4che2.data.Tag;
 import com.sun.opengl.util.BufferUtil;
 
 import de.olafklischat.volkit.view.SharedContextData;
+import de.sofd.util.ProgressReportage;
 import de.sofd.viskit.image.DicomInputOutput;
 import de.sofd.viskit.model.RawImage;
 
@@ -100,7 +102,11 @@ public class VolumeDataSet {
     protected VolumeDataSet() {
     }
     
-    public static VolumeDataSet readFromDirectory(String dirName, int stride) throws Exception {  // TODO move I/O into separate class
+    public static VolumeDataSet readFromDirectory(String dirName, int stride) throws Exception {
+        return readFromDirectory(dirName, stride, null);
+    }
+    
+    public static VolumeDataSet readFromDirectory(String dirName, int stride, ProgressReportage progressReport) throws Exception {  // TODO move I/O into separate class
         VolumeDataSet result = new VolumeDataSet();
         NavigableSet<DicomObject> dobjs = new TreeSet<DicomObject>(new Comparator<DicomObject>() {
             @Override
@@ -113,11 +119,14 @@ public class VolumeDataSet {
             }
         });
         
-        dobjs.addAll(DicomInputOutput.readDir(dirName, null, stride));
+        dobjs.addAll(DicomInputOutput.readDir(dirName, null, stride, progressReport));
         
         // read metadata
         
         result.zCount = dobjs.size();
+        if (result.zCount < 2) {
+            throw new IOException("Only " + result.zCount + " files found in there. That's not gonna work, dude.");
+        }
 
         DicomObject firstDobj = dobjs.first();
         DicomObject lastDobj = dobjs.last();
