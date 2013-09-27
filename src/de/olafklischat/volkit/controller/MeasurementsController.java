@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.media.opengl.GL;
+import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 
 import de.olafklischat.volkit.model.Measurement;
@@ -106,6 +107,32 @@ public class MeasurementsController {
 
         @Override
         public void onPaint(SlicePaintEvent e) {
+            SliceViewer sv = e.getSource();
+            GL2 gl = e.getGl().getGL2();
+            gl.glMatrixMode(GL2.GL_MODELVIEW);
+            gl.glPushMatrix();
+            try {
+                gl.glLoadIdentity();
+                gl.glMultMatrixf(sv.getVolumeToBaseSliceTransform(), 0);  // TODO: sv.getNavigationZ() is missing, and restrict visible depth to just the slice
+                if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
+                    paintMeasurement(gl, currentMeasurement);
+                }
+                for (Measurement m : mdb.getMeasurements()) {
+                    paintMeasurement(gl, m);
+                }
+            } finally {
+                gl.glPopMatrix();
+            }
+        }
+        
+        private void paintMeasurement(GL2 gl, Measurement m) {
+            gl.glColor3f((float) m.getColor().getRed() / 255F,
+                    (float) m.getColor().getGreen() / 255F,
+                    (float) m.getColor().getBlue() / 255F);
+            gl.glBegin(GL.GL_LINE_STRIP);
+            gl.glVertex3fv(m.getPt0InVolume(), 0);
+            gl.glVertex3fv(m.getPt1InVolume(), 0);
+            gl.glEnd();
         }
         
     };
