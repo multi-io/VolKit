@@ -15,7 +15,9 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
+import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
+import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SliceViewer;
 
 public class App {
@@ -52,6 +54,9 @@ public class App {
                     mainPane.add(sv3);
                     
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
+                    
+                    MeasurementsDB mdb = new MeasurementsDB();
+                    final MeasurementsController measurementsController = new MeasurementsController(mdb, sv1, sv2, sv3);
 
                     mainPane.add(new JLabel(":-)", JLabel.CENTER));
                     

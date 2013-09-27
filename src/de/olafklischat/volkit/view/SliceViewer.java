@@ -3,6 +3,7 @@ package de.olafklischat.volkit.view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -46,9 +47,11 @@ import org.apache.log4j.Logger;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.sofd.util.IdentityHashSet;
+import de.sofd.util.Misc;
 import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
 import de.sofd.viskit.image3D.jogl.util.ShaderManager;
+import de.sofd.viskit.ui.imagelist.ImageListViewCell;
 
 
 public class SliceViewer extends JPanel {
@@ -116,6 +119,8 @@ public class SliceViewer extends JPanel {
     
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
+    
+    public static final int PAINT_ZORDER_DEFAULT = 100;
 
     public SliceViewer() {
         setLayout(new BorderLayout());
@@ -197,6 +202,19 @@ public class SliceViewer extends JPanel {
     public float[] getVolumeToWorldTransform() {
         return LinAlg.copyArr(volumeToWorldTransform, null);
     }
+
+    public float[] getVolumeToBaseSliceTransform() {
+        return LinAlg.copyArr(volumeToBaseSliceTransform, null);
+    }
+
+    public float[] getBaseSliceToVolumeTransform() {
+        return LinAlg.copyArr(baseSliceToVolumeTransform, null);
+    }
+    
+    public float[] getBaseSliceToWorldTransform() {
+        return LinAlg.copyArr(baseSliceToWorldTransform, null);
+    }
+    
     
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
@@ -475,12 +493,12 @@ public class SliceViewer extends JPanel {
 
         @Override
         public void mouseEntered(MouseEvent evt) {
-             //dispatchEventToCell(evt);
+             //dispatchEventToCanvas(evt);
         }
 
         @Override
         public void mouseExited(MouseEvent evt) {
-            //dispatchEventToCell(evt);
+            //dispatchEventToCanvas(evt);
         }
 
         @Override
@@ -501,11 +519,28 @@ public class SliceViewer extends JPanel {
     };
 
     protected void dispatchEventToCanvas(MouseEvent evt) {
-        if (evt instanceof MouseWheelEvent) {
-            fireCanvasMouseWheelEvent((MouseWheelEvent) evt);
+        MouseEvent ce = Misc.deepCopy(evt);
+        ce.setSource(this);
+        if (ce instanceof MouseWheelEvent) {
+            fireCanvasMouseWheelEvent((MouseWheelEvent) ce);
         } else {
-            fireCanvasMouseEvent(evt);
+            fireCanvasMouseEvent(ce);
         }
+    }
+
+    public float[] convertCanvasToBaseSlice(Point ptOnCanvas) {
+        // TODO: have a tx matrix for this as well
+        // TODO: unify with code in reshape() / setupEye2ViewportTransformation()
+        Dimension sz = glCanvas.getSize();
+        float mmPerPixel;
+        if (sz.width > sz.height) {
+            mmPerPixel = navigationCubeLength / sz.height;
+        } else {
+            mmPerPixel = navigationCubeLength / sz.width;
+        }
+        float x = ptOnCanvas.x - sz.width / 2;
+        float y = - (ptOnCanvas.y - sz.height / 2);
+        return new float[]{x*mmPerPixel, y*mmPerPixel, getNavigationZ()};
     }
 
     public void addCanvasMouseListener(MouseListener listener) {
@@ -614,6 +649,13 @@ public class SliceViewer extends JPanel {
     }
 
     
+    public void addSlicePaintListener(SlicePaintListener listener) {
+        addSlicePaintListener(PAINT_ZORDER_DEFAULT, listener);
+    }
+
+    public void addSlicePaintListener(int zOrder, SlicePaintListener listener) {
+        slicePaintListeners.add(new ListenerRecord<SlicePaintListener>(listener, zOrder));
+    }
     
     /**
      * NOT A PUBLIC API! DON'T CALL.
@@ -622,7 +664,7 @@ public class SliceViewer extends JPanel {
      * @param e
      */
     public void firePaintEvent(SlicePaintEvent e) {
-        for (ListenerRecord<SlicePaintListener> rec : paintListeners) {
+        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners) {
             rec.listener.onPaint(e);
             if (e.isConsumed()) {
                 break;
@@ -631,7 +673,7 @@ public class SliceViewer extends JPanel {
     }
 
     protected void forEachPaintListenerInZOrder(Runnable1<SlicePaintListener> callback) {
-        for (ListenerRecord<SlicePaintListener> rec : paintListeners) {
+        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners) {
             callback.run(rec.listener);
         }
     }
@@ -654,7 +696,7 @@ public class SliceViewer extends JPanel {
         };
         ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);
         ListenerRecord<SlicePaintListener> max = new ListenerRecord<SlicePaintListener>(dummy, maxZ);
-        for (ListenerRecord<SlicePaintListener> rec : paintListeners.subSet(min, max)) {
+        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners.subSet(min, max)) {
             rec.listener.onPaint(e);
             if (e.isConsumed()) {
                 break;
@@ -662,7 +704,7 @@ public class SliceViewer extends JPanel {
         }
     }
 
-    private NavigableSet<ListenerRecord<SlicePaintListener>> paintListeners = new TreeSet<ListenerRecord<SlicePaintListener>>();
+    private NavigableSet<ListenerRecord<SlicePaintListener>> slicePaintListeners = new TreeSet<ListenerRecord<SlicePaintListener>>();
     
     private static class ListenerRecord<ListenerType> implements Comparable<ListenerRecord<ListenerType>> {
         ListenerType listener;

@@ -1,5 +1,6 @@
 package de.olafklischat.volkit.model;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.Buffer;
 import java.util.ArrayList;
@@ -10,7 +11,6 @@ import java.util.TreeSet;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
-import javax.swing.SwingWorker;
 
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -24,6 +24,7 @@ import de.sofd.viskit.model.RawImage;
 
 public class VolumeDataSet {
 
+    protected String datasetName;
     protected int xCount, yCount, zCount;
     protected List<Buffer> xyPixelPlaneBuffers = new ArrayList<Buffer>();  // invariant: depth == xyPixelPlaneBuffers.size()
     protected float xSpacingInMm, ySpacingInMm, zSpacingInMm;
@@ -108,6 +109,7 @@ public class VolumeDataSet {
     
     public static VolumeDataSet readFromDirectory(String dirName, int stride, ProgressReportage progressReport) throws Exception {  // TODO move I/O into separate class
         VolumeDataSet result = new VolumeDataSet();
+        result.datasetName = new File(dirName).getName();
         NavigableSet<DicomObject> dobjs = new TreeSet<DicomObject>(new Comparator<DicomObject>() {
             @Override
             public int compare(DicomObject o1, DicomObject o2) {
@@ -232,7 +234,10 @@ public class VolumeDataSet {
     public float getDepthInMm() {
         return zSpacingInMm * zCount;
     }
-    
+
+    public String getDatasetName() {
+        return datasetName;
+    }
 
     public TextureRef bindTexture(int texUnit, GL gl1, SharedContextData scd) {
         GL2 gl = gl1.getGL2();

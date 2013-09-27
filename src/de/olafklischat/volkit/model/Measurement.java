@@ -1,10 +1,13 @@
 package de.olafklischat.volkit.model;
 
+import java.awt.Color;
+
 public class Measurement {
 
     String datasetName;
     float[] pt0InVolume, pt1InVolume;
     float[] volumeToWorldTransformation;
+    Color color;
     float navigationZs[];
     // {sv1,sv2,sv3}.worldToBaseSliceTransformation sind fix in TripleSliceViewerController...
 
@@ -15,7 +18,7 @@ public class Measurement {
         setDatasetName(datasetName);
     }
 
-    public Measurement(String datasetName, float[] pt0InVolume, float[] pt1InVolume, float[] volumeToWorldTransformation, float navigationZs[]) {
+    public Measurement(String datasetName, float[] pt0InVolume, float[] pt1InVolume, float[] volumeToWorldTransformation, Color color, float navigationZs[]) {
         setDatasetName(datasetName);
         setPt0InVolume(pt0InVolume);
         setPt1InVolume(pt1InVolume);
@@ -56,6 +59,14 @@ public class Measurement {
         this.volumeToWorldTransformation = volumeToWorldTransformation;
     }
     
+    public Color getColor() {
+        return color;
+    }
+    
+    public void setColor(Color color) {
+        this.color = color;
+    }
+    
     public float[] getNavigationZs() {
         return navigationZs;
     }
@@ -71,4 +82,13 @@ public class Measurement {
         return (float) Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
 
+    @Override
+    public String toString() {
+        return "[" + super.toString() +
+            " (" + pt0InVolume[0] + "," + pt0InVolume[1] + "," + pt0InVolume[2] + ") -- " +
+            "(" + pt1InVolume[0] + "," + pt1InVolume[1] + "," + pt1InVolume[2] + ") -- " +
+            "(l=" + getLengthInMm() +
+        "]";
+    }
+    
 }

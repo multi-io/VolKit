@@ -18,6 +18,10 @@ import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 public class TripleSliceViewerController {
 
+    // TODO: make these parameterizable
+    private static final int MOUSE_BUTTON = MouseEvent.BUTTON1;
+    private static final int MOUSE_MASK = MouseEvent.BUTTON1_MASK;
+
     protected SliceViewer sv1;
     protected SliceViewer sv2;
     protected SliceViewer sv3;
@@ -79,29 +83,33 @@ public class TripleSliceViewerController {
         
         @Override
         public void mousePressed(MouseEvent e) {
-            lastPos = e.getPoint();
+            if (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0) {
+                lastPos = e.getPoint();
+            }
         }
         @Override
         public void mouseDragged(MouseEvent e) {
-            Point pos = e.getPoint();
-            if (lastPos != null) {
-                float roty = - ((float)pos.x - lastPos.x) / 400 * 180;
-                float rotx = - ((float)pos.y - lastPos.y) / 400 * 180;
-                float[] volumeDeltaTransform = new float[16];
-                LinAlg.fillIdentity(volumeDeltaTransform);
-                if (horizRotEnabled) {
-                    LinAlg.fillRotation(volumeDeltaTransform, rotx, horizAxis[0], horizAxis[1], horizAxis[2], volumeDeltaTransform);
+            if (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0) {
+                Point pos = e.getPoint();
+                if (lastPos != null) {
+                    float roty = - ((float)pos.x - lastPos.x) / 400 * 180;
+                    float rotx = - ((float)pos.y - lastPos.y) / 400 * 180;
+                    float[] volumeDeltaTransform = new float[16];
+                    LinAlg.fillIdentity(volumeDeltaTransform);
+                    if (horizRotEnabled) {
+                        LinAlg.fillRotation(volumeDeltaTransform, rotx, horizAxis[0], horizAxis[1], horizAxis[2], volumeDeltaTransform);
+                    }
+                    if (vertRotEnabled) {
+                        LinAlg.fillRotation(volumeDeltaTransform, roty, vertAxis[0], vertAxis[1], vertAxis[2], volumeDeltaTransform);
+                    }
+                    float[] vol2worlTx = sv1.getVolumeToWorldTransform();
+                    LinAlg.fillMultiplication(volumeDeltaTransform, vol2worlTx, vol2worlTx);
+                    sv1.setVolumeToWorldTransform(vol2worlTx);
+                    sv2.setVolumeToWorldTransform(vol2worlTx);
+                    sv3.setVolumeToWorldTransform(vol2worlTx);
                 }
-                if (vertRotEnabled) {
-                    LinAlg.fillRotation(volumeDeltaTransform, roty, vertAxis[0], vertAxis[1], vertAxis[2], volumeDeltaTransform);
-                }
-                float[] vol2worlTx = sv1.getVolumeToWorldTransform();
-                LinAlg.fillMultiplication(volumeDeltaTransform, vol2worlTx, vol2worlTx);
-                sv1.setVolumeToWorldTransform(vol2worlTx);
-                sv2.setVolumeToWorldTransform(vol2worlTx);
-                sv3.setVolumeToWorldTransform(vol2worlTx);
+                lastPos = pos;
             }
-            lastPos = pos;
         }
 
     }
