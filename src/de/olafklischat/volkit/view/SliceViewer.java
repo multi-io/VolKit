@@ -104,6 +104,7 @@ public class SliceViewer extends JPanel {
     private float[] volumeToBaseSliceTransform = new float[16];
     private float[] baseSliceToVolumeTransform = new float[16];
     private float[] baseSliceToWorldTransform = new float[16];
+    private float[] volumeToSliceTransform = new float[16];
 
     private float navigationCubeLength;
     private float navigationZ;
@@ -218,6 +219,10 @@ public class SliceViewer extends JPanel {
         return LinAlg.copyArr(baseSliceToWorldTransform, null);
     }
     
+    public float[] getVolumeToSliceTransform() {
+        return LinAlg.copyArr(volumeToSliceTransform, null);
+    }
+    
     
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
@@ -259,6 +264,7 @@ public class SliceViewer extends JPanel {
         LinAlg.inverse(worldToBaseSliceTransform, baseSliceToWorldTransform);
         LinAlg.fillMultiplication(worldToBaseSliceTransform, volumeToWorldTransform, volumeToBaseSliceTransform);
         LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
+        LinAlg.fillTranslationL(volumeToBaseSliceTransform, 0, 0, -getNavigationZ(), volumeToSliceTransform);
     }
     
     public void refresh() {
@@ -460,8 +466,8 @@ public class SliceViewer extends JPanel {
                             viewWidth / 2,   //    GLdouble      right,
                            -viewHeight / 2,  //    GLdouble      bottom,
                             viewHeight / 2,  //    GLdouble      top,
-                           -1000, //  GLdouble      nearVal,
-                            1000   //  GLdouble     farVal
+                           -navigationCubeLength/2, //  GLdouble      nearVal,
+                            navigationCubeLength/2   //  GLdouble     farVal
                            );
 
                 /*

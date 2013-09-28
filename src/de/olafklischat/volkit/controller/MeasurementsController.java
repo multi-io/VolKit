@@ -151,7 +151,7 @@ public class MeasurementsController {
                 gl.glEnable(GL.GL_BLEND);
                 gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
                 gl.glLoadIdentity();
-                gl.glMultMatrixf(sv.getVolumeToBaseSliceTransform(), 0);  // TODO: sv.getNavigationZ() is missing, and restrict visible depth to just the slice
+                gl.glMultMatrixf(sv.getVolumeToSliceTransform(), 0);  // TODO: sv.getNavigationZ() is missing, and restrict visible depth to just the slice
                 if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
                     paintMeasurement(gl, currentMeasurement);
                 }
