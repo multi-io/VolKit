@@ -30,7 +30,7 @@ public class MeasurementsController {
     private List<SliceViewer> sliceViewers = new ArrayList<SliceViewer>();
     private Measurement currentMeasurement;
 
-    private Color nextDrawingColor = Color.red;
+    private Color nextDrawingColor = Color.green;
 
     public MeasurementsController(MeasurementsDB mdb, SliceViewer... svs) {
         this.mdb = mdb;

@@ -101,7 +101,7 @@ public class App {
                     toolbar.add(new AbstractAction("brainix") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM cérébrale, neuro-crâne/T1-3D-FFE-C - 801", 1);
+                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                         }
                     });
                     

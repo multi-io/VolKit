@@ -15,7 +15,9 @@ import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EventListener;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -51,7 +53,6 @@ import de.sofd.util.Misc;
 import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
 import de.sofd.viskit.image3D.jogl.util.ShaderManager;
-import de.sofd.viskit.ui.imagelist.ImageListViewCell;
 
 
 public class SliceViewer extends JPanel {
@@ -120,6 +121,8 @@ public class SliceViewer extends JPanel {
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
     
+    private final Collection<SlicePaintListener> uninitializedSlicePaintListeners = new IdentityHashSet<SlicePaintListener>();
+
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
     public SliceViewer() {
@@ -264,6 +267,19 @@ public class SliceViewer extends JPanel {
         }
     }
 
+    protected void initializeUninitializedSlicePaintListeners(final GL gl, final GLAutoDrawable glAutoDrawable) {
+        forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
+            @Override
+            public void run(SlicePaintListener l) {
+                if (uninitializedSlicePaintListeners.contains(l)) {
+                    l.glSharedContextDataInitialization(gl, sharedContextData.getAttributes());
+                    l.glDrawableInitialized(glAutoDrawable);
+                }
+            }
+        });
+        uninitializedSlicePaintListeners.clear();
+    }
+    
     protected class GLEventHandler implements GLEventListener {
 
         @Override
@@ -299,6 +315,7 @@ public class SliceViewer extends JPanel {
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
+            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
         }
 
         @Override
@@ -314,6 +331,7 @@ public class SliceViewer extends JPanel {
             if (needViewportReset) {
                 setupEye2ViewportTransformation(gl);
             }
+            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT);
             gl.glMatrixMode(gl.GL_MODELVIEW);
             gl.glLoadIdentity();
@@ -655,8 +673,19 @@ public class SliceViewer extends JPanel {
 
     public void addSlicePaintListener(int zOrder, SlicePaintListener listener) {
         slicePaintListeners.add(new ListenerRecord<SlicePaintListener>(listener, zOrder));
+        uninitializedSlicePaintListeners.add(listener);
     }
     
+    public void removeSlicePaintListener(SlicePaintListener listener) {
+        for (Iterator<ListenerRecord<SlicePaintListener>> it = slicePaintListeners.iterator(); it.hasNext();) {
+            if (it.next().listener == listener) {
+                it.remove();
+                uninitializedSlicePaintListeners.remove(listener);
+                return;
+            }
+        }
+    }
+
     /**
      * NOT A PUBLIC API! DON'T CALL.
      * 
