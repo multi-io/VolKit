@@ -272,8 +272,8 @@ public class SliceViewer extends JPanel {
             @Override
             public void run(SlicePaintListener l) {
                 if (uninitializedSlicePaintListeners.contains(l)) {
-                    l.glSharedContextDataInitialization(gl, sharedContextData.getAttributes());
-                    l.glDrawableInitialized(glAutoDrawable);
+                    l.glSharedContextDataInitialization(SliceViewer.this, gl, sharedContextData.getAttributes());
+                    l.glDrawableInitialized(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
                 }
             }
         });
@@ -482,11 +482,18 @@ public class SliceViewer extends JPanel {
         }
 
         @Override
-        public void dispose(GLAutoDrawable glAutoDrawable) {
+        public void dispose(final GLAutoDrawable glAutoDrawable) {
             logger.debug("disposing GLCanvas...");
+            forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
+                @Override
+                public void run(SlicePaintListener l) {
+                    if (uninitializedSlicePaintListeners.contains(l)) {
+                        l.glDrawableDisposing(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
+                    }
+                }
+            });
             sharedContextData.unref();
             instances.remove(SliceViewer.this);
-            // TODO: call dispose methods on paint listeners here
             logger.debug("GLCanvas disposed, refcount=" + sharedContextData.getRefCount() + ", GLCanvas inst. count = " + instances.size());
         }
 
@@ -710,17 +717,16 @@ public class SliceViewer extends JPanel {
     protected void firePaintEvent(SlicePaintEvent e, int minZ, int maxZ) {
         SlicePaintListener dummy = new SlicePaintListener() {
             @Override
-            public void glSharedContextDataInitialization(GL gl,
-                    Map<String, Object> sharedData) {
+            public void glSharedContextDataInitialization(SliceViewer sv, GL gl, Map<String, Object> sharedData) {
             }
             @Override
-            public void glDrawableInitialized(GLAutoDrawable glAutoDrawable) {
+            public void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
             }
             @Override
             public void onPaint(SlicePaintEvent e) {
             }
             @Override
-            public void glDrawableDisposing(GLAutoDrawable glAutoDrawable) {
+            public void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
             }
         };
         ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);

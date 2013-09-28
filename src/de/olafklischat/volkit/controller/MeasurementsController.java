@@ -5,6 +5,7 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +19,9 @@ import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SlicePaintEvent;
 import de.olafklischat.volkit.view.SlicePaintListener;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
+import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 public class MeasurementsController {
 
@@ -91,27 +94,62 @@ public class MeasurementsController {
     }
     
     private SlicePaintListener sliceViewersPaintHandler = new SlicePaintListener() {
-        
+
+        Map<SliceViewer, GLShader> measShaderBySV = new IdentityHashMap<SliceViewer, GLShader>();
+
         @Override
-        public void glSharedContextDataInitialization(GL gl,
-                Map<String, Object> sharedData) {
+        public void glSharedContextDataInitialization(SliceViewer sv, GL gl1, Map<String, Object> sharedData) {
+            /*
+            // TODO: this is how we should initialize measShader (just one, not one per SliceViewer), but it doesn't work for now
+            // because measShader stored the GL object, which won't be usable in other contexts
+            GLShader measShader = (GLShader) sharedData.get("measurementsShader");
+            if (null == measShader) {
+                GL2 gl = gl1.getGL2();
+                try {
+                    ShaderManager.read(gl, "measurements");
+                    measShader = ShaderManager.get("measurements");
+                    //measShader.addProgramUniform("tex");
+                    sharedData.put("measurementsShader", measShader);
+                } catch (Exception e) {
+                    throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
+                }
+            }
+            */
         }
         
         @Override
-        public void glDrawableInitialized(GLAutoDrawable glAutoDrawable) {
+        public void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
         }
         
         @Override
-        public void glDrawableDisposing(GLAutoDrawable glAutoDrawable) {
+        public void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
         }
 
         @Override
         public void onPaint(SlicePaintEvent e) {
             SliceViewer sv = e.getSource();
             GL2 gl = e.getGl().getGL2();
+            GLShader measShader = measShaderBySV.get(sv);
+            if (null == measShader) {
+                try {
+                    // TODO: this is the wrong place to initialize measShader -- see above
+                    ShaderManager.read(gl, "measurements");
+                    measShader = ShaderManager.get("measurements");
+                    //measShader.addProgramUniform("tex");
+                    measShaderBySV.put(sv, measShader);
+                } catch (Exception ex) {
+                    throw new RuntimeException("couldn't initialize GL shader: " + ex.getLocalizedMessage(), ex);
+                }
+            }
+            
+            measShader.bind();
+            //measShader.bindUniform("tex", 0);
             gl.glMatrixMode(GL2.GL_MODELVIEW);
             gl.glPushMatrix();
+            gl.glPushAttrib(GL.GL_COLOR_BUFFER_BIT);  // b/c we set up alpha blending
             try {
+                gl.glEnable(GL.GL_BLEND);
+                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
                 gl.glLoadIdentity();
                 gl.glMultMatrixf(sv.getVolumeToBaseSliceTransform(), 0);  // TODO: sv.getNavigationZ() is missing, and restrict visible depth to just the slice
                 if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
@@ -121,7 +159,9 @@ public class MeasurementsController {
                     paintMeasurement(gl, m);
                 }
             } finally {
+                gl.glPopAttrib();
                 gl.glPopMatrix();
+                measShader.unbind();
             }
         }
         

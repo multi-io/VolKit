@@ -25,8 +25,6 @@ public interface SlicePaintListener {
     void onPaint(SlicePaintEvent e);
 
     /**
-     * TODO: not implemented for now
-     * 
      * An OpenGL/JOGL drawable is being initialized. Happens with any lists that
      * use JOGL somewhere in their painting pipeline. Whether or not (and if so,
      * how many) GL drawables are created by a list depends on the list (e.g.,
@@ -44,12 +42,11 @@ public interface SlicePaintListener {
      * be called once, right after listener registration.
      * 
      * @param glAutoDrawable
+     * @param sharedData
      */
-    void glDrawableInitialized(GLAutoDrawable glAutoDrawable);
+    void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData);
 
     /**
-     * TODO: not implemented for now
-     * 
      * Method that will be called every time a GL context is being set up whose
      * data (e.g., textures and display lists) may later be shared with new GL
      * contexts being created. sharedData is a place where the listener can put
@@ -71,7 +68,7 @@ public interface SlicePaintListener {
      * @param gl
      * @param sharedData
      */
-    void glSharedContextDataInitialization(GL gl, Map<String, Object> sharedData);
+    void glSharedContextDataInitialization(SliceViewer sv, GL gl, Map<String, Object> sharedData);
 
     /**
      * An OpenGL/JOGL drawable that has previously been initialized (and for
@@ -79,7 +76,8 @@ public interface SlicePaintListener {
      * being disposed.
      * 
      * @param glAutoDrawable
+     * @param sharedData
      */
-    void glDrawableDisposing(GLAutoDrawable glAutoDrawable);
+    void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData);
 
 }
