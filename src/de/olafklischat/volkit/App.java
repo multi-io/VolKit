@@ -12,8 +12,12 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 
 import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
@@ -108,6 +112,23 @@ public class App {
                     f.setSize(1200,900);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
+                    
+
+                    // measurements frame
+
+                    JFrame measurementsFrame = new JFrame("Measurements");
+                    TableModel dataModel = new AbstractTableModel() {
+                        public int getColumnCount() { return 10; }
+                        public int getRowCount() { return 100;}
+                        public Object getValueAt(int row, int col) { return new Integer(row*col); }
+                    };
+                    JTable table = new JTable(dataModel);
+                    JScrollPane scrollpane = new JScrollPane(table);
+                    measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+                    
+                    measurementsFrame.setSize(500,1000);
+                    measurementsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    measurementsFrame.setVisible(true);
                     
                     //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
                     //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);

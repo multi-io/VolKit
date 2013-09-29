@@ -34,6 +34,9 @@ public class MeasurementsController {
     private Measurement currentMeasurement;
 
     private Color nextDrawingColor = Color.green;
+    
+    private boolean foregroundMeasurementsVisible = false;
+    private boolean backgroundMeasurementsVisible = false;
 
     public MeasurementsController(MeasurementsDB mdb, SliceViewer... svs) {
         this.mdb = mdb;
@@ -44,6 +47,22 @@ public class MeasurementsController {
             sliceViewers.add(sv);
         }
         refreshViewers();
+    }
+
+    public boolean isForegroundMeasurementsVisible() {
+        return foregroundMeasurementsVisible;
+    }
+    
+    public void setForegroundMeasurementsVisible(boolean foregroundMeasurementsVisible) {
+        this.foregroundMeasurementsVisible = foregroundMeasurementsVisible;
+    }
+    
+    public boolean isBackgroundMeasurementsVisible() {
+        return backgroundMeasurementsVisible;
+    }
+    
+    public void setBackgroundMeasurementsVisible(boolean backgroundMeasurementsVisible) {
+        this.backgroundMeasurementsVisible = backgroundMeasurementsVisible;
     }
     
     private MouseAdapter sliceViewersMouseHandler = new MouseAdapter() {

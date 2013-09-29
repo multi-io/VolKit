@@ -41,7 +41,7 @@ public class TripleSliceViewerController {
         sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
         sv3.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XY);
 
-        VolumeRotatingMouseHandler rhxz = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,0,1}, false, true);
+        VolumeRotatingMouseHandler rhxz = new VolumeRotatingMouseHandler(new float[]{1,0,0}, new float[]{0,1,0}, false, true);
         sv1.addCanvasMouseListener(rhxz);
         sv1.addCanvasMouseMotionListener(rhxz);
         
@@ -92,8 +92,8 @@ public class TripleSliceViewerController {
             if (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0) {
                 Point pos = e.getPoint();
                 if (lastPos != null) {
-                    float roty = - ((float)pos.x - lastPos.x) / 400 * 180;
-                    float rotx = - ((float)pos.y - lastPos.y) / 400 * 180;
+                    float roty = ((float)pos.x - lastPos.x) / 400 * 180;
+                    float rotx = ((float)pos.y - lastPos.y) / 400 * 180;
                     float[] volumeDeltaTransform = new float[16];
                     LinAlg.fillIdentity(volumeDeltaTransform);
                     if (horizRotEnabled) {
