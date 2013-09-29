@@ -16,8 +16,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 
 import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
@@ -60,7 +58,8 @@ public class App {
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
                     
                     MeasurementsDB mdb = new MeasurementsDB();
-                    final MeasurementsController measurementsController = new MeasurementsController(mdb, sv1, sv2, sv3);
+                    JTable measurementsTable = new JTable();
+                    final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
 
                     mainPane.add(new JLabel(":-)", JLabel.CENTER));
                     
@@ -117,13 +116,7 @@ public class App {
                     // measurements frame
 
                     JFrame measurementsFrame = new JFrame("Measurements");
-                    TableModel dataModel = new AbstractTableModel() {
-                        public int getColumnCount() { return 10; }
-                        public int getRowCount() { return 100;}
-                        public Object getValueAt(int row, int col) { return new Integer(row*col); }
-                    };
-                    JTable table = new JTable(dataModel);
-                    JScrollPane scrollpane = new JScrollPane(table);
+                    JScrollPane scrollpane = new JScrollPane(measurementsTable);
                     measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
                     
                     measurementsFrame.setSize(500,1000);

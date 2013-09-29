@@ -14,5 +14,8 @@ public class MeasurementsDB {
     public void addMeasurement(Measurement m) {
         measurements.add(m);
     }
-    
+
+    public int size() {
+        return measurements.size();
+    }
 }

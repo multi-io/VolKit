@@ -12,6 +12,8 @@ import java.util.Map;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
 
 import de.olafklischat.volkit.model.Measurement;
 import de.olafklischat.volkit.model.MeasurementsDB;
@@ -30,16 +32,61 @@ public class MeasurementsController {
     private static final int MOUSE_MASK = MouseEvent.BUTTON3_MASK;
 
     private MeasurementsDB mdb;
+    private JTable measurementsTable;
     private List<SliceViewer> sliceViewers = new ArrayList<SliceViewer>();
     private Measurement currentMeasurement;
 
     private Color nextDrawingColor = Color.green;
     
+    private MeasurementsTableModel measurementsTableModel = new MeasurementsTableModel();
+    
+    private class MeasurementsTableModel extends AbstractTableModel {
+        private String[] colNames = new String[]{
+                "dataset", "length (mm)"
+        };
+
+        @Override
+        public String getColumnName(int column) {
+            return colNames[column];
+        }
+        
+        @Override
+        public int getRowCount() {
+            return mdb.size();
+        }
+        
+        @Override
+        public int getColumnCount() {
+            return colNames.length;
+        }
+        
+        @Override
+        public Object getValueAt(int row, int col) {
+            Measurement m = mdb.getMeasurements().get(row);
+            switch (col) {
+            case 0:
+                return m.getDatasetName();
+            case 1:
+                return m.getLengthInMm();
+            default:
+                throw new RuntimeException("SHOULD NEVER HAPPEN: col=" + col);
+            }
+        }
+        
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+        
+    };
+    
     private boolean foregroundMeasurementsVisible = false;
     private boolean backgroundMeasurementsVisible = false;
 
-    public MeasurementsController(MeasurementsDB mdb, SliceViewer... svs) {
+    public MeasurementsController(MeasurementsDB mdb, JTable measurementsTable, SliceViewer... svs) {
         this.mdb = mdb;
+        this.measurementsTable = measurementsTable;
+        measurementsTable.setModel(measurementsTableModel);
         for (SliceViewer sv: svs) {
             sv.addCanvasMouseListener(sliceViewersMouseHandler);
             sv.addCanvasMouseMotionListener(sliceViewersMouseHandler);
@@ -63,6 +110,10 @@ public class MeasurementsController {
     
     public void setBackgroundMeasurementsVisible(boolean backgroundMeasurementsVisible) {
         this.backgroundMeasurementsVisible = backgroundMeasurementsVisible;
+    }
+    
+    protected void refreshMeasurementsTable() {
+        measurementsTableModel.fireTableDataChanged();
     }
     
     private MouseAdapter sliceViewersMouseHandler = new MouseAdapter() {
@@ -103,6 +154,7 @@ public class MeasurementsController {
                 System.err.println("new measurement added: " + currentMeasurement);
                 currentMeasurement = null;
                 refreshViewers();
+                refreshMeasurementsTable();
             }
         }
         

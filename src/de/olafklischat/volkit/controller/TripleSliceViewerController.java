@@ -45,7 +45,7 @@ public class TripleSliceViewerController {
         sv1.addCanvasMouseListener(rhxz);
         sv1.addCanvasMouseMotionListener(rhxz);
         
-        VolumeRotatingMouseHandler rhyz = new VolumeRotatingMouseHandler(new float[]{0,-1,0}, new float[]{0,0,1}, false, true);
+        VolumeRotatingMouseHandler rhyz = new VolumeRotatingMouseHandler(new float[]{0,1,0}, new float[]{0,0,1}, false, true);
         sv2.addCanvasMouseListener(rhyz);
         sv2.addCanvasMouseMotionListener(rhyz);
 
