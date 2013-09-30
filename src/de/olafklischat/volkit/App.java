@@ -10,6 +10,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -17,6 +18,7 @@ import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
+import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.model.MeasurementsDB;
@@ -115,13 +117,31 @@ public class App {
 
                     // measurements frame
 
-                    JFrame measurementsFrame = new JFrame("Measurements");
-                    JScrollPane scrollpane = new JScrollPane(measurementsTable);
-                    measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+                    {
+                        JFrame measurementsFrame = new JFrame("Measurements");
+                        JScrollPane scrollpane = new JScrollPane(measurementsTable);
+                        measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+                        
+                        measurementsFrame.setSize(500,1000);
+                        measurementsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        measurementsFrame.setVisible(true);
+                    }
                     
-                    measurementsFrame.setSize(500,1000);
-                    measurementsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    measurementsFrame.setVisible(true);
+                    // datasets frame
+
+                    {
+                        JFrame datasetsFrame = new JFrame("Datasets");
+                        JList datasetsList = new JList();
+                        datasetsList.setLayoutOrientation(JList.VERTICAL);
+                        JScrollPane scrollpane = new JScrollPane(datasetsList);
+                        datasetsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+                        
+                        datasetsFrame.setSize(300,1000);
+                        datasetsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        datasetsFrame.setVisible(true);
+                        
+                        DatasetsController dsc = new DatasetsController(new File("/home/olaf/gi/resources/DICOM-Testbilder"), datasetsList, slicesController);
+                    }
                     
                     //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
                     //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
