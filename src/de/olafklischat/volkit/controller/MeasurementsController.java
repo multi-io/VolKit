@@ -91,7 +91,7 @@ public class MeasurementsController {
         List<Measurement> ms = getCurrentMeasurementsTableContents();
         int i = 0;
         for (Measurement msm : ms) {
-            if (ms.equals(msm)) {
+            if (m.equals(msm)) {
                 return i;
             }
             i++;
