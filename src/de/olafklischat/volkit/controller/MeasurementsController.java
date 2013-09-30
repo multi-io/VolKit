@@ -81,24 +81,6 @@ public class MeasurementsController {
         this.backgroundMeasurementsVisible = backgroundMeasurementsVisible;
     }
     
-    // TODO: ugliest code I've ever written. Move CurrentMeasurementsTableContents to separate class at leat
-    protected List<Measurement> getCurrentMeasurementsTableContents() {
-        return mdb.getMeasurements();
-    }
-    
-    protected int getCurrentMeasurementsTableRowNumberOf(Measurement m) {
-        //TODO: optimize
-        List<Measurement> ms = getCurrentMeasurementsTableContents();
-        int i = 0;
-        for (Measurement msm : ms) {
-            if (m.equals(msm)) {
-                return i;
-            }
-            i++;
-        }
-        return -1;
-    }
-    
     private MeasurementsTableModel measurementsTableModel = new MeasurementsTableModel();
     
     private class MeasurementsTableModel extends AbstractTableModel {
@@ -113,7 +95,7 @@ public class MeasurementsController {
         
         @Override
         public int getRowCount() {
-            return getCurrentMeasurementsTableContents().size();
+            return mdb.size();
         }
         
         @Override
@@ -121,9 +103,30 @@ public class MeasurementsController {
             return colNames.length;
         }
         
+        public List<Measurement> getAllDisplayedMeasurements() {
+            return mdb.getMeasurements();
+        }
+
+        public Measurement getMeasurementAt(int row) {
+            return getAllDisplayedMeasurements().get(row);
+        }
+        
+        protected int getCurrentRowNumberOf(Measurement m) {
+            //TODO: optimize
+            List<Measurement> ms = getAllDisplayedMeasurements();
+            int i = 0;
+            for (Measurement msm : ms) {
+                if (m.equals(msm)) {
+                    return i;
+                }
+                i++;
+            }
+            return -1;
+        }
+        
         @Override
         public Object getValueAt(int row, int col) {
-            Measurement m = getCurrentMeasurementsTableContents().get(row);
+            Measurement m = getMeasurementAt(row);
             switch (col) {
             case 0:
                 return m.getNumber();
@@ -143,10 +146,28 @@ public class MeasurementsController {
         
     };
 
+    /**
+     * Utility method
+     */
+    protected void runIgnoringTableSelectionEvents(Runnable r) {
+        boolean prevValue = ignoreTableSelectionEvents;
+        ignoreTableSelectionEvents = true;
+        try {
+            r.run();
+        } finally {
+            ignoreTableSelectionEvents = prevValue;
+        }
+    }
+    
+    private boolean ignoreTableSelectionEvents = false;
+    
     private ListSelectionListener measurementsSelectionHandler = new ListSelectionListener() {
         @Override
         public void valueChanged(ListSelectionEvent e) {
             if (e.getValueIsAdjusting()) {
+                return;
+            }
+            if (ignoreTableSelectionEvents) {
                 return;
             }
             /*
@@ -158,50 +179,52 @@ public class MeasurementsController {
             */
             int lsi = measurementsTable.getSelectionModel().getLeadSelectionIndex();
             if (lsi != -1) {
-                selectMeasurement(lsi);
+                selectMeasurement(measurementsTableModel.getMeasurementAt(lsi));
             }
         }
     };
     
-    private boolean inSelectMeasurement = false;
+    protected void selectMeasurementInTable(final Measurement m) {
+        runIgnoringTableSelectionEvents(new Runnable() {
+            @Override
+            public void run() {
+                int r = measurementsTableModel.getCurrentRowNumberOf(m);
+                if (r != -1) {
+                    selectMeasurementInTable(r);
+                }
+            }
+        });
+    }
     
+    protected void selectMeasurementInTable(final int rowInCurrTable) {
+        runIgnoringTableSelectionEvents(new Runnable() {
+            @Override
+            public void run() {
+                measurementsTable.getSelectionModel().setSelectionInterval(rowInCurrTable, rowInCurrTable);
+            }
+        });
+    }
+
     public void selectMeasurement(Measurement m) {
-        if (inSelectMeasurement) {
+        selectMeasurementInTable(m);
+        if (!m.getDatasetName().equals(sliceViewers.get(0).getVolumeDataSet().getDatasetName())) {
             return;
         }
-        inSelectMeasurement = true;
-        try {
-            int r = getCurrentMeasurementsTableRowNumberOf(m);
-            if (r != -1) {
-                selectMeasurement(r);
-            }
-        } finally {
-            inSelectMeasurement = false;
+        for (int i=0; i < sliceViewers.size(); i++) {
+            sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
+            sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
         }
+    }
+
+    protected void refreshTable() {
+        runIgnoringTableSelectionEvents(new Runnable() {
+            @Override
+            public void run() {
+                measurementsTableModel.fireTableDataChanged();
+            }
+        });
     }
     
-    private boolean inSelectMeasurementByRow = false;
-
-    protected void selectMeasurement(int rowInCurrTable) {
-        if (inSelectMeasurementByRow) {
-            return;
-        }
-        inSelectMeasurementByRow = true;
-        try {
-            measurementsTable.getSelectionModel().setSelectionInterval(rowInCurrTable, rowInCurrTable);
-            Measurement m = getCurrentMeasurementsTableContents().get(rowInCurrTable);
-            if (!m.getDatasetName().equals(sliceViewers.get(0).getVolumeDataSet().getDatasetName())) {
-                return;
-            }
-            for (int i=0; i < sliceViewers.size(); i++) {
-                sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
-                sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
-            }
-        } finally {
-            inSelectMeasurementByRow = false;
-        }
-    }
-
     private MouseAdapter sliceViewersMouseHandler = new MouseAdapter() {
         @Override
         public void mousePressed(MouseEvent e) {
@@ -236,12 +259,11 @@ public class MeasurementsController {
         @Override
         public void mouseReleased(MouseEvent e) {
             if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
-                int prevTableLength = getCurrentMeasurementsTableContents().size();
                 mdb.addMeasurement(currentMeasurement);
                 System.err.println("new measurement added: " + currentMeasurement);
+                refreshTable();
+                selectMeasurementInTable(currentMeasurement);
                 currentMeasurement = null;
-                measurementsTableModel.fireTableRowsInserted(prevTableLength, prevTableLength);
-                selectMeasurement(prevTableLength);
             }
         }
         
