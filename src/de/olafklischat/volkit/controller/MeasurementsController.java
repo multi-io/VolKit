@@ -13,6 +13,8 @@ import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.swing.JTable;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 
 import de.olafklischat.volkit.model.Measurement;
@@ -35,54 +37,20 @@ public class MeasurementsController {
     private JTable measurementsTable;
     private List<SliceViewer> sliceViewers = new ArrayList<SliceViewer>();
     private Measurement currentMeasurement;
+    
+    private boolean restrictMeasurementsTableToCurrDataset = false;  //TODO: impl
 
     private Color nextDrawingColor = Color.green;
-    
-    private MeasurementsTableModel measurementsTableModel = new MeasurementsTableModel();
-    
-    private class MeasurementsTableModel extends AbstractTableModel {
-        private String[] colNames = new String[]{
-                "dataset", "length (mm)"
-        };
-
-        @Override
-        public String getColumnName(int column) {
-            return colNames[column];
-        }
-        
-        @Override
-        public int getRowCount() {
-            return mdb.size();
-        }
-        
-        @Override
-        public int getColumnCount() {
-            return colNames.length;
-        }
-        
-        @Override
-        public Object getValueAt(int row, int col) {
-            Measurement m = mdb.getMeasurements().get(row);
-            switch (col) {
-            case 0:
-                return m.getDatasetName();
-            case 1:
-                return m.getLengthInMm();
-            default:
-                throw new RuntimeException("SHOULD NEVER HAPPEN: col=" + col);
-            }
-        }
-        
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-        
-    };
     
     private boolean foregroundMeasurementsVisible = false;
     private boolean backgroundMeasurementsVisible = false;
 
+    /**
+     * 
+     * @param mdb MUST NOT be changed outside this controller
+     * @param measurementsTable
+     * @param svs
+     */
     public MeasurementsController(MeasurementsDB mdb, JTable measurementsTable, SliceViewer... svs) {
         this.mdb = mdb;
         this.measurementsTable = measurementsTable;
@@ -93,6 +61,7 @@ public class MeasurementsController {
             sv.addSlicePaintListener(sliceViewersPaintHandler);
             sliceViewers.add(sv);
         }
+        measurementsTable.getSelectionModel().addListSelectionListener(measurementsSelectionHandler);
         refreshViewers();
     }
 
@@ -112,10 +81,124 @@ public class MeasurementsController {
         this.backgroundMeasurementsVisible = backgroundMeasurementsVisible;
     }
     
-    protected void refreshMeasurementsTable() {
-        measurementsTableModel.fireTableDataChanged();
+    // TODO: ugliest code I've ever written. Move CurrentMeasurementsTableContents to separate class at leat
+    protected List<Measurement> getCurrentMeasurementsTableContents() {
+        return mdb.getMeasurements();
     }
     
+    protected int getCurrentMeasurementsTableRowNumberOf(Measurement m) {
+        //TODO: optimize
+        List<Measurement> ms = getCurrentMeasurementsTableContents();
+        int i = 0;
+        for (Measurement msm : ms) {
+            if (ms.equals(msm)) {
+                return i;
+            }
+            i++;
+        }
+        return -1;
+    }
+    
+    private MeasurementsTableModel measurementsTableModel = new MeasurementsTableModel();
+    
+    private class MeasurementsTableModel extends AbstractTableModel {
+        private String[] colNames = new String[]{
+                "nr.", "dataset", "length (mm)"
+        };
+
+        @Override
+        public String getColumnName(int column) {
+            return colNames[column];
+        }
+        
+        @Override
+        public int getRowCount() {
+            return getCurrentMeasurementsTableContents().size();
+        }
+        
+        @Override
+        public int getColumnCount() {
+            return colNames.length;
+        }
+        
+        @Override
+        public Object getValueAt(int row, int col) {
+            Measurement m = getCurrentMeasurementsTableContents().get(row);
+            switch (col) {
+            case 0:
+                return m.getNumber();
+            case 1:
+                return m.getDatasetName();
+            case 2:
+                return m.getLengthInMm();
+            default:
+                throw new RuntimeException("SHOULD NEVER HAPPEN: col=" + col);
+            }
+        }
+        
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+        
+    };
+
+    private ListSelectionListener measurementsSelectionHandler = new ListSelectionListener() {
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+            /*
+            System.out.println("sel. rows:");
+            for (int i: measurementsTable.getSelectedRows()) {
+                System.out.println(" "+i);
+            }
+            System.out.println("lead sel.idx: " + measurementsTable.getSelectionModel().getLeadSelectionIndex());
+            */
+            int lsi = measurementsTable.getSelectionModel().getLeadSelectionIndex();
+            if (lsi != -1) {
+                selectMeasurement(lsi);
+            }
+        }
+    };
+    
+    private boolean inSelectMeasurement = false;
+    
+    public void selectMeasurement(Measurement m) {
+        if (inSelectMeasurement) {
+            return;
+        }
+        inSelectMeasurement = true;
+        try {
+            int r = getCurrentMeasurementsTableRowNumberOf(m);
+            if (r != -1) {
+                selectMeasurement(r);
+            }
+        } finally {
+            inSelectMeasurement = false;
+        }
+    }
+    
+    private boolean inSelectMeasurementByRow = false;
+
+    protected void selectMeasurement(int rowInCurrTable) {
+        if (inSelectMeasurementByRow) {
+            return;
+        }
+        inSelectMeasurementByRow = true;
+        try {
+            measurementsTable.getSelectionModel().setSelectionInterval(rowInCurrTable, rowInCurrTable);
+            Measurement m = getCurrentMeasurementsTableContents().get(rowInCurrTable);
+            for (int i=0; i < sliceViewers.size(); i++) {
+                sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
+                sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
+            }
+        } finally {
+            inSelectMeasurementByRow = false;
+        }
+    }
+
     private MouseAdapter sliceViewersMouseHandler = new MouseAdapter() {
         @Override
         public void mousePressed(MouseEvent e) {
@@ -150,11 +233,12 @@ public class MeasurementsController {
         @Override
         public void mouseReleased(MouseEvent e) {
             if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
+                int prevTableLength = getCurrentMeasurementsTableContents().size();
                 mdb.addMeasurement(currentMeasurement);
                 System.err.println("new measurement added: " + currentMeasurement);
                 currentMeasurement = null;
-                refreshViewers();
-                refreshMeasurementsTable();
+                measurementsTableModel.fireTableRowsInserted(prevTableLength, prevTableLength);
+                selectMeasurement(prevTableLength);
             }
         }
         
@@ -227,7 +311,9 @@ public class MeasurementsController {
                     paintMeasurement(gl, currentMeasurement);
                 }
                 for (Measurement m : mdb.getMeasurements()) {
-                    paintMeasurement(gl, m);
+                    if (m.getDatasetName().equals(sv.getVolumeDataSet().getDatasetName())) {
+                        paintMeasurement(gl, m);
+                    }
                 }
             } finally {
                 gl.glPopAttrib();

@@ -12,6 +12,7 @@ public class MeasurementsDB {
     }
     
     public void addMeasurement(Measurement m) {
+        m.setNumber(measurements.size());
         measurements.add(m);
     }
 

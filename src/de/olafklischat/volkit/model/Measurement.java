@@ -4,6 +4,7 @@ import java.awt.Color;
 
 public class Measurement {
 
+    int number;
     String datasetName;
     float[] pt0InVolume, pt1InVolume;
     float[] volumeToWorldTransformation;
@@ -26,6 +27,14 @@ public class Measurement {
         setNavigationZs(navigationZs);
     }
 
+    public int getNumber() {
+        return number;
+    }
+
+    void setNumber(int number) {
+        this.number = number;
+    }
+    
     public String getDatasetName() {
         return datasetName;
     }
