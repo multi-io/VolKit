@@ -190,6 +190,9 @@ public class MeasurementsController {
         try {
             measurementsTable.getSelectionModel().setSelectionInterval(rowInCurrTable, rowInCurrTable);
             Measurement m = getCurrentMeasurementsTableContents().get(rowInCurrTable);
+            if (!m.getDatasetName().equals(sliceViewers.get(0).getVolumeDataSet().getDatasetName())) {
+                return;
+            }
             for (int i=0; i < sliceViewers.size(); i++) {
                 sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
                 sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
