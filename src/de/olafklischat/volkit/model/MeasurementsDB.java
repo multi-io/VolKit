@@ -15,6 +15,10 @@ public class MeasurementsDB {
         m.setNumber(measurements.size());
         measurements.add(m);
     }
+    
+    public void removeMeasurement(Measurement m) {
+        measurements.remove(m);
+    }
 
     public int size() {
         return measurements.size();

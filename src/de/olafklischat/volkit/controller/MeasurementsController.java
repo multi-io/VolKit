@@ -2,6 +2,7 @@ package de.olafklischat.volkit.controller;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -12,6 +13,9 @@ import java.util.Map;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
+import javax.swing.AbstractAction;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -51,7 +55,7 @@ public class MeasurementsController {
      * @param measurementsTable
      * @param svs
      */
-    public MeasurementsController(MeasurementsDB mdb, JTable measurementsTable, SliceViewer... svs) {
+    public MeasurementsController(final MeasurementsDB mdb, final JTable measurementsTable, SliceViewer... svs) {
         this.mdb = mdb;
         this.measurementsTable = measurementsTable;
         measurementsTable.setModel(measurementsTableModel);
@@ -62,6 +66,36 @@ public class MeasurementsController {
             sliceViewers.add(sv);
         }
         measurementsTable.getSelectionModel().addListSelectionListener(measurementsSelectionHandler);
+        final JPopupMenu ctxMenu = new JPopupMenu();
+        final int[] popupClickedRow = new int[1];
+        ctxMenu.add(new JMenuItem(new AbstractAction("Delete this Measurement") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mdb.removeMeasurement(measurementsTableModel.getMeasurementAt(popupClickedRow[0]));
+                refreshTable();
+                refreshViewers();
+            }
+        }));
+        measurementsTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                maybeShowPopup(e);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                maybeShowPopup(e);
+            }
+            private void maybeShowPopup(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    int row = measurementsTable.rowAtPoint(e.getPoint());
+                    if (row != -1) {
+                        popupClickedRow[0] = row;
+                        ctxMenu.show(e.getComponent(),
+                                     e.getX(), e.getY());
+                    }
+                }
+            }            
+        });
         refreshViewers();
     }
 
