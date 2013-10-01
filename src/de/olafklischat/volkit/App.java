@@ -60,6 +60,7 @@ public class App {
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
                     
                     MeasurementsDB mdb = new MeasurementsDB("mdb");
+                    mdb.load();
                     JTable measurementsTable = new JTable();
                     final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
 
@@ -146,6 +147,7 @@ public class App {
                     //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
                     //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
                 } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     throw new RuntimeException(e);
                 }
             }

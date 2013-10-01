@@ -1,5 +1,6 @@
 package de.olafklischat.volkit.model;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -87,7 +88,7 @@ public class MeasurementsDB {
     		loadV1(r);
     		break;
     	default:
-    		throw new IllegalStateException("unsupported version: " + vnum);
+    		throw new IllegalStateException("unsupported measurements DB version: " + vnum);
     	}
     }
     
@@ -95,8 +96,17 @@ public class MeasurementsDB {
     	int msCount = readInt(r);
     	List<Measurement> newMs = new ArrayList<Measurement>(msCount);
     	for (int i=0; i<msCount; i++) {
-    		
+    		Measurement m = new Measurement();
+    		m.setNumber(readInt(r));
+    		m.setDatasetName(readString(r));
+    		m.setPt0InVolume(readFloatArr(4, r));
+            m.setPt1InVolume(readFloatArr(4, r));
+            m.setColor(new Color(readInt(r), readInt(r), readInt(r)));
+            m.setVolumeToWorldTransformation(readFloatArr(16, r));
+            m.setNavigationZs(readFloatArr(3, r));
+            newMs.add(m);
     	}
+    	this.measurements = newMs;
     }
 
     private static int readInt(BufferedReader r) throws IOException {
@@ -114,4 +124,9 @@ public class MeasurementsDB {
     	}
     	return result;
     }
+    
+    private static String readString(BufferedReader r) throws IOException {
+        return r.readLine();
+    }
+
 }

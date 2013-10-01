@@ -1,4 +1,4 @@
-- Persistierung der DB
+- DONE Persistierung der DB
 
 - Exportieren von Messungen
 
