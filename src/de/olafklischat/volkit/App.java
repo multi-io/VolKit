@@ -59,7 +59,7 @@ public class App {
                     
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
                     
-                    MeasurementsDB mdb = new MeasurementsDB();
+                    MeasurementsDB mdb = new MeasurementsDB("mdb");
                     JTable measurementsTable = new JTable();
                     final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
 
