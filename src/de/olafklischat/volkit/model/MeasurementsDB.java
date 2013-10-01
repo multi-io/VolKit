@@ -1,8 +1,11 @@
 package de.olafklischat.volkit.model;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -47,6 +50,7 @@ public class MeasurementsDB {
         File dest = new File(baseDir, dbFilename);
         File newDest = new File(baseDir, dbFilename + ".new");
         PrintWriter w = new PrintWriter(new OutputStreamWriter(new FileOutputStream(newDest), "utf-8"));
+        w.println("1");   //version number
         w.println(getMeasurements().size());
         for (Measurement m : getMeasurements()) {
             w.println(m.getNumber());
@@ -65,10 +69,49 @@ public class MeasurementsDB {
         }
     }
     
-    private void writeFloats(float[] fs, PrintWriter w) {
+    private static void writeFloats(float[] fs, PrintWriter w) {
         for (float f: fs) {
             w.println(f);
         }
     }
     
+    public void load() throws IOException {
+        File src = new File(baseDir, dbFilename);
+    	if (!src.exists()) {
+    		return;
+    	}
+    	BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(src), "utf-8"));
+    	int vnum = readInt(r);
+    	switch (vnum) {
+    	case 1:
+    		loadV1(r);
+    		break;
+    	default:
+    		throw new IllegalStateException("unsupported version: " + vnum);
+    	}
+    }
+    
+    private void loadV1(BufferedReader r) throws IOException {
+    	int msCount = readInt(r);
+    	List<Measurement> newMs = new ArrayList<Measurement>(msCount);
+    	for (int i=0; i<msCount; i++) {
+    		
+    	}
+    }
+
+    private static int readInt(BufferedReader r) throws IOException {
+    	return Integer.parseInt(r.readLine());
+    }
+    
+    private static float readFloat(BufferedReader r) throws IOException {
+    	return Float.parseFloat(r.readLine());
+    }
+    
+    private static float[] readFloatArr(int count, BufferedReader r) throws IOException {
+    	float[] result = new float[count];
+    	for (int i=0; i<count; i++) {
+    		result[i] = readFloat(r);
+    	}
+    	return result;
+    }
 }
