@@ -17,9 +17,12 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
@@ -116,6 +119,16 @@ public class App {
                             slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                         }
                     });
+                    toolbar.add(new JLabel("transparency"));
+                    final JSlider transpSlider = new JSlider(0, 10000);
+                    toolbar.add(transpSlider);
+                    transpSlider.addChangeListener(new ChangeListener() {
+                        @Override
+                        public void stateChanged(ChangeEvent e) {
+                            measurementsController.setTransparencyCoeff((float)Math.exp((float)transpSlider.getValue()/1500f));
+                        }
+                    });
+                    transpSlider.setValue(1650);
                     
                     f.setSize(1200,900);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

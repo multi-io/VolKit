@@ -51,6 +51,8 @@ public class MeasurementsController {
 
     private Color nextDrawingColor = Color.green;
     
+    private float transparencyCoeff = 3f;
+    
     private boolean foregroundMeasurementsVisible = false;
     private boolean backgroundMeasurementsVisible = false;
 
@@ -312,6 +314,15 @@ public class MeasurementsController {
         return LinAlg.mtimesv(sv.getBaseSliceToVolumeTransform(), sv.convertCanvasToBaseSlice(p), null);
     }
     
+    public float getTransparencyCoeff() {
+        return transparencyCoeff;
+    }
+    
+    public void setTransparencyCoeff(float transparencyCoeff) {
+        this.transparencyCoeff = transparencyCoeff;
+        refreshViewers();
+    }
+    
     private SlicePaintListener sliceViewersPaintHandler = new SlicePaintListener() {
 
         Map<SliceViewer, GLShader> measShaderBySV = new IdentityHashMap<SliceViewer, GLShader>();
@@ -354,7 +365,7 @@ public class MeasurementsController {
                     // TODO: this is the wrong place to initialize measShader -- see above
                     ShaderManager.read(gl, "measurements");
                     measShader = ShaderManager.get("measurements");
-                    //measShader.addProgramUniform("tex");
+                    measShader.addProgramUniform("transpCoeff");
                     measShaderBySV.put(sv, measShader);
                 } catch (Exception ex) {
                     throw new RuntimeException("couldn't initialize GL shader: " + ex.getLocalizedMessage(), ex);
@@ -362,7 +373,7 @@ public class MeasurementsController {
             }
             
             measShader.bind();
-            //measShader.bindUniform("tex", 0);
+            measShader.bindUniform("transpCoeff", getTransparencyCoeff());
             gl.glMatrixMode(GL2.GL_MODELVIEW);
             gl.glPushMatrix();
             gl.glPushAttrib(GL.GL_COLOR_BUFFER_BIT);  // b/c we set up alpha blending
