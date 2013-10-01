@@ -91,6 +91,7 @@ public class App {
                             slicesController.resetZNavigations();
                         }
                     });
+                    /*
                     toolbar.add(new AbstractAction("Load Volume") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
@@ -119,6 +120,7 @@ public class App {
                             slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                         }
                     });
+                    //*/
                     toolbar.add(new JLabel("transparency"));
                     final JSlider transpSlider = new JSlider(0, 10000);
                     toolbar.add(transpSlider);

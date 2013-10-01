@@ -105,6 +105,7 @@ public class SliceViewer extends JPanel {
     private float[] baseSliceToVolumeTransform = new float[16];
     private float[] baseSliceToWorldTransform = new float[16];
     private float[] volumeToSliceTransform = new float[16];
+    private float[] sliceToCanvasTransform = new float[16];
 
     private float navigationCubeLength;
     private float navigationZ;

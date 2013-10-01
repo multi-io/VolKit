@@ -249,12 +249,18 @@ public class MeasurementsController {
     public void selectMeasurement(Measurement m) {
         selectMeasurementInTable(m);
         if (!m.getDatasetName().equals(sliceViewers.get(0).getVolumeDataSet().getDatasetName())) {
+            refreshViewers();
             return;
         }
         for (int i=0; i < sliceViewers.size(); i++) {
             sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
             sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
         }
+    }
+    
+    public boolean isSelected(Measurement m) {
+        int row = measurementsTableModel.getCurrentRowNumberOf(m);
+        return measurementsTable.getSelectionModel().isSelectedIndex(row);
     }
 
     protected void refreshTable() {
@@ -398,9 +404,13 @@ public class MeasurementsController {
         }
         
         private void paintMeasurement(GL2 gl, Measurement m) {
-            gl.glColor3f((float) m.getColor().getRed() / 255F,
-                    (float) m.getColor().getGreen() / 255F,
-                    (float) m.getColor().getBlue() / 255F);
+            if (isSelected(m)) {
+                gl.glColor3f(1f, 1f, 0f);
+            } else {
+                gl.glColor3f((float) m.getColor().getRed() / 255F,
+                        (float) m.getColor().getGreen() / 255F,
+                        (float) m.getColor().getBlue() / 255F);
+            }
             gl.glBegin(GL.GL_LINE_STRIP);
             gl.glVertex3fv(m.getPt0InVolume(), 0);
             gl.glVertex3fv(m.getPt1InVolume(), 0);
