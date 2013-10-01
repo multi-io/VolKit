@@ -2,10 +2,9 @@ package de.olafklischat.volkit.model;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +28,11 @@ public class MeasurementsDB {
     public void addMeasurement(Measurement m) {
         m.setNumber(measurements.size());
         measurements.add(m);
+        try {
+            persist();
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error: " + e.getLocalizedMessage(), e);
+        }
     }
     
     public void removeMeasurement(Measurement m) {
@@ -40,8 +44,31 @@ public class MeasurementsDB {
     }
     
     public void persist() throws IOException {
-        Writer w = new OutputStreamWriter(new FileOutputStream(new File(baseDir, dbFilename + ".new")), "utf-8");
-        w.write("" + getMeasurements().size() + "\n");
+        File dest = new File(baseDir, dbFilename);
+        File newDest = new File(baseDir, dbFilename + ".new");
+        PrintWriter w = new PrintWriter(new OutputStreamWriter(new FileOutputStream(newDest), "utf-8"));
+        w.println(getMeasurements().size());
+        for (Measurement m : getMeasurements()) {
+            w.println(m.getNumber());
+            w.println(m.getDatasetName());
+            writeFloats(m.getPt0InVolume(), w);
+            writeFloats(m.getPt1InVolume(), w);
+            w.println(m.getColor().getRed());
+            w.println(m.getColor().getGreen());
+            w.println(m.getColor().getBlue());
+            writeFloats(m.getVolumeToWorldTransformation(), w);
+            writeFloats(m.getNavigationZs(), w);
+        }
+        w.close();
+        if (!newDest.renameTo(dest)) { // TODO: this won't work on Windows
+            throw new IOException("file rename during DB persisting failed");
+        }
+    }
+    
+    private void writeFloats(float[] fs, PrintWriter w) {
+        for (float f: fs) {
+            w.println(f);
+        }
     }
     
 }

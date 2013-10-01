@@ -2,7 +2,13 @@
 
 - Exportieren von Messungen
 
+- Programmende beim Einlesen leerer Datensätze
+
+- Fehler beim Progress-Dialog beheben
+
 - selektierte Messung markieren (andere Farbe?)
+
+- Message.number Verdopplung nach Löschen von Messungen
 
 - Farbe einstellbar
 
