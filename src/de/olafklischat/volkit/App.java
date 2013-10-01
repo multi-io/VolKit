@@ -125,9 +125,26 @@ public class App {
                     // measurements frame
 
                     {
-                        JFrame measurementsFrame = new JFrame("Measurements");
+                        final JFrame measurementsFrame = new JFrame("Measurements");
                         JScrollPane scrollpane = new JScrollPane(measurementsTable);
                         measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+
+                        JToolBar measurementsToolbar = new JToolBar();
+                        measurementsFrame.getContentPane().add(measurementsToolbar, BorderLayout.SOUTH);
+                        measurementsToolbar.add(new AbstractAction("Export") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                JFileChooser fc = new JFileChooser();
+                                if (JFileChooser.APPROVE_OPTION == fc.showSaveDialog(measurementsFrame)) {
+                                    try {
+                                        measurementsController.exportAllMeasurements(fc.getSelectedFile());
+                                    } catch (Exception ex) {
+                                        JOptionPane.showMessageDialog(measurementsFrame, ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                                        ex.printStackTrace();
+                                    }
+                                }
+                            }
+                        });
                         
                         measurementsFrame.setSize(500,1000);
                         measurementsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

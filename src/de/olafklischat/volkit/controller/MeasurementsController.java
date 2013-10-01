@@ -5,6 +5,11 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -396,6 +401,18 @@ public class MeasurementsController {
     protected void refreshViewers() {
         for (SliceViewer sv: sliceViewers) {
             sv.refresh();
+        }
+    }
+
+    public void exportAllMeasurements(File f) throws IOException {
+        PrintWriter w = new PrintWriter(new OutputStreamWriter(new FileOutputStream(f), "utf-8"));
+        try {
+            w.println("nr,dataset,length");
+            for (Measurement m : measurementsTableModel.getAllDisplayedMeasurements()) {
+                w.println("" + m.getNumber() + "," + m.getDatasetName() + "," + m.getLengthInMm());
+            }
+        } finally {
+            w.close();
         }
     }
     

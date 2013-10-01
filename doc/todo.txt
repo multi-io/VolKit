@@ -8,7 +8,7 @@
 
 - selektierte Messung markieren (andere Farbe?)
 
-- Message.number Verdopplung nach Löschen von Messungen
+- DONE Message.number Verdopplung nach Löschen von Messungen
 
 - Farbe einstellbar
 

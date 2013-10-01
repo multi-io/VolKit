@@ -17,6 +17,7 @@ public class MeasurementsDB {
     private List<Measurement> measurements = new ArrayList<Measurement>();
     private final File baseDir;
     private final String dbFilename = "measurements.db";
+    private int lastNumber = 0;
     
     public MeasurementsDB(String baseDirName) {
         this.baseDir = new File(baseDirName);
@@ -30,7 +31,7 @@ public class MeasurementsDB {
     }
     
     public void addMeasurement(Measurement m) {
-        m.setNumber(measurements.size());
+        m.setNumber(++lastNumber);
         measurements.add(m);
         try {
             persist();
@@ -56,20 +57,23 @@ public class MeasurementsDB {
         File dest = new File(baseDir, dbFilename);
         File newDest = new File(baseDir, dbFilename + ".new");
         PrintWriter w = new PrintWriter(new OutputStreamWriter(new FileOutputStream(newDest), "utf-8"));
-        w.println("1");   //version number
-        w.println(getMeasurements().size());
-        for (Measurement m : getMeasurements()) {
-            w.println(m.getNumber());
-            w.println(m.getDatasetName());
-            writeFloats(m.getPt0InVolume(), w);
-            writeFloats(m.getPt1InVolume(), w);
-            w.println(m.getColor().getRed());
-            w.println(m.getColor().getGreen());
-            w.println(m.getColor().getBlue());
-            writeFloats(m.getVolumeToWorldTransformation(), w);
-            writeFloats(m.getNavigationZs(), w);
+        try {
+            w.println("1");   //version number
+            w.println(getMeasurements().size());
+            for (Measurement m : getMeasurements()) {
+                w.println(m.getNumber());
+                w.println(m.getDatasetName());
+                writeFloats(m.getPt0InVolume(), w);
+                writeFloats(m.getPt1InVolume(), w);
+                w.println(m.getColor().getRed());
+                w.println(m.getColor().getGreen());
+                w.println(m.getColor().getBlue());
+                writeFloats(m.getVolumeToWorldTransformation(), w);
+                writeFloats(m.getNavigationZs(), w);
+            }
+        } finally {
+            w.close();
         }
-        w.close();
         if (!newDest.renameTo(dest)) { // TODO: this won't work on Windows
             throw new IOException("file rename during DB persisting failed");
         }
@@ -87,19 +91,24 @@ public class MeasurementsDB {
     		return;
     	}
     	BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(src), "utf-8"));
-    	int vnum = readInt(r);
-    	switch (vnum) {
-    	case 1:
-    		loadV1(r);
-    		break;
-    	default:
-    		throw new IllegalStateException("unsupported measurements DB version: " + vnum);
+    	try {
+        	int vnum = readInt(r);
+        	switch (vnum) {
+        	case 1:
+        		loadV1(r);
+        		break;
+        	default:
+        		throw new IllegalStateException("unsupported measurements DB version: " + vnum);
+        	}
+    	} finally {
+    	    r.close();
     	}
     }
     
     private void loadV1(BufferedReader r) throws IOException {
     	int msCount = readInt(r);
     	List<Measurement> newMs = new ArrayList<Measurement>(msCount);
+    	int highestNumber = -1;
     	for (int i=0; i<msCount; i++) {
     		Measurement m = new Measurement();
     		m.setNumber(readInt(r));
@@ -110,8 +119,10 @@ public class MeasurementsDB {
             m.setVolumeToWorldTransformation(readFloatArr(16, r));
             m.setNavigationZs(readFloatArr(3, r));
             newMs.add(m);
+            highestNumber = Math.max(highestNumber, m.getNumber());
     	}
     	this.measurements = newMs;
+    	this.lastNumber = highestNumber;
     }
 
     private static int readInt(BufferedReader r) throws IOException {
