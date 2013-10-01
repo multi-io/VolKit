@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
 
 import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
@@ -34,6 +37,9 @@ public class App {
             @Override
             public void run() {
                 try {
+                    Properties appProps = new Properties();
+                    appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
+                    
                     final JFrame f = new JFrame("SliceView");
                     
                     f.getContentPane().setBackground(Color.GRAY);
@@ -59,7 +65,7 @@ public class App {
                     
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
                     
-                    MeasurementsDB mdb = new MeasurementsDB("mdb");
+                    MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
                     mdb.load();
                     JTable measurementsTable = new JTable();
                     final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
@@ -141,7 +147,7 @@ public class App {
                         datasetsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                         datasetsFrame.setVisible(true);
                         
-                        DatasetsController dsc = new DatasetsController(new File("/home/olaf/gi/resources/DICOM-Testbilder"), datasetsList, slicesController);
+                        DatasetsController dsc = new DatasetsController(new File(appProps.getProperty("dataset.basedir")), datasetsList, slicesController);
                     }
                     
                     //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);

@@ -41,6 +41,11 @@ public class MeasurementsDB {
     
     public void removeMeasurement(Measurement m) {
         measurements.remove(m);
+        try {
+            persist();
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error: " + e.getLocalizedMessage(), e);
+        }
     }
 
     public int size() {
