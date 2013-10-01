@@ -1,9 +1,17 @@
-- Slice-Ebenen anzeigen
+- Persistierung der DB
 
-- Längenmessungen in Slices
+- Exportieren von Messungen
 
-  - pro Messung speichern: Zahndatensatzname, Farbe,
-    Slice-Orientierungen, Navigationsposition, Anfangs- und Endpunkt
-    (=>Länge)
+- selektierte Messung markieren (andere Farbe?)
 
-  - Export in Textdatei
+- Farbe einstellbar
+
+- Messungen Sichtbarkeit
+
+- Windowing
+
+- Zoom/Pan
+
+- Rotieren um Ebenenschnitte
+
+- Verschieben der Ebenen mit der Maus
