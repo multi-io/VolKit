@@ -140,6 +140,7 @@ public class SliceViewer extends JPanel {
         navZslider.getModel().addChangeListener(navZsliderChangeListener);
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
+        LinAlg.fillIdentity(sliceToCanvasTransform);
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
@@ -240,6 +241,14 @@ public class SliceViewer extends JPanel {
         LinAlg.copyArr(worldToBaseSliceTransform, this.worldToBaseSliceTransform);
         recomputeMatrices();
         refresh();
+    }
+    
+    public float[] getSliceToCanvasTransform() {
+        return LinAlg.copyArr(sliceToCanvasTransform, null);
+    }
+    
+    public void setSliceToCanvasTransform(float[] sliceToCanvasTransform) {
+        this.sliceToCanvasTransform = sliceToCanvasTransform;
     }
     
     public void addTrackedViewer(SliceViewer sv) {

@@ -91,7 +91,7 @@ public class App {
                             slicesController.resetZNavigations();
                         }
                     });
-                    /*
+                    ///*
                     toolbar.add(new AbstractAction("Load Volume") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
