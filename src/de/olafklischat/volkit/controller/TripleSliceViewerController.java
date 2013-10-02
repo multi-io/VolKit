@@ -19,8 +19,11 @@ import de.sofd.viskit.image3D.jogl.util.LinAlg;
 public class TripleSliceViewerController {
 
     // TODO: make these parameterizable
-    private static final int MOUSE_BUTTON = MouseEvent.BUTTON1;
-    private static final int MOUSE_MASK = MouseEvent.BUTTON1_MASK;
+    private static final int ROTATION_MOUSE_BUTTON = MouseEvent.BUTTON1;
+    private static final int ROTATION_MOUSE_MASK = MouseEvent.BUTTON1_MASK;
+
+    private static final int ZOOMPAN_MOUSE_BUTTON = MouseEvent.BUTTON2;
+    private static final int ZOOMPAN_MOUSE_MASK = MouseEvent.BUTTON2_MASK;
 
     protected SliceViewer sv1;
     protected SliceViewer sv2;
@@ -53,6 +56,18 @@ public class TripleSliceViewerController {
         sv3.addCanvasMouseListener(rhxy);
         sv3.addCanvasMouseMotionListener(rhxy);
         
+        sv1.addCanvasMouseListener(zoomPanMouseHandler);
+        sv1.addCanvasMouseMotionListener(zoomPanMouseHandler);
+        sv1.addCanvasMouseWheelListener(zoomPanMouseHandler);
+
+        sv2.addCanvasMouseListener(zoomPanMouseHandler);
+        sv2.addCanvasMouseMotionListener(zoomPanMouseHandler);
+        sv2.addCanvasMouseWheelListener(zoomPanMouseHandler);
+
+        sv3.addCanvasMouseListener(zoomPanMouseHandler);
+        sv3.addCanvasMouseMotionListener(zoomPanMouseHandler);
+        sv3.addCanvasMouseWheelListener(zoomPanMouseHandler);
+
         sv1.addTrackedViewer(sv2);
         sv1.addTrackedViewer(sv3);
         sv2.addTrackedViewer(sv1);
@@ -83,13 +98,13 @@ public class TripleSliceViewerController {
         
         @Override
         public void mousePressed(MouseEvent e) {
-            if (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0) {
+            if (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0) {
                 lastPos = e.getPoint();
             }
         }
         @Override
         public void mouseDragged(MouseEvent e) {
-            if (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0) {
+            if (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0) {
                 Point pos = e.getPoint();
                 if (lastPos != null) {
                     float roty = ((float)pos.x - lastPos.x) / 400 * 180;
@@ -114,6 +129,34 @@ public class TripleSliceViewerController {
 
     }
     
+    private MouseAdapter zoomPanMouseHandler = new MouseAdapter() {
+
+        private Point lastPos = null;
+        
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (e.getButton() == ZOOMPAN_MOUSE_BUTTON || (e.getModifiers() & ZOOMPAN_MOUSE_MASK) != 0) {
+                lastPos = e.getPoint();
+            }
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if (e.getButton() == ZOOMPAN_MOUSE_BUTTON || (e.getModifiers() & ZOOMPAN_MOUSE_MASK) != 0) {
+                Point pos = e.getPoint();
+                if (lastPos != null) {
+                    System.out.println("SwingPos: " + pos.x + " " + pos.y);
+                }
+                lastPos = pos;
+            }
+        }
+        
+        public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+            
+        }
+
+    };
+
     public void resetVolumeToWorldTransform() {
         float[] identity = new float[16];
         LinAlg.fillIdentity(identity);

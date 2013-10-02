@@ -616,7 +616,7 @@ public class SliceViewer extends JPanel {
         }
     }
 
-    public float[] convertCanvasToBaseSlice(Point ptOnCanvas) {
+    public float[] convertAwtToCanvas(Point awtPtOnGlCanvas) {
         // TODO: have a tx matrix for this as well
         // TODO: unify with code in reshape() / setupEye2ViewportTransformation()
         Dimension sz = glCanvas.getSize();
@@ -626,9 +626,9 @@ public class SliceViewer extends JPanel {
         } else {
             mmPerPixel = navigationCubeLength / sz.width;
         }
-        float x = ptOnCanvas.x - sz.width / 2;
-        float y = - (ptOnCanvas.y - sz.height / 2);
-        return new float[]{x*mmPerPixel, y*mmPerPixel, getNavigationZ()};
+        float x = awtPtOnGlCanvas.x - sz.width / 2;
+        float y = - (awtPtOnGlCanvas.y - sz.height / 2);
+        return new float[]{x*mmPerPixel, y*mmPerPixel, 0};
     }
 
     public void addCanvasMouseListener(MouseListener listener) {
@@ -655,7 +655,7 @@ public class SliceViewer extends JPanel {
         fireAnyCanvasMouseEvent(e);
     }
 
-    public void addCanvasMouseWheelListener(int zOrder, MouseWheelListener listener) {
+    public void addCanvasMouseWheelListener(MouseWheelListener listener) {
         addAnyCanvasMouseListener(listener);
     }
     

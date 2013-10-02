@@ -287,7 +287,7 @@ public class MeasurementsController {
                     navZs[i] = sliceViewers.get(i).getNavigationZ();
                 }
                 currentMeasurement.setNavigationZs(navZs);
-                currentMeasurement.setPt0InVolume(canvasToVolume(e.getPoint(), sv));
+                currentMeasurement.setPt0InVolume(awtToVolume(e.getPoint(), sv));
                 e.consume();
             }
         }
@@ -297,7 +297,7 @@ public class MeasurementsController {
             if (currentMeasurement != null &&
                     e.isShiftDown() && (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0)) {
                 SliceViewer sv = (SliceViewer) e.getSource();
-                currentMeasurement.setPt1InVolume(canvasToVolume(e.getPoint(), sv));
+                currentMeasurement.setPt1InVolume(awtToVolume(e.getPoint(), sv));
                 sv.refresh();
                 e.consume();
             }
@@ -316,8 +316,9 @@ public class MeasurementsController {
         
     };
     
-    protected static float[] canvasToVolume(Point p, SliceViewer sv) {
-        return LinAlg.mtimesv(sv.getBaseSliceToVolumeTransform(), sv.convertCanvasToBaseSlice(p), null);
+    protected static float[] awtToVolume(Point p, SliceViewer sv) {
+        float[] ptInSlice = LinAlg.mtimesv(sv.getCanvasToSliceTransform(), sv.convertAwtToCanvas(p), null);
+        return LinAlg.mtimesv(sv.getSliceToVolumeTransform(), ptInSlice, null);
     }
     
     public float getTransparencyCoeff() {
