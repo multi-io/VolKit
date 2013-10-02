@@ -138,6 +138,7 @@ public class SliceViewer extends JPanel {
     private float[] baseSliceToVolumeTransform = new float[16];
     private float[] baseSliceToWorldTransform = new float[16];
     private float[] volumeToSliceTransform = new float[16];
+    private float[] sliceToVolumeTransform = new float[16];
 
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
@@ -253,6 +254,9 @@ public class SliceViewer extends JPanel {
         return LinAlg.copyArr(volumeToSliceTransform, null);
     }
     
+    public float[] getSliceToVolumeTransform() {
+        return LinAlg.copyArr(sliceToVolumeTransform, null);
+    }
     
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
@@ -303,6 +307,7 @@ public class SliceViewer extends JPanel {
         LinAlg.fillMultiplication(worldToBaseSliceTransform, volumeToWorldTransform, volumeToBaseSliceTransform);
         LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
         LinAlg.fillTranslationL(volumeToBaseSliceTransform, 0, 0, -getNavigationZ(), volumeToSliceTransform);
+        LinAlg.fillTranslation(baseSliceToVolumeTransform, 0, 0, getNavigationZ(), sliceToVolumeTransform);
     }
     
     public void refresh() {
@@ -390,12 +395,12 @@ public class SliceViewer extends JPanel {
                     fragShader.bindUniform("offset", texRef.getPreOffset());
                     gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
                     gl.glBegin(GL2.GL_QUADS);
-                    texturedSlicePoint(gl,-navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
-                    texturedSlicePoint(gl, navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
-                    texturedSlicePoint(gl, navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
-                    texturedSlicePoint(gl,-navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
-                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2, navigationZ);
-                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2, navigationZ);
+                    texturedCanvasPoint(gl,-navigationCubeLength/2, -navigationCubeLength/2);
+                    texturedCanvasPoint(gl, navigationCubeLength/2, -navigationCubeLength/2);
+                    texturedCanvasPoint(gl, navigationCubeLength/2,  navigationCubeLength/2);
+                    texturedCanvasPoint(gl,-navigationCubeLength/2,  navigationCubeLength/2);
+                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
+                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
                     gl.glEnd();
                     fragShader.unbind();
                     volumeDataSet.unbindCurrentTexture(gl);
@@ -421,10 +426,10 @@ public class SliceViewer extends JPanel {
             }
         }
         
-        private void texturedSlicePoint(GL2 gl, float x, float y, float z) {
+        private void texturedCanvasPoint(GL2 gl, float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
-            float[] pt = new float[]{x,y,z};
-            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, pt, null);
+            float[] ptInSlice = new float[]{x,y,0};
+            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             float[] vol2tex = new float[16];
             LinAlg.fillIdentity(vol2tex);
             LinAlg.fillTranslation(vol2tex, 0.5f, 0.5f, 0.5f, vol2tex);
@@ -439,9 +444,9 @@ public class SliceViewer extends JPanel {
             gl.glVertex2f(x, y);
         }
         
-        private void outputSlicePoint(String caption, float x, float y, float z) {
-            float[] ptInBase = new float[]{x,y,z};
-            float[] ptInVolume = LinAlg.mtimesv(baseSliceToVolumeTransform, ptInBase, null);
+        private void outputSlicePoint(String caption, float x, float y) {
+            float[] ptInBase = new float[]{x,y,0};
+            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInBase, null);
             //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
             System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
