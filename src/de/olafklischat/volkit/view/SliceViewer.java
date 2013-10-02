@@ -77,21 +77,53 @@ public class SliceViewer extends JPanel {
      * 1 unit length = 1 mm in all systems
      */
     private float[] volumeToWorldTransform = new float[16];
-    
-     /**
-     * transformation from world to "slice" system, i.e. the system whose z=0 plane
-     * defines "base" slice plane (the actual slice plane is parallel to the
-     * base slice plane, navigationZ unit lenghts
-     * in z axis direction (slice system) away).
+
+    /**
+     * transformation from world to "base slice" system, i.e. the system whose
+     * z=0 plane defines "base" slice plane (the actual slice plane is parallel
+     * to the base slice plane, navigationZ unit lenghts in z axis direction
+     * (slice system) away).
      * <p>
-     * Normally one of three values
-     * corresponding to the three main slice orientations (BASE_SLICE_xx constants).
+     * Normally one of three values corresponding to the three main slice
+     * orientations (BASE_SLICE_xx constants).
      */
     private float[] worldToBaseSliceTransform = new float[16];
+
+    /**
+     * Transformation that transforms from the slice system to the
+     * "canvas system", i.e. the actually visible canvas surface, and thus
+     * captures the zoom/pan state. Defaults to the identity. The drawn area is
+     * the square with side length navigationCubeLength (see below) in the z=0
+     * plane of the canvas system.
+     * <p>
+     * Only transforms the x and y coordinates, leaves z alone.
+     */
+    private float[] sliceToCanvasTransform = new float[16];
     
     public static final float[] BASE_SLICE_XY = new float[16];
     public static final float[] BASE_SLICE_XZ = new float[16];
     public static final float[] BASE_SLICE_YZ = new float[16];
+
+    /**
+     * z location of the slice, i.e. distance of the slice plane
+     * from the z=0 plane of the base slice system.
+     */
+    private float navigationZ;
+
+    /**
+     * Side length of the minimum cube around the origin in the world system
+     * that the volume will always stay inside of, no matter how it is rotated
+     * (as long as it isn't translated, i.e. as long as the volume system's
+     * origin is identical to the world system's origin).
+     * <p>
+     * Set equal to the diagonal length through the volume.
+     * <p>
+     * This is used as the default bounds of the drawn slice area; see
+     * sliceToCanvasTransform above.
+     */
+    private float navigationCubeLength;
+
+    private boolean needViewportReset = false;
     
     static {
         // TODO: verify
@@ -100,17 +132,13 @@ public class SliceViewer extends JPanel {
         LinAlg.fillRotation(BASE_SLICE_XZ, 90, 0, 0, 1, BASE_SLICE_YZ);
     }
     
-    //dependent matrices, updated by recomputeMatrices()
+    //matrices that depend on the above matrices and navigationZ.
+    //recomputed by recomputeMatrices()
     private float[] volumeToBaseSliceTransform = new float[16];
     private float[] baseSliceToVolumeTransform = new float[16];
     private float[] baseSliceToWorldTransform = new float[16];
     private float[] volumeToSliceTransform = new float[16];
-    private float[] sliceToCanvasTransform = new float[16];
 
-    private float navigationCubeLength;
-    private float navigationZ;
-    private boolean needViewportReset = false;
-    
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
     private GLCanvas glCanvas = null;
