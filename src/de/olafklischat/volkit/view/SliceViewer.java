@@ -97,6 +97,11 @@ public class SliceViewer extends JPanel {
      * plane of the canvas system.
      * <p>
      * Only transforms the x and y coordinates, leaves z alone.
+     * <p>
+     * TODO: Normalizing slice coordinates to [-1,1] coordinate ranges rather
+     * than [-navigationCubeLength/2,navigationCubeLength/2] might be more
+     * logical, but probably harder to deal with when another volume is loaded
+     * and thus navigationCubeLength changes.
      */
     private float[] sliceToCanvasTransform = new float[16];
     
@@ -139,6 +144,7 @@ public class SliceViewer extends JPanel {
     private float[] baseSliceToWorldTransform = new float[16];
     private float[] volumeToSliceTransform = new float[16];
     private float[] sliceToVolumeTransform = new float[16];
+    private float[] canvasToSliceTransform = new float[16];
 
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
@@ -279,8 +285,14 @@ public class SliceViewer extends JPanel {
         return LinAlg.copyArr(sliceToCanvasTransform, null);
     }
     
+    public float[] getCanvasToSliceTransform() {
+        return LinAlg.copyArr(canvasToSliceTransform, null);
+    }
+
     public void setSliceToCanvasTransform(float[] sliceToCanvasTransform) {
         this.sliceToCanvasTransform = sliceToCanvasTransform;
+        recomputeMatrices();
+        refresh();
     }
     
     public void addTrackedViewer(SliceViewer sv) {
@@ -308,6 +320,7 @@ public class SliceViewer extends JPanel {
         LinAlg.inverse(volumeToBaseSliceTransform, baseSliceToVolumeTransform);
         LinAlg.fillTranslationL(volumeToBaseSliceTransform, 0, 0, -getNavigationZ(), volumeToSliceTransform);
         LinAlg.fillTranslation(baseSliceToVolumeTransform, 0, 0, getNavigationZ(), sliceToVolumeTransform);
+        LinAlg.inverse(sliceToCanvasTransform, canvasToSliceTransform);
     }
     
     public void refresh() {
@@ -428,7 +441,8 @@ public class SliceViewer extends JPanel {
         
         private void texturedCanvasPoint(GL2 gl, float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
-            float[] ptInSlice = new float[]{x,y,0};
+            float[] ptInCanvas = new float[]{x,y,0};
+            float[] ptInSlice = LinAlg.mtimesv(canvasToSliceTransform, ptInCanvas, null);
             float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             float[] vol2tex = new float[16];
             LinAlg.fillIdentity(vol2tex);
@@ -445,8 +459,8 @@ public class SliceViewer extends JPanel {
         }
         
         private void outputSlicePoint(String caption, float x, float y) {
-            float[] ptInBase = new float[]{x,y,0};
-            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInBase, null);
+            float[] ptInSlice = new float[]{x,y,0};
+            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
             System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
