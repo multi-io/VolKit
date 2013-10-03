@@ -192,6 +192,13 @@ public class TripleSliceViewerController {
         sv3.setNavigationZ(0f);
     }
     
+    public void resetSliceToCanvasTransformations() {
+        float[] identity = LinAlg.fillIdentity(null);
+        sv1.setSliceToCanvasTransform(identity);
+        sv2.setSliceToCanvasTransform(identity);
+        sv3.setSliceToCanvasTransform(identity);
+    }
+    
     public void loadVolumeDataSet(String pathName, int stride) throws Exception {
         long t0 = System.currentTimeMillis();
         VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, stride);

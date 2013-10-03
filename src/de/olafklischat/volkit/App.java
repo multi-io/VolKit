@@ -91,6 +91,12 @@ public class App {
                             slicesController.resetZNavigations();
                         }
                     });
+                    toolbar.add(new AbstractAction("Zoom RST") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            slicesController.resetSliceToCanvasTransformations();
+                        }
+                    });
                     ///*
                     toolbar.add(new AbstractAction("Load Volume") {
                         @Override

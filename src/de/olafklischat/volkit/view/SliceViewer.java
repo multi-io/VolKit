@@ -201,6 +201,7 @@ public class SliceViewer extends JPanel {
                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
 
         LinAlg.fillIdentity(volumeToWorldTransform);
+        LinAlg.fillIdentity(sliceToCanvasTransform);
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
