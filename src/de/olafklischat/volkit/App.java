@@ -97,36 +97,36 @@ public class App {
                             slicesController.resetSliceToCanvasTransformations();
                         }
                     });
-                    ///*
-                    toolbar.add(new AbstractAction("Load Volume") {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            final JFileChooser fc = new JFileChooser();
-                            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                            int returnVal = fc.showOpenDialog(f);
-                            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                                File dir = fc.getSelectedFile();
-                                if (dir.isDirectory()) {
-                                    slicesController.startLoadingVolumeDataSetInBackground(dir.getAbsolutePath(), 1);
-                                } else {
-                                    JOptionPane.showMessageDialog(f, "not a directory: " + dir, "Error", JOptionPane.ERROR_MESSAGE);
+                    if (null != System.getProperty("VolKit.debug")) {
+                        toolbar.add(new AbstractAction("Load Volume") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                final JFileChooser fc = new JFileChooser();
+                                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                                int returnVal = fc.showOpenDialog(f);
+                                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                                    File dir = fc.getSelectedFile();
+                                    if (dir.isDirectory()) {
+                                        slicesController.startLoadingVolumeDataSetInBackground(dir.getAbsolutePath(), 1);
+                                    } else {
+                                        JOptionPane.showMessageDialog(f, "not a directory: " + dir, "Error", JOptionPane.ERROR_MESSAGE);
+                                    }
                                 }
                             }
-                        }
-                    });
-                    toolbar.add(new AbstractAction("incisx") {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/INCISIX", 1);
-                        }
-                    });
-                    toolbar.add(new AbstractAction("brainix") {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
-                        }
-                    });
-                    //*/
+                        });
+                        toolbar.add(new AbstractAction("incisx") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/INCISIX", 1);
+                            }
+                        });
+                        toolbar.add(new AbstractAction("brainix") {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
+                            }
+                        });
+                    }
                     toolbar.add(new JLabel("transparency"));
                     final JSlider transpSlider = new JSlider(0, 10000);
                     toolbar.add(transpSlider);
