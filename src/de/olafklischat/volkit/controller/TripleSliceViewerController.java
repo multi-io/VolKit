@@ -150,9 +150,13 @@ public class TripleSliceViewerController {
                 SliceViewer sv = (SliceViewer) e.getSource();
                 Point pos = e.getPoint();
                 if (lastPos != null) {
-                    System.out.println("SwingPos: " + pos.x + " " + pos.y);
-                    float[] ptInCanvas = sv.convertAwtToCanvas(pos);
-                    System.out.println("pos in canvas: " + ptInCanvas[0] + " " + ptInCanvas[1] + " " + ptInCanvas[2]);
+                    float[] posCnv = sv.convertAwtToCanvas(pos);
+                    float[] lastPosCnv = sv.convertAwtToCanvas(lastPos);
+                    float[] delta = LinAlg.fillIdentity(null);
+                    LinAlg.fillTranslation(delta, posCnv[0] - lastPosCnv[0], posCnv[1] - lastPosCnv[1], 0, delta);
+                    float[] slice2cnv = sv.getSliceToCanvasTransform();
+                    LinAlg.fillMultiplication(delta, slice2cnv, slice2cnv);
+                    sv.setSliceToCanvasTransform(slice2cnv);
                 }
                 lastPos = pos;
                 e.consume();
@@ -162,10 +166,11 @@ public class TripleSliceViewerController {
         public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
             SliceViewer sv = (SliceViewer) e.getSource();
             float scaleChange = (e.getWheelRotation() < 0 ? 1.1f/1f : 1f/1.1f);
-            Point pos = e.getPoint();
-            System.out.println("Wheel SwingPos: " + pos.x + " " + pos.y);
+            float[] zoomCenterCnv = sv.convertAwtToCanvas(e.getPoint());
             float[] delta = LinAlg.fillIdentity(null);
+            LinAlg.fillTranslation(delta, zoomCenterCnv[0], zoomCenterCnv[1], 0, delta);
             LinAlg.fillScale(delta, scaleChange, scaleChange, 1f, delta);
+            LinAlg.fillTranslation(delta, - zoomCenterCnv[0], - zoomCenterCnv[1], 0, delta);
             float[] slice2cnv = sv.getSliceToCanvasTransform();
             LinAlg.fillMultiplication(delta, slice2cnv, slice2cnv);
             sv.setSliceToCanvasTransform(slice2cnv);
