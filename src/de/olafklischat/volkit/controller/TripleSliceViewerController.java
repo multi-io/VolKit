@@ -56,17 +56,20 @@ public class TripleSliceViewerController {
         sv3.addCanvasMouseListener(rhxy);
         sv3.addCanvasMouseMotionListener(rhxy);
         
-        sv1.addCanvasMouseListener(zoomPanMouseHandler);
-        sv1.addCanvasMouseMotionListener(zoomPanMouseHandler);
-        sv1.addCanvasMouseWheelListener(zoomPanMouseHandler);
+        ZoomPanMouseHandler zpmh = new ZoomPanMouseHandler();
+        sv1.addCanvasMouseListener(zpmh);
+        sv1.addCanvasMouseMotionListener(zpmh);
+        sv1.addCanvasMouseWheelListener(zpmh);
 
-        sv2.addCanvasMouseListener(zoomPanMouseHandler);
-        sv2.addCanvasMouseMotionListener(zoomPanMouseHandler);
-        sv2.addCanvasMouseWheelListener(zoomPanMouseHandler);
+        zpmh = new ZoomPanMouseHandler();
+        sv2.addCanvasMouseListener(zpmh);
+        sv2.addCanvasMouseMotionListener(zpmh);
+        sv2.addCanvasMouseWheelListener(zpmh);
 
-        sv3.addCanvasMouseListener(zoomPanMouseHandler);
-        sv3.addCanvasMouseMotionListener(zoomPanMouseHandler);
-        sv3.addCanvasMouseWheelListener(zoomPanMouseHandler);
+        zpmh = new ZoomPanMouseHandler();
+        sv3.addCanvasMouseListener(zpmh);
+        sv3.addCanvasMouseMotionListener(zpmh);
+        sv3.addCanvasMouseWheelListener(zpmh);
 
         sv1.addTrackedViewer(sv2);
         sv1.addTrackedViewer(sv3);
@@ -129,7 +132,7 @@ public class TripleSliceViewerController {
 
     }
     
-    private MouseAdapter zoomPanMouseHandler = new MouseAdapter() {
+    private class ZoomPanMouseHandler extends MouseAdapter {
 
         private Point lastPos = null;
         
@@ -137,22 +140,35 @@ public class TripleSliceViewerController {
         public void mousePressed(MouseEvent e) {
             if (e.getButton() == ZOOMPAN_MOUSE_BUTTON || (e.getModifiers() & ZOOMPAN_MOUSE_MASK) != 0) {
                 lastPos = e.getPoint();
+                e.consume();
             }
         }
 
         @Override
         public void mouseDragged(MouseEvent e) {
             if (e.getButton() == ZOOMPAN_MOUSE_BUTTON || (e.getModifiers() & ZOOMPAN_MOUSE_MASK) != 0) {
+                SliceViewer sv = (SliceViewer) e.getSource();
                 Point pos = e.getPoint();
                 if (lastPos != null) {
                     System.out.println("SwingPos: " + pos.x + " " + pos.y);
+                    float[] ptInCanvas = sv.convertAwtToCanvas(pos);
+                    System.out.println("pos in canvas: " + ptInCanvas[0] + " " + ptInCanvas[1] + " " + ptInCanvas[2]);
                 }
                 lastPos = pos;
+                e.consume();
             }
         }
         
         public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
-            
+            SliceViewer sv = (SliceViewer) e.getSource();
+            float scaleChange = (e.getWheelRotation() < 0 ? 1.1f/1f : 1f/1.1f);
+            Point pos = e.getPoint();
+            System.out.println("Wheel SwingPos: " + pos.x + " " + pos.y);
+            float[] delta = LinAlg.fillIdentity(null);
+            LinAlg.fillScale(delta, scaleChange, scaleChange, 1f, delta);
+            float[] slice2cnv = sv.getSliceToCanvasTransform();
+            LinAlg.fillMultiplication(delta, slice2cnv, slice2cnv);
+            sv.setSliceToCanvasTransform(slice2cnv);
         }
 
     };

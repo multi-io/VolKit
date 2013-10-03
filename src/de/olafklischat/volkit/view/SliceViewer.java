@@ -420,17 +420,18 @@ public class SliceViewer extends JPanel {
                     gl.glShadeModel(gl.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
                         gl.glColor3f(1f, 0f, 0f);
-                        float[] trackedToOurBaseSlice = new float[16];
-                        LinAlg.fillIdentity(trackedToOurBaseSlice);
-                        LinAlg.fillMultiplication(trackedViewer.baseSliceToWorldTransform, trackedToOurBaseSlice, trackedToOurBaseSlice);
-                        LinAlg.fillMultiplication(worldToBaseSliceTransform, trackedToOurBaseSlice, trackedToOurBaseSlice);
+                        float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
+                        LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
+                        LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
+                        LinAlg.fillMultiplication(getSliceToCanvasTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
                         float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         gl.glBegin(gl.GL_LINES);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedToOurBaseSlice, pt1, null), 0);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedToOurBaseSlice, pt2, null), 0);
+                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null), 0);
+                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null), 0);
                         gl.glEnd();
                     }
+
                     firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
                 } finally {
                 }
@@ -523,8 +524,8 @@ public class SliceViewer extends JPanel {
                             viewWidth / 2,   //    GLdouble      right,
                            -viewHeight / 2,  //    GLdouble      bottom,
                             viewHeight / 2,  //    GLdouble      top,
-                           -navigationCubeLength/2, //  GLdouble      nearVal,
-                            navigationCubeLength/2   //  GLdouble     farVal
+                           -navigationCubeLength, //  GLdouble      nearVal,
+                            navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
                            );
 
                 /*
