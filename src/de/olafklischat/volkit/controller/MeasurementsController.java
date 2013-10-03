@@ -247,6 +247,7 @@ public class MeasurementsController {
     }
 
     public void selectMeasurement(Measurement m) {
+        refreshTable();
         selectMeasurementInTable(m);
         if (!m.getDatasetName().equals(sliceViewers.get(0).getVolumeDataSet().getDatasetName())) {
             refreshViewers();
@@ -308,8 +309,8 @@ public class MeasurementsController {
             if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
                 mdb.addMeasurement(currentMeasurement);
                 System.err.println("new measurement added: " + currentMeasurement);
-                refreshTable();
-                selectMeasurementInTable(currentMeasurement);
+                //refreshTable();
+                selectMeasurement(currentMeasurement);
                 currentMeasurement = null;
             }
         }
