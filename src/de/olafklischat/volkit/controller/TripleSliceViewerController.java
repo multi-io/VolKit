@@ -9,6 +9,7 @@ import java.beans.PropertyChangeListener;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
+import javax.swing.undo.UndoManager;
 
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
@@ -29,10 +30,22 @@ public class TripleSliceViewerController {
     protected SliceViewer sv2;
     protected SliceViewer sv3;
     
+    protected UndoManager undoManager;
+    
     public TripleSliceViewerController(SliceViewer sv1, SliceViewer sv2, SliceViewer sv3) {
+        this(sv1, sv2, sv3, null);
+    }
+    
+    public TripleSliceViewerController(SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, UndoManager undoMgr) {
         this.sv1 = sv1;
         this.sv2 = sv2;
         this.sv3 = sv3;
+        
+        if (undoMgr == null) {
+            this.undoManager = new UndoManager();
+        } else {
+            this.undoManager = undoMgr;
+        }
 
         float[] identity = new float[16];
         LinAlg.fillIdentity(identity);
@@ -89,6 +102,7 @@ public class TripleSliceViewerController {
         float[] vertAxis;
         boolean horizRotEnabled;
         boolean vertRotEnabled;
+        float[] preDragVol2WorldTr;
         
         public VolumeRotatingMouseHandler(float[] horizAxis, float[] vertAxis, boolean horizRotEnabled, boolean vertRotEnabled) {
             this.horizAxis = horizAxis;
@@ -103,6 +117,7 @@ public class TripleSliceViewerController {
         public void mousePressed(MouseEvent e) {
             if (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0) {
                 lastPos = e.getPoint();
+                preDragVol2WorldTr = sv1.getVolumeToWorldTransform();
             }
         }
         @Override
@@ -124,11 +139,11 @@ public class TripleSliceViewerController {
                     }
                     LinAlg.fillTranslation(volumeDeltaTransform, - offset[0], - offset[1], - offset[2], volumeDeltaTransform);
                     float[] vol2worlTx = sv1.getVolumeToWorldTransform();
-                    
                     LinAlg.fillMultiplication(volumeDeltaTransform, vol2worlTx, vol2worlTx);
                     sv1.setVolumeToWorldTransform(vol2worlTx);
                     sv2.setVolumeToWorldTransform(vol2worlTx);
                     sv3.setVolumeToWorldTransform(vol2worlTx);
+                    undoManager.addEdit(new UndoableVol2WorlTxChange(preDragVol2WorldTr, vol2worlTx, sv1, sv2, sv3));
                 }
                 lastPos = pos;
             }
