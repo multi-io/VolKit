@@ -345,6 +345,11 @@ public class SliceViewer extends JPanel {
     
     protected class GLEventHandler implements GLEventListener {
 
+        /**
+         * dimensions of viewport in canvas coordinate system
+         */
+        float viewWidth, viewHeight;
+
         @Override
         public void init(GLAutoDrawable glAutoDrawable) {
             // Use debug pipeline
@@ -409,10 +414,10 @@ public class SliceViewer extends JPanel {
                     fragShader.bindUniform("offset", texRef.getPreOffset());
                     gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
                     gl.glBegin(GL2.GL_QUADS);
-                    texturedCanvasPoint(gl,-navigationCubeLength/2, -navigationCubeLength/2);
-                    texturedCanvasPoint(gl, navigationCubeLength/2, -navigationCubeLength/2);
-                    texturedCanvasPoint(gl, navigationCubeLength/2,  navigationCubeLength/2);
-                    texturedCanvasPoint(gl,-navigationCubeLength/2,  navigationCubeLength/2);
+                    texturedCanvasPoint(gl,-viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint(gl, viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint(gl, viewWidth/2,  viewHeight/2);
+                    texturedCanvasPoint(gl,-viewWidth/2,  viewHeight/2);
                     outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
                     outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
                     gl.glEnd();
@@ -512,8 +517,6 @@ public class SliceViewer extends JPanel {
                        );
                 */
                 
-                // fixed visible area of size navigationCubeLength
-                float viewWidth, viewHeight;
                 if (sz.width > sz.height) {
                     viewHeight = navigationCubeLength;
                     viewWidth = viewHeight * sz.width / sz.height;
