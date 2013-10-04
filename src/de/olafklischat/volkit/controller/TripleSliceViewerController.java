@@ -114,13 +114,17 @@ public class TripleSliceViewerController {
                     float rotx = ((float)pos.y - lastPos.y) / 400 * 180;
                     float[] volumeDeltaTransform = new float[16];
                     LinAlg.fillIdentity(volumeDeltaTransform);
+                    float[] offset = getSlicesIntersectionPointInWorld();
+                    LinAlg.fillTranslation(volumeDeltaTransform, offset[0], offset[1], offset[2], volumeDeltaTransform);
                     if (horizRotEnabled) {
                         LinAlg.fillRotation(volumeDeltaTransform, rotx, horizAxis[0], horizAxis[1], horizAxis[2], volumeDeltaTransform);
                     }
                     if (vertRotEnabled) {
                         LinAlg.fillRotation(volumeDeltaTransform, roty, vertAxis[0], vertAxis[1], vertAxis[2], volumeDeltaTransform);
                     }
+                    LinAlg.fillTranslation(volumeDeltaTransform, - offset[0], - offset[1], - offset[2], volumeDeltaTransform);
                     float[] vol2worlTx = sv1.getVolumeToWorldTransform();
+                    
                     LinAlg.fillMultiplication(volumeDeltaTransform, vol2worlTx, vol2worlTx);
                     sv1.setVolumeToWorldTransform(vol2worlTx);
                     sv2.setVolumeToWorldTransform(vol2worlTx);
@@ -128,6 +132,17 @@ public class TripleSliceViewerController {
                 }
                 lastPos = pos;
             }
+        }
+        
+        private float[] getSlicesIntersectionPointInWorld() {
+            // TODO: this is a somewhat less than general solution b/c it
+            // only works for the specific worldToBaseSliceTransform settings
+            // of the svs as set in the constructor
+            float[] result = new float[3];
+            result[0] = - sv2.getNavigationZ();
+            result[1] = - sv1.getNavigationZ();
+            result[2] =   sv3.getNavigationZ();
+            return result;
         }
 
     }
