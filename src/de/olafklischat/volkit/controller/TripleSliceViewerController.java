@@ -135,6 +135,9 @@ public class TripleSliceViewerController {
         }
         
         private float[] getSlicesIntersectionPointInWorld() {
+            // TODO: this is a somewhat less than general solution b/c it
+            // only works for the specific worldToBaseSliceTransform settings
+            // of the svs as set in the constructor
             float[] result = new float[3];
             result[0] = - sv2.getNavigationZ();
             result[1] = - sv1.getNavigationZ();
