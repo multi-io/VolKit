@@ -6,15 +6,15 @@ import javax.swing.undo.CannotUndoException;
 
 import de.olafklischat.volkit.view.SliceViewer;
 
-public class UndoableVol2WorlTxChange extends AbstractUndoableEdit {
+public class UndoableVol2WorldTransformChange extends AbstractUndoableEdit {
 	private SliceViewer[] svs;
 	private float[] preTr, postTr;
 	
-	public UndoableVol2WorlTxChange(float[] preTx, float[] postTx, SliceViewer... svs) {
+	public UndoableVol2WorldTransformChange(float[] preTr, float[] postTr, SliceViewer... svs) {
 		super();
 		this.svs = svs;
-		this.preTr = preTx;
-		this.postTr = postTx;
+		this.preTr = preTr;
+		this.postTr = postTr;
 	}
 
 	@Override

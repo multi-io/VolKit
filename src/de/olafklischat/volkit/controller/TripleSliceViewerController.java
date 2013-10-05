@@ -151,7 +151,7 @@ public class TripleSliceViewerController {
         @Override
         public void mouseReleased(MouseEvent e) {
             if (lastPos != null && (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0)) {
-                vol2worldTransformUndoManager.addEdit(new UndoableVol2WorlTxChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), sv1, sv2, sv3));
+                vol2worldTransformUndoManager.addEdit(new UndoableVol2WorldTransformChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), sv1, sv2, sv3));
             }
         }
         
