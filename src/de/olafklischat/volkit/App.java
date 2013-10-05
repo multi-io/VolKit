@@ -23,6 +23,11 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.undo.UndoManager;
+
+import org.jdesktop.beansbinding.BeanProperty;
+import org.jdesktop.beansbinding.Bindings;
+import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 
 import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
@@ -42,6 +47,8 @@ public class App {
                 try {
                     Properties appProps = new Properties();
                     appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
+                    
+                    final UndoManager undoMgr = new UndoManager();
                     
                     final JFrame f = new JFrame("SliceView");
                     
@@ -66,7 +73,7 @@ public class App {
                     sv3.setBackground(Color.DARK_GRAY);
                     mainPane.add(sv3);
                     
-                    final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3);
+                    final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3, undoMgr);
                     
                     MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
                     mdb.load();
@@ -91,6 +98,27 @@ public class App {
                             slicesController.resetZNavigations();
                         }
                     });
+                    toolbar.add(new AbstractAction("Undo") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (undoMgr.canUndo()) {
+                                undoMgr.undo();
+                            }
+                        }
+                    });
+                    toolbar.add(new AbstractAction("Redo") {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (undoMgr.canRedo()) {
+                                undoMgr.redo();
+                            }
+                        }
+                    });
+                    // TODO: UndoManager doesn't have PropertyChangeEvents for its
+                    // canUndo/canRedo properties, so we can't easily enable/disable the above buttons
+                    // at the right time. Would have to make all the involved components
+                    // (TripleSliceViewerController in this case) fire UndoableEditEvents, which, frankly, sucks.
+
                     toolbar.add(new AbstractAction("Zoom RST") {
                         @Override
                         public void actionPerformed(ActionEvent e) {

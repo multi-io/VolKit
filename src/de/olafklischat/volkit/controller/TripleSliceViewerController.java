@@ -30,7 +30,7 @@ public class TripleSliceViewerController {
     protected SliceViewer sv2;
     protected SliceViewer sv3;
     
-    protected UndoManager undoManager;
+    protected UndoManager vol2worldTransformUndoManager;
     
     public TripleSliceViewerController(SliceViewer sv1, SliceViewer sv2, SliceViewer sv3) {
         this(sv1, sv2, sv3, null);
@@ -42,9 +42,9 @@ public class TripleSliceViewerController {
         this.sv3 = sv3;
         
         if (undoMgr == null) {
-            this.undoManager = new UndoManager();
+            this.vol2worldTransformUndoManager = new UndoManager();
         } else {
-            this.undoManager = undoMgr;
+            this.vol2worldTransformUndoManager = undoMgr;
         }
 
         float[] identity = new float[16];
@@ -143,9 +143,15 @@ public class TripleSliceViewerController {
                     sv1.setVolumeToWorldTransform(vol2worlTx);
                     sv2.setVolumeToWorldTransform(vol2worlTx);
                     sv3.setVolumeToWorldTransform(vol2worlTx);
-                    undoManager.addEdit(new UndoableVol2WorlTxChange(preDragVol2WorldTr, vol2worlTx, sv1, sv2, sv3));
                 }
                 lastPos = pos;
+            }
+        }
+        
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            if (lastPos != null && (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0)) {
+                vol2worldTransformUndoManager.addEdit(new UndoableVol2WorlTxChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), sv1, sv2, sv3));
             }
         }
         
@@ -160,6 +166,10 @@ public class TripleSliceViewerController {
             return result;
         }
 
+    }
+
+    public UndoManager getVol2worldTransformUndoManager() {
+        return vol2worldTransformUndoManager;
     }
     
     private class ZoomPanMouseHandler extends MouseAdapter {
