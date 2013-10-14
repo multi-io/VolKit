@@ -1,0 +1,43 @@
+02:05 < multi_io> MatthiasM: are you there?
+02:09 < multi_io> MatthiasM: is there a problem with displaying a TWL UI in an AWTGLCanvas and thus run all the 
+                  redraws from the canvas's paintGL() method?
+02:10 < MatthiasM> I would say no :)
+02:11 < multi_io> (i.e. call UI#update() from there)
+02:11 < multi_io> ok\
+02:14 <+lwjglbot> nightly: LWJGL #533 (SUCCESS) <http://www.newdawnsoftware.com/hudson/job/LWJGL/533/> || 
+                  LWJGL-win32 #549 (SUCCESS) <http://www.newdawnsoftware.com/hudson/job/LWJGL-win32/549/>
+02:15 < multi_io> if I were to create two AWTGLCanvas objects (in two different windows) and have them share theire 
+                  GL contexts, and then draw a TWL GUI in each of them, would that lead to problems?
+02:16 < MatthiasM> you can create as many GUI instances as you want
+02:16 < MatthiasM> eg the theme editor uses 2 in one GL context :)
+02:17 < multi_io> would they end up sharing things like TWL-internal textures automatically then?
+02:18 < MatthiasM> no - this is controlled by Renderer instances and it's CacheContext objects
+02:18 < multi_io> ah, ok
+02:19 < multi_io> but I really want to have two separate X11 windows with a GUI in each of them
+02:19 < multi_io> but that should be possible, right?
+02:19 < MatthiasM> and?
+02:19 < MatthiasM> yes
+02:19 < multi_io> ok
+02:20 < multi_io> thanks, I'll try this out
+
+[.....]
+
+
+01:01 < multi_io> looks like I can't use TWL with AWTGLCanvas because the latter doesn't create a Display and thus I 
+                  get a "Mouse must be created" exception in the LWJGLRenderer constructor.
+01:01 < multi_io> MatthiasM: ^^^
+01:01 < NoobFukaire1> Mouse.create()?
+01:02 -!- arielsan [~arielsan@r190-64-170-195.dialup.adsl.anteldata.net.uy] has quit [Quit: Leaving.]
+01:02 < multi_io> fails with "Display must be created."
+01:03 -!- rhk [~rhk@76.247.147.25] has joined #lwjgl
+01:04 < appel> is matt around?
+01:12 < multi_io> what I want is run TWL in an AWT canvas. The GL routines (and thus, the TWL calls) should be issued in the AWT event dispatch thread
+
+Possible at all? :-\
+
+CanvasGameContainer from the "Slick" library
+(http://slick.cokeandcode.com/) may achieve something like what I want
+-- investigate!
+
+(svn co https://bob.newdawnsoftware.com/repos/slick/trunk/Slick /
+src/org/newdawn/slick/CanvasGameContainer.java)
