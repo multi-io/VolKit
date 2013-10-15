@@ -1,7 +1,9 @@
 package de.olafklischat.volkit;
 
 import java.awt.BorderLayout;
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -73,7 +75,7 @@ public class App {
                     new App();
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    throw new RuntimeException(e);
+                    System.exit(1);
                 }
             }
         });
@@ -99,7 +101,7 @@ public class App {
         f.setVisible(true);
     }
 
-    private class MainFrameCanvas extends AWTGLCanvas {
+    private class MainFrameCanvas extends Canvas {
 
         protected LWJGLRenderer renderer;
         protected ThemeManager theme;
@@ -116,12 +118,23 @@ public class App {
         }
         
         @Override
-        protected void initGL() {
-            super.initGL();
+        public final void addNotify() {
+            super.addNotify();
+            startLWJGL();
+        }
+        
+        @Override
+        public final void removeNotify() {
+            stopLWJGL();
+            super.removeNotify();
+        }
+        
+        protected void startLWJGL() {
+            //Input.disableControllers();
             try {
-                //Display.create(new PixelFormat(0, 0, 0));
-                Mouse.create();
+                Display.setParent(this);
                 Display.setVSyncEnabled(true);
+                Display.create();
                 desktopMode = Display.getDisplayMode();
                 curThemeIdx = new PersistentIntegerModel(
                         Preferences.userNodeForPackage(App.class),
@@ -139,11 +152,13 @@ public class App {
                         //closeRequested = true;
                     }
                 });
-            } catch (Exception e) {
+            } catch (LWJGLException e) {
+                throw new RuntimeException(e.getLocalizedMessage(), e);
+            } catch (IOException e) {
                 throw new RuntimeException(e.getLocalizedMessage(), e);
             }
         }
-
+        
         private void loadTheme() throws IOException {
             renderer.syncViewportSize();
             System.out.println("width="+renderer.getWidth()+" height="+renderer.getHeight());
@@ -170,14 +185,15 @@ public class App {
         }
 
         @Override
-        protected void paintGL() {
-            try {
-                gui.update();
-                swapBuffers();
-            } catch (LWJGLException ex) {
-                throw new RuntimeException(ex);
-            }
+        public void paint(Graphics g) {
+            gui.update();
+            Display.update();
         }
+
+        protected void stopLWJGL() {
+            
+        }
+        
     }
 
     
