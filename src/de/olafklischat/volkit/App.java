@@ -71,6 +71,7 @@ public class App {
                 try {
                     new App();
                 } catch (Exception e) {
+                    e.printStackTrace();
                     JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     System.exit(1);
                 }
@@ -93,8 +94,17 @@ public class App {
         f.getContentPane().add(canvas, BorderLayout.CENTER);
         canvas.setFocusable(true);
         canvas.requestFocus();
-        canvas.setIgnoreRepaint(true);
+        //canvas.setIgnoreRepaint(true);
         canvas.setVisible(true);
+        
+        JToolBar tb = new JToolBar();
+        f.getContentPane().add(tb, BorderLayout.NORTH);
+        tb.add(new AbstractAction("startLWJGL") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                canvas.startLWJGL();
+            }
+        });
         
         f.setSize(1200,900);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,7 +132,8 @@ public class App {
         @Override
         public final void addNotify() {
             super.addNotify();
-            startLWJGL();
+            System.out.println("addNotify");
+            //startLWJGL();
         }
         
         @Override
@@ -132,6 +143,23 @@ public class App {
         }
         
         protected void startLWJGL() {
+            try {
+                Thread.sleep(3000);
+                Display.setParent(MainFrameCanvas.this);
+                Display.setVSyncEnabled(true);
+                Display.create();
+                desktopMode = Display.getDisplayMode();
+                curThemeIdx = new PersistentIntegerModel(
+                        Preferences.userNodeForPackage(App.class),
+                        "currentThemeIndex", 0, THEME_FILES.length, 0);
+                //simpleTest.mainLoop(true);
+                setupUi();
+            } catch (Exception e) {
+                throw new RuntimeException(e.getLocalizedMessage(), e);
+            }
+            
+            /*
+            //multi-threaded attempt (works, but having to use MT for this sucks)
             gameThread = new Thread() {
                 @Override
                 public void run() {
@@ -145,6 +173,7 @@ public class App {
                                 Preferences.userNodeForPackage(App.class),
                                 "currentThemeIndex", 0, THEME_FILES.length, 0);
                         //simpleTest.mainLoop(true);
+                        setupUi();
                         mainLoop(true);
                         //
                         Display.destroy();
@@ -155,11 +184,14 @@ public class App {
                         pw.flush();
                         Sys.alert("Error", sw.toString());
                     }
+                    System.exit(0);
                 }
             };
             gameThread.start();
+            */
 
             /*
+            //first attempt
             //Input.disableControllers();
             try {
                 Display.setParent(this);
@@ -215,24 +247,28 @@ public class App {
             gui.setBackground(theme.getImageNoWarning("gui.background"));
         }
 
-        public void mainLoop(boolean isApplet) throws LWJGLException, IOException {
-            final RootPane root = new RootPane();
+        RootPane root;
+        boolean closeRequested = false;
+        
+        protected void setupUi() throws LWJGLException, IOException {
+            root = new RootPane();
             renderer = new LWJGLRenderer();
             renderer.setUseSWMouseCursors(true);
             gui = new GUI(root, renderer);
 
             loadTheme();
 
-            final boolean[] closeRequested = {false};
             root.addButton("Exit", new Runnable() {
                 public void run() {
-                    closeRequested[0] = true;
+                    closeRequested = true;
                 }
             });
 
             //fInfo.requestKeyboardFocus();
-
-            while(!Display.isCloseRequested() && !closeRequested[0]) {
+        }
+        
+        protected void mainLoop(boolean isApplet) throws LWJGLException, IOException {
+            while(!Display.isCloseRequested() && !closeRequested) {
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
                 gui.update();
@@ -266,8 +302,12 @@ public class App {
         
         @Override
         public void paint(Graphics g) {
-            gui.update();
-            Display.update();
+            System.out.println("paint()");
+            if (Display.isCreated() && Display.isVisible()) {
+                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+                gui.update();
+                Display.update();
+            }
         }
 
         protected void stopLWJGL() {
