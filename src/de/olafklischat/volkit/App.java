@@ -4,13 +4,14 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.GraphicsDevice;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Properties;
 import java.util.prefs.Preferences;
 
@@ -30,17 +31,13 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.UndoManager;
 
-import org.jdesktop.beansbinding.BeanProperty;
-import org.jdesktop.beansbinding.Bindings;
-import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.AWTGLCanvas;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.Drawable;
-import org.lwjgl.opengl.PixelFormat;
+import org.lwjgl.opengl.GL11;
 
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Button;
@@ -94,12 +91,17 @@ public class App {
         
         final MainFrameCanvas canvas = new MainFrameCanvas();
         f.getContentPane().add(canvas, BorderLayout.CENTER);
+        canvas.setFocusable(true);
+        canvas.requestFocus();
+        canvas.setIgnoreRepaint(true);
         canvas.setVisible(true);
         
         f.setSize(1200,900);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setVisible(true);
     }
+
+    Thread gameThread;
 
     private class MainFrameCanvas extends Canvas {
 
@@ -130,6 +132,34 @@ public class App {
         }
         
         protected void startLWJGL() {
+            gameThread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        Display.setParent(MainFrameCanvas.this);
+                        Display.setVSyncEnabled(true);
+                        Display.create();
+                        //simpleTest = new SimpleTest();
+                        desktopMode = Display.getDisplayMode();
+                        curThemeIdx = new PersistentIntegerModel(
+                                Preferences.userNodeForPackage(App.class),
+                                "currentThemeIndex", 0, THEME_FILES.length, 0);
+                        //simpleTest.mainLoop(true);
+                        mainLoop(true);
+                        //
+                        Display.destroy();
+                    } catch (Exception ex) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        ex.printStackTrace(pw);
+                        pw.flush();
+                        Sys.alert("Error", sw.toString());
+                    }
+                }
+            };
+            gameThread.start();
+
+            /*
             //Input.disableControllers();
             try {
                 Display.setParent(this);
@@ -157,6 +187,7 @@ public class App {
             } catch (IOException e) {
                 throw new RuntimeException(e.getLocalizedMessage(), e);
             }
+            */
         }
         
         private void loadTheme() throws IOException {
@@ -184,6 +215,55 @@ public class App {
             gui.setBackground(theme.getImageNoWarning("gui.background"));
         }
 
+        public void mainLoop(boolean isApplet) throws LWJGLException, IOException {
+            final RootPane root = new RootPane();
+            renderer = new LWJGLRenderer();
+            renderer.setUseSWMouseCursors(true);
+            gui = new GUI(root, renderer);
+
+            loadTheme();
+
+            final boolean[] closeRequested = {false};
+            root.addButton("Exit", new Runnable() {
+                public void run() {
+                    closeRequested[0] = true;
+                }
+            });
+
+            //fInfo.requestKeyboardFocus();
+
+            while(!Display.isCloseRequested() && !closeRequested[0]) {
+                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+
+                gui.update();
+                Display.update();
+
+                if(root.reduceLag) {
+                    reduceInputLag();
+                }
+
+                if(!Display.isVisible()) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException unused) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        /**
+         * reduce input lag by polling input devices after waiting for vsync
+         * 
+         * Call after Display.update()
+         */
+        public void reduceInputLag() {
+            GL11.glGetError();          // this call will burn the time between vsyncs
+            Display.processMessages();  // process new native messages since Display.update();
+            Mouse.poll();               // now update Mouse events
+            Keyboard.poll();            // and Keyboard too
+        }
+        
         @Override
         public void paint(Graphics g) {
             gui.update();
