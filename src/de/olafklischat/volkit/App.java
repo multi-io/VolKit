@@ -5,6 +5,9 @@ import java.awt.Color;
 import java.awt.GraphicsDevice;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,6 +41,10 @@ import org.lwjgl.opengl.AWTGLCanvas;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.Drawable;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.PixelFormat;
 
 import de.matthiasmann.twl.BoxLayout;
@@ -94,22 +101,20 @@ public class App {
         f.getContentPane().add(canvas, BorderLayout.CENTER);
         canvas.setVisible(true);
         
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("mouseClicked @ " + e);
+            }
+        });
+        
         f.setSize(1200,900);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setVisible(true);
     }
 
     private class MainFrameCanvas extends AWTGLCanvas {
-
-        protected LWJGLRenderer renderer;
-        protected ThemeManager theme;
-        private /*static*/ final String[] THEME_FILES = {
-            "simple.xml",
-            "guiTheme.xml"
-        };
-
-        protected PersistentIntegerModel curThemeIdx;
-        protected DisplayMode desktopMode;
+        final float vpWidthInWorldCoords = 500;
 
         public MainFrameCanvas() throws LWJGLException {
             super();
@@ -117,66 +122,67 @@ public class App {
         
         @Override
         protected void initGL() {
-            super.initGL();
-            try {
-                //Display.create(new PixelFormat(0, 0, 0));
-                Mouse.create();
-                Display.setVSyncEnabled(true);
-                desktopMode = Display.getDisplayMode();
-                curThemeIdx = new PersistentIntegerModel(
-                        Preferences.userNodeForPackage(App.class),
-                        "currentThemeIndex", 0, THEME_FILES.length, 0);
-                
-                final RootPane root = new RootPane();
-                renderer = new LWJGLRenderer();
-                renderer.setUseSWMouseCursors(true);
-                gui = new GUI(root, renderer);
-    
-                loadTheme();
-                
-                root.addButton("Exit", new Runnable() {
-                    public void run() {
-                        //closeRequested = true;
-                    }
-                });
-            } catch (Exception e) {
-                throw new RuntimeException(e.getLocalizedMessage(), e);
-            }
+            setVSyncEnabled(true);
+            setupEye2ViewportTransformation();
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+            GL11.glEnable(GL11.GL_LIGHTING);
+            GL11.glEnable(GL11.GL_LIGHT0);
+            GL11.glEnable(GL11.GL_COLOR_MATERIAL);
+            GL11.glClearColor(0,0,0,0);
         }
-
-        private void loadTheme() throws IOException {
-            renderer.syncViewportSize();
-            System.out.println("width="+renderer.getWidth()+" height="+renderer.getHeight());
-
-            long startTime = System.nanoTime();
-            // NOTE: this code destroys the old theme manager (including it's cache context)
-            // after loading the new theme with a new cache context.
-            // This allows easy reloading of a theme for development.
-            // If you want fast theme switching without reloading then use the existing
-            // cache context for loading the new theme and don't destroy the old theme.
-            ThemeManager newTheme = ThemeManager.createThemeManager(
-                App.class.getResource(THEME_FILES[curThemeIdx.getValue()]), renderer);
-            long duration = System.nanoTime() - startTime;
-            System.out.println("Loaded theme in " + (duration/1000) + " us");
-
-            if(theme != null) {
-                theme.destroy();
-            }
-            theme = newTheme;
-            
-            gui.setSize();
-            gui.applyTheme(theme);
-            gui.setBackground(theme.getImageNoWarning("gui.background"));
-        }
+        
+        private boolean contextInitialized = false, resizePending = false;
 
         @Override
         protected void paintGL() {
+            if (!contextInitialized) {
+                initGL();
+                contextInitialized = true;
+                resizePending = false;
+            }
+            if (resizePending) {
+                setupEye2ViewportTransformation();
+                resizePending = false;
+            }
+            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glLoadIdentity();
+            
+            GL11.glColor3f(1, 0, 0);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex2f(0, 0);
+            GL11.glVertex2f(100, 50);
+            GL11.glEnd();
             try {
-                gui.update();
                 swapBuffers();
             } catch (LWJGLException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+
+        private void setupEye2ViewportTransformation() {
+            System.out.println("projecting to viewport width=" + getWidth() + ", height=" + getHeight());
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glLoadIdentity();
+
+            // isometric projection
+            double vpHeightInObjCoords = vpWidthInWorldCoords * getHeight() / getWidth();
+            GL11.glOrtho(-vpWidthInWorldCoords/2,  //    GLdouble    left,
+                         vpWidthInWorldCoords/2,   //    GLdouble    right,
+                         -vpHeightInObjCoords/2, //    GLdouble      bottom,
+                         vpHeightInObjCoords/2,  //    GLdouble      top,
+                         -1000, //  GLdouble     nearVal,
+                         1000   //  GLdouble     farVal
+                         );
+
+            // eye coord -> viewport transformation
+            GL11.glViewport(0, //GLint x,
+                       0, //GLint y,
+                       getWidth(), //GLsizei width,
+                       getHeight() //GLsizei height
+                       );
+            GL11.glDepthRange(0,1);
         }
     }
 
