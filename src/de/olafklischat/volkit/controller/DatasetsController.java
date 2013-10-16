@@ -21,6 +21,9 @@ public class DatasetsController {
         this.tsvc = tsvc;
         this.datasetsList = datasetsList;
         File[] datasetDirs = baseDir.listFiles();
+        if (null == datasetDirs) {
+            throw new IllegalArgumentException("No dataset directories found under " + baseDir);
+        }
         Arrays.sort(datasetDirs);
         DefaultListModel lm = new DefaultListModel();
         for (File d : datasetDirs) {
