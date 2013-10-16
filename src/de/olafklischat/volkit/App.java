@@ -31,6 +31,7 @@ import org.jdesktop.beansbinding.AutoBinding.UpdateStrategy;
 
 import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
+import de.olafklischat.volkit.controller.TrackedViewerDraggingController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SliceViewer;
@@ -74,6 +75,12 @@ public class App {
                     mainPane.add(sv3);
                     
                     final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3, undoMgr);
+
+                    if (isDebugMode()) {
+                        new TrackedViewerDraggingController(sv1);
+                        new TrackedViewerDraggingController(sv2);
+                        new TrackedViewerDraggingController(sv3);
+                    }
                     
                     MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
                     mdb.load();
@@ -98,6 +105,7 @@ public class App {
                             slicesController.resetZNavigations();
                         }
                     });
+                    if (isDebugMode()) {
                     toolbar.add(new AbstractAction("Undo") {
                         @Override
                         public void actionPerformed(ActionEvent e) {
@@ -114,6 +122,7 @@ public class App {
                             }
                         }
                     });
+                    }
                     // TODO: UndoManager doesn't have PropertyChangeEvents for its
                     // canUndo/canRedo properties, so we can't easily enable/disable the above buttons
                     // at the right time. Would have to make all the involved components
@@ -125,7 +134,7 @@ public class App {
                             slicesController.resetSliceToCanvasTransformations();
                         }
                     });
-                    if (null != System.getProperty("VolKit.debug")) {
+                    if (isDebugMode()) {
                         toolbar.add(new AbstractAction("Load Volume") {
                             @Override
                             public void actionPerformed(ActionEvent e) {
@@ -226,4 +235,7 @@ public class App {
         });
     }
 
+    public static boolean isDebugMode() {
+        return (null != System.getProperty("VolKit.debug"));
+    }
 }

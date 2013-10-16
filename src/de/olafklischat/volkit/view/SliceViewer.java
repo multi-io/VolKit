@@ -265,6 +265,10 @@ public class SliceViewer extends JPanel {
         return LinAlg.copyArr(sliceToVolumeTransform, null);
     }
     
+    public List<SliceViewer> getTrackedViewers() {
+        return trackedViewers;
+    }
+    
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
         recomputeMatrices();
