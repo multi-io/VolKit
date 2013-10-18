@@ -74,14 +74,14 @@ public class App {
                     sv3.setBackground(Color.DARK_GRAY);
                     mainPane.add(sv3);
                     
-                    final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3, undoMgr);
-
                     if (isDebugMode()) {
                         new TrackedViewerDraggingController(sv1);
                         new TrackedViewerDraggingController(sv2);
                         new TrackedViewerDraggingController(sv3);
                     }
                     
+                    final TripleSliceViewerController slicesController = new TripleSliceViewerController(sv1, sv2, sv3, undoMgr);
+
                     MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
                     mdb.load();
                     JTable measurementsTable = new JTable();

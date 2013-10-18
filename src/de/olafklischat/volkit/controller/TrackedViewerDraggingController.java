@@ -12,8 +12,8 @@ import de.sofd.viskit.image3D.jogl.util.LinAlg;
 public class TrackedViewerDraggingController {
     
     // TODO: make these parameterizable
-    private static final int MOUSE_BUTTON = MouseEvent.BUTTON3;
-    private static final int MOUSE_MASK = MouseEvent.BUTTON3_MASK;
+    private static final int MOUSE_BUTTON = MouseEvent.BUTTON1;
+    private static final int MOUSE_MASK = MouseEvent.BUTTON1_MASK;
 
     protected final SliceViewer controlledViewer;
 
@@ -35,15 +35,18 @@ public class TrackedViewerDraggingController {
         public void mousePressed(java.awt.event.MouseEvent e) {
             if ((e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0)) {
                 lastPos = new Point(e.getPoint());
-                float[] ptInControlledSlice = controlledViewer.convertAwtToCanvas(e.getPoint());
+                float[] ptInControlledViewerCanvas = controlledViewer.convertAwtToCanvas(e.getPoint());
+                float[] ptInControlledSlice = LinAlg.mtimesv(controlledViewer.getCanvasToSliceTransform(), ptInControlledViewerCanvas, null);
                 //printPt(ptInControlledSlice);
                 float[] ptInVolume = LinAlg.mtimesv(controlledViewer.getSliceToVolumeTransform(), ptInControlledSlice, null);
                 //printPt(ptInVolume);
                 draggedViewers.clear();
                 for (SliceViewer trackedSv : controlledViewer.getTrackedViewers()) {
-                    float[] ptInTrackedSlice = LinAlg.mtimesv(trackedSv.getVolumeToSliceTransform(), ptInVolume, null);
-                    if (Math.abs(ptInTrackedSlice[2]) < 1.0) {  //TODO: the 1.0 must depend on the controlledViewer's current canvas (viewport) extent
+                    float[] ptInTrackedSliceSystem = LinAlg.mtimesv(trackedSv.getVolumeToSliceTransform(), ptInVolume, null);
+                    printPt(ptInTrackedSliceSystem);
+                    if (Math.abs(ptInTrackedSliceSystem[2]) < 1.0) {  //TODO: the 1.0 must depend on the controlledViewer's current canvas (viewport) extent
                         draggedViewers.add(trackedSv);
+                        System.err.println("start dragging viewer " + trackedSv);
                         e.consume();
                     }
                 }
@@ -62,12 +65,19 @@ public class TrackedViewerDraggingController {
                 if (draggedViewers.isEmpty()) {
                     return;
                 }
-                float[] ptInControlledSlice = controlledViewer.convertAwtToCanvas(e.getPoint());
-                //printPt(ptInControlledSlice);
+                float[] ptInControlledViewerCanvas = controlledViewer.convertAwtToCanvas(e.getPoint());
+                float[] ptInControlledSlice = LinAlg.mtimesv(controlledViewer.getCanvasToSliceTransform(), ptInControlledViewerCanvas, null);
                 float[] ptInVolume = LinAlg.mtimesv(controlledViewer.getSliceToVolumeTransform(), ptInControlledSlice, null);
-                for (SliceViewer draggedSv : draggedViewers) {
-                    //TODO
+
+                for (SliceViewer draggedViewer : draggedViewers) {
+                    float[] ptInDraggedBaseSliceSystem = LinAlg.mtimesv(draggedViewer.getVolumeToBaseSliceTransform(), ptInVolume, null);
+                    float newNavZ = ptInDraggedBaseSliceSystem[2];
+                    if (Math.abs(newNavZ) < draggedViewer.getNavigationCubeLength()/2) {
+                        draggedViewer.setNavigationZ(ptInDraggedBaseSliceSystem[2]);
+                        System.err.println("dragged viewer " + draggedViewer);
+                    }
                 }
+                e.consume();
             }
         }
         

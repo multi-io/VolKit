@@ -333,6 +333,10 @@ public class SliceViewer extends JPanel {
             glCanvas.repaint();
         }
     }
+    
+    public float getNavigationCubeLength() {
+        return navigationCubeLength;
+    }
 
     protected void initializeUninitializedSlicePaintListeners(final GL gl, final GLAutoDrawable glAutoDrawable) {
         forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {

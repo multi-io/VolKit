@@ -118,6 +118,7 @@ public class TripleSliceViewerController {
             if (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0) {
                 lastPos = e.getPoint();
                 preDragVol2WorldTr = sv1.getVolumeToWorldTransform();
+                e.consume();
             }
         }
         @Override
@@ -143,6 +144,7 @@ public class TripleSliceViewerController {
                     sv1.setVolumeToWorldTransform(vol2worlTx);
                     sv2.setVolumeToWorldTransform(vol2worlTx);
                     sv3.setVolumeToWorldTransform(vol2worlTx);
+                    e.consume();
                 }
                 lastPos = pos;
             }
@@ -152,6 +154,7 @@ public class TripleSliceViewerController {
         public void mouseReleased(MouseEvent e) {
             if (lastPos != null && (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0)) {
                 vol2worldTransformUndoManager.addEdit(new UndoableVol2WorldTransformChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), sv1, sv2, sv3));
+                e.consume();
             }
         }
         
@@ -214,6 +217,7 @@ public class TripleSliceViewerController {
             float[] slice2cnv = sv.getSliceToCanvasTransform();
             LinAlg.fillMultiplication(delta, slice2cnv, slice2cnv);
             sv.setSliceToCanvasTransform(slice2cnv);
+            e.consume();
         }
 
     };
