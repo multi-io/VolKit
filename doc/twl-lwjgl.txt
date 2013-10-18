@@ -41,3 +41,65 @@ CanvasGameContainer from the "Slick" library
 
 (svn co https://bob.newdawnsoftware.com/repos/slick/trunk/Slick /
 src/org/newdawn/slick/CanvasGameContainer.java)
+
+
+[.....]
+
+16:14 < multi_io> I don't know if this is related, but I want to use TWL in an AWTGLCanvas or maybe in a normal Canvas with 
+                  Display.setParent, but I want the TWL event handlers to be called in the AWT event dispatch thread
+16:14 < multi_io> i.e. I don't want to have a separate rendering thread
+16:14 < multi_io> (this is an AWT/Swing app, obviously)
+16:16 < multi_io> using AWTGLCanvas directly doesn't work here because AWTGLCanvas doesn't create a Display and I get a "Mouse must be 
+                  created" exception in the LWJGLRenderer constructor.
+16:18 < multi_io> MatthiasM2: so AWTGLCanvas isn't really supported by TWL?
+16:19 < kap1> Phiip be great if you can drop a patch of the needed change on the lwjgl forum
+16:19 < kap1> i'm sure someone will review it and add it to lwjgl
+16:37 -!- Dragonene [~d550261b@gateway/web/freenode/x-cwcbpbbdggsemguk] has quit [Ping timeout: 252 seconds]
+16:43 < baedert> multi_io: did you use Display.setParent()?
+16:44 < baedert> there's also the theme editor which is using a awt frame to be resizable and the code is online
+16:45 < baedert> http://hg.l33tlabs.org/twlthemeeditor/file/a9bb266ffa29/src/de/matthiasmann/twlthemeeditor/Main.java#l112
+16:53 < multi_io> baedert: Yes, I use Display.setParent()
+16:53 < multi_io> (unless I use AWTGLCanvas)
+16:53 < multi_io> thanks for the link
+16:56 < MatthiasM2> multi_io: it is - you just can't use GUI.update() directöy
+17:21 -!- arielsan [~acoppes@r190-134-19-78.dialup.adsl.anteldata.net.uy] has joined #lwjgl
+17:48 -!- tametick [~chatzilla@chello062178075009.26.11.vie.surfer.at] has quit [Quit: ChatZilla 0.9.86 [Firefox 3.6.3/20100401080539]]
+18:06 < multi_io> MatthiasM2: ok, so I would directly call things like handleMouse(x,y,...), handleKey(...) from outside, passing e.g. 
+                  mouse events into TWL?
+18:06 < MatthiasM2> yes
+18:08 < multi_io> cool
+18:32 < MatthiasM2> multi_io: look at the Slick <-> TWL adapter for details
+18:32 < MatthiasM2> maybe you could put your AWTGLCanvas adapter online too?
+18:34 -!- tris2k [~chatzilla@190.213.141.173] has joined #lwjgl
+18:36 -!- ruben01 [~ruben01@r190-135-200-63.dialup.adsl.anteldata.net.uy] has joined #lwjgl
+18:49 < multi_io> sure
+
+[...]
+
+20:03 < multi_io> MatthiasM2: I would still need to Display.create(theAWTGLCanvas) though, right?
+20:03 < MatthiasM2> huh?
+20:03 < MatthiasM2> when you use AWTGLCanvas you don't use any of the Display/Mouse/Keyboard classes
+20:04 < multi_io> right, thought so
+20:04 < multi_io> but
+20:04 < MatthiasM2> (except for the Keyboard constants - they are used by TWL)
+20:04 < multi_io> the LWJGLRender c'tor needs Mouse.getCursorSize() or so
+20:04 < multi_io> *LWJGLRenderer
+20:04 < MatthiasM2> hmm
+20:05 < MatthiasM2> yeah - but that shouldn't matter
+20:06 < multi_io> ok
+20:06 < multi_io> seems to work
+20:08 < multi_io> no
+20:08 < multi_io>  java.lang.IllegalStateException: Mouse must be created.
+20:09 < multi_io> at org.lwjgl.input.Cursor.getMinCursorSize(Cursor.java:121)
+20:09 < multi_io> ..and Mouse.create() wants a display, iirc
+20:11 < MatthiasM2> multi_io: ok, try the latest version from mercurial repo
+20:12 -!- ZeuPiark [~piark@AAubervilliers-155-1-23-217.w83-199.abo.wanadoo.fr] has quit [Remote host closed the connection]
+20:23 -!- tris2k [~chatzilla@190.213.141.173] has quit [Quit: ChatZilla 0.9.86 [Firefox 3.6.3/20100401080539]]
+20:24 < multi_io> MatthiasM2: thanks
+20:24 < multi_io> I think Gui#setCursor is the other thing that uses Mouse
+20:24 < multi_io> ?
+20:25 < multi_io> so it just wouldn't be supported with AWTGLCanvas then?
+20:27 < multi_io> and GUI#draw doesn't draw anything here for now, but that's probably some fault in my code (investigating)
+20:28 -!- betel [~betel@c83-248-228-54.bredband.comhem.se] has joined #lwjgl
+20:30 < MatthiasM2> multi_io: you can subclass LWJGLRenderer and implement your own cursor handling
+20:37 < multi_io> ok
