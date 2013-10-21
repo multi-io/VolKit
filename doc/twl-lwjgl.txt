@@ -103,3 +103,50 @@ src/org/newdawn/slick/CanvasGameContainer.java)
 20:28 -!- betel [~betel@c83-248-228-54.bredband.comhem.se] has joined #lwjgl
 20:30 < MatthiasM2> multi_io: you can subclass LWJGLRenderer and implement your own cursor handling
 20:37 < multi_io> ok
+
+
+
+
+
+cases where TWL-internal mouse/keyboards event handlers expect a valid
+current GL context:
+
+
+- SimpleTest, combobox (in table cell) popup & close
+
+Exception in thread "AWT-EventQueue-0" java.lang.NullPointerException
+	at org.lwjgl.opengl.GL11.glDeleteLists(GL11.java:715)
+	at de.matthiasmann.twl.renderer.lwjgl.LWJGLFontCache.destroy(LWJGLFontCache.java:77)
+	at de.matthiasmann.twl.TextWidget.destroy(TextWidget.java:171)
+	at de.matthiasmann.twl.Widget.destroy(Widget.java:1204)
+	at de.matthiasmann.twl.Widget.destroy(Widget.java:1204)
+	at de.matthiasmann.twl.Widget.unparentChild(Widget.java:2044)
+	at de.matthiasmann.twl.Widget.removeChild(Widget.java:1159)
+	at de.matthiasmann.twl.GUI.closePopup(GUI.java:842)
+	at de.matthiasmann.twl.PopupWindow.closePopup(PopupWindow.java:163)
+	at de.matthiasmann.twl.ComboBox.listBoxSelectionChanged(ComboBox.java:172)
+	at de.matthiasmann.twl.ComboBox$2.callback(ComboBox.java:77)
+	at de.matthiasmann.twl.ComboBox$2.callback(ComboBox.java:1)
+	at de.matthiasmann.twl.utils.CallbackSupport.fireCallbacks(CallbackSupport.java:109)
+	at de.matthiasmann.twl.ListBox.doCallback(ListBox.java:131)
+	at de.matthiasmann.twl.ListBox.setSelected(ListBox.java:236)
+	at de.matthiasmann.twl.ListBox$1.callback(ListBox.java:523)
+	at de.matthiasmann.twl.ListBox$1.callback(ListBox.java:1)
+	at de.matthiasmann.twl.utils.CallbackSupport.fireCallbacks(CallbackSupport.java:109)
+	at de.matthiasmann.twl.ListBox$ListBoxLabel.doListBoxCallback(ListBox.java:616)
+	at de.matthiasmann.twl.ComboBox$ComboboxListboxLabel.handleListBoxEvent(ComboBox.java:322)
+	at de.matthiasmann.twl.ListBox$ListBoxLabel.handleEvent(ListBox.java:639)
+	at de.matthiasmann.twl.GUI.sendMouseEvent(GUI.java:785)
+	at de.matthiasmann.twl.GUI.handleMouse(GUI.java:615)
+	at de.olafklischat.volkit.App$MainFrameCanvas.processAnyMouseEvent(App.java:188)
+	at de.olafklischat.volkit.App$MainFrameCanvas.processMouseEvent(App.java:158)
+	at java.awt.Component.processEvent(Component.java:6028)
+	at java.awt.Component.dispatchEventImpl(Component.java:4630)
+	at java.awt.Component.dispatchEvent(Component.java:4460)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:599)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:269)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:184)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:174)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:169)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:161)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:122)
