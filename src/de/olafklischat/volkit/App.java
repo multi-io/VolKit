@@ -48,20 +48,6 @@ import org.lwjgl.opengl.Drawable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.PixelFormat;
 
-import test.BlockGame;
-import test.ColorSelectorDemoDialog1;
-import test.FileSelectorDemoDialog;
-import test.GraphDemoDialog1;
-import test.PropertySheetDemoDialog;
-import test.ScrollPaneDemoDialog1;
-import test.TableDemoDialog1;
-import test.TextAreaDemoDialog1;
-import test.TextAreaDemoDialog2;
-import test.ToggleFadeFrame;
-import test.VideoMode;
-import test.VideoSettings;
-import test.WidgetsDemoDialog1;
-
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.CallbackWithReason;
@@ -272,12 +258,6 @@ public class App {
             
         }
 
-        
-        
-        
-        
-        
-        
         public void createUI(boolean isApplet) throws LWJGLException, IOException {
             final RootPane root = new RootPane();
             renderer = new LWJGLRenderer();
@@ -285,148 +265,11 @@ public class App {
             gui = new GUI(root, renderer);
 
             loadTheme();
-
-            WidgetsDemoDialog1 dlg1 = new WidgetsDemoDialog1();
-            root.desk.add(dlg1);
-            dlg1.adjustSize();
-            dlg1.center(0.35f, 0.5f);
-
-            GraphDemoDialog1 fMS = new GraphDemoDialog1();
-            root.desk.add(fMS);
-            fMS.adjustSize();
-            fMS.center(1f, 0.8f);
-
-            ScrollPaneDemoDialog1 fScroll = new ScrollPaneDemoDialog1();
-            root.desk.add(fScroll);
-            fScroll.adjustSize();
-            fScroll.center(0f, 0f);
-            fScroll.addCloseCallback();
-            fScroll.centerScrollPane();
-
-            TableDemoDialog1 fTable = new TableDemoDialog1();
-            root.desk.add(fTable);
-            fTable.adjustSize();
-            fTable.center(0f, 0.5f);
-            //fTable.addCloseCallback();
-
-            PropertySheetDemoDialog fPropertySheet = new PropertySheetDemoDialog();
-            fPropertySheet.setHardVisible(false);
-            root.desk.add(fPropertySheet);
-            fPropertySheet.setSize(400, 400);
-            fPropertySheet.center(0f, 0.25f);
-            fPropertySheet.addCloseCallback();
-
-            FileSelectorDemoDialog fFileSelector = new FileSelectorDemoDialog();
-            fFileSelector.setHardVisible(false);
-            root.desk.add(fFileSelector);
-            fFileSelector.setSize(600, 400);
-            fFileSelector.center(0.15f, 0.25f);
-            fFileSelector.addCloseCallback();
-
-            TextAreaDemoDialog1 fInfo = new TextAreaDemoDialog1();
-            root.desk.add(fInfo);
-            fInfo.setSize(gui.getWidth()*2/3, gui.getHeight()*2/3);
-            fInfo.center(0.5f, 0.5f);
-            fInfo.addCloseCallback();
-
-            TextAreaDemoDialog2 fTextAreaTest = new TextAreaDemoDialog2();
-            fTextAreaTest.setHardVisible(false);
-            root.desk.add(fTextAreaTest);
-            fTextAreaTest.setSize(gui.getWidth()*2/3, gui.getHeight()*2/3);
-            fTextAreaTest.center(0.5f, 0.5f);
-            fTextAreaTest.addCloseCallback();
-
-            ColorSelectorDemoDialog1 fCS = new ColorSelectorDemoDialog1();
-            fCS.setHardVisible(false);
-            root.desk.add(fCS);
-            fCS.adjustSize();
-            fCS.center(0.5f, 0.5f);
-            fCS.addCloseCallback();
-
-            /*
-            final PopupWindow settingsDlg = new PopupWindow(root);
-            final VideoSettings settings = new VideoSettings(
-                    Preferences.userNodeForPackage(VideoSettings.class),
-                    desktopMode);
-            settingsDlg.setTheme("settingdialog");
-            settingsDlg.add(settings);
-            settingsDlg.setCloseOnClickedOutside(false);
-            settings.setTheme("settings");
-            settings.addCallback(new CallbackWithReason<VideoSettings.CallbackReason>() {
-                public void callback(VideoSettings.CallbackReason reason) {
-                    vidDlgCloseReason = reason;
-                    settingsDlg.closePopup();
-                }
-            });
-            */
-
-            root.addButton("Exit", new Runnable() {
-                public void run() {
-                    //closeRequested = true;
-                }
-            });
-            root.addButton("Info", "Shows TWL license", new ToggleFadeFrame(fInfo)).setTooltipContent(makeComplexTooltip());
-            root.addButton("TA", "Shows a text area test", new ToggleFadeFrame(fTextAreaTest));
-            if(!isApplet) {
-                root.addButton("Settings", "Opens a dialog which might be used to change video settings", new Runnable() {
-                    public void run() {
-                        //settings.readSettings();
-                        //settingsDlg.openPopupCentered();
-                    }
-                });
-            }
-            root.addButton("Toggle Theme", new Runnable() {
-                public void run() {
-                    curThemeIdx.setValue((curThemeIdx.getValue() + 1) % THEME_FILES.length);
-                    try {
-                        loadTheme();
-                    } catch(IOException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            });
-            root.addButton("ScrollPane", new ToggleFadeFrame(fScroll));
-            root.addButton("File", new ToggleFadeFrame(fFileSelector));
-            root.addButton("Properties", new ToggleFadeFrame(fPropertySheet));
-            root.addButton("Color", new ToggleFadeFrame(fCS));
-
-            root.addButton("Game", new Runnable() {
-                public void run() {
-                    BlockGame game = new BlockGame();
-                    game.setTheme("/blockgame");
-                    PopupWindow popup = new PopupWindow(root);
-                    popup.setTheme("settingdialog");
-                    popup.add(game);
-                    popup.openPopupCentered();
-                }
-            });
-
-            fInfo.requestKeyboardFocus();
         }
-        
-        
-        private Object makeComplexTooltip() {
-            HTMLTextAreaModel tam = new HTMLTextAreaModel();
-            tam.setHtml("Hello <img src=\"twl-logo\" alt=\"logo\"/> World");
-            TextArea ta = new TextArea(tam);
-            ta.setTheme("/licenseTextArea");
-            return ta;
-        }
-        
         
         @Override
         protected void paintGL() {
             try {
-                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                GL11.glLoadIdentity();
-                            
-                GL11.glColor3f(1, 0, 0);
-                GL11.glBegin(GL11.GL_LINES);
-                GL11.glVertex2f(0, 0);
-                GL11.glVertex2f(100, 50);
-                GL11.glEnd();
-                
                 if (resizePending) {
                     GL11.glViewport(0, 0, MainFrameCanvas.this.getWidth(), MainFrameCanvas.this.getHeight());
                     renderer.syncViewportSize();
