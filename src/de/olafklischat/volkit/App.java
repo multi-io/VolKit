@@ -7,6 +7,7 @@ import java.awt.GraphicsDevice;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -133,6 +134,7 @@ public class App {
 
         protected PersistentIntegerModel curThemeIdx;
         protected Timer guiUpdateTimer;
+        protected boolean resizePending = true;
 
         public MainFrameCanvas() throws LWJGLException {
             super();
@@ -412,9 +414,6 @@ public class App {
         }
         
         
-        
-        
-        
         @Override
         protected void paintGL() {
             try {
@@ -427,6 +426,13 @@ public class App {
                 GL11.glVertex2f(0, 0);
                 GL11.glVertex2f(100, 50);
                 GL11.glEnd();
+                
+                if (resizePending) {
+                    GL11.glViewport(0, 0, MainFrameCanvas.this.getWidth(), MainFrameCanvas.this.getHeight());
+                    renderer.syncViewportSize();
+                    gui.setSize();
+                    resizePending = false;
+                }
 
                 gui.validateLayout();
                 gui.draw();
@@ -435,6 +441,13 @@ public class App {
             } catch (LWJGLException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+        
+        
+        @Override
+        public void componentResized(ComponentEvent e) {
+            super.componentResized(e);
+            resizePending = true;
         }
     }
 
