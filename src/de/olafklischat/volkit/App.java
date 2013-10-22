@@ -24,9 +24,13 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.AWTGLCanvas;
 import org.lwjgl.opengl.GL11;
 
+import de.matthiasmann.twl.Alignment;
+import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
+import de.matthiasmann.twl.Widget;
+import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import de.matthiasmann.twl.theme.ThemeManager;
 import de.olafklischat.volkit.controller.MeasurementsController;
@@ -212,12 +216,35 @@ public class App {
         }
 
         public void createUI(boolean isApplet) throws LWJGLException, IOException {
+            final BoxLayout toolbar = new BoxLayout(Direction.HORIZONTAL);
+            toolbar.setTheme("");
+            toolbar.setAlignment(Alignment.CENTER);
             
-            de.olafklischat.twl.GridLayout mainPane = new de.olafklischat.twl.GridLayout(2, 2);
+            final de.olafklischat.twl.GridLayout mainPane = new de.olafklischat.twl.GridLayout(2, 2);
             mainPane.setTheme(""); //"buttonBox");
+            
+            Widget root = new Widget() {
+                @Override
+                protected void layout() {
+                    int h = 10 + toolbar.getPreferredHeight();
+                    toolbar.setPosition(getInnerX(), getInnerY());
+                    toolbar.setSize(getInnerWidth(), h);
+                    mainPane.setPosition(getInnerX(), getInnerY() + h);
+                    mainPane.setSize(getInnerWidth(), getInnerHeight() - h);
+                }
+                
+                @Override
+                protected void paint(GUI gui) {
+                    super.paint(gui);
+                }
+            };
+            root.setTheme("");
+            root.add(toolbar);
+            root.add(mainPane);
+            
             renderer = new LWJGLRenderer();
             renderer.setUseSWMouseCursors(true);
-            gui = new GUI(mainPane, renderer);
+            gui = new GUI(root, renderer);
             
             Properties appProps = new Properties();
             appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
@@ -246,6 +273,8 @@ public class App {
             final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
 
             mainPane.add(new Button(":-)"));
+
+            toolbar.add(new Button("Tx RST"));
 
             loadTheme();
         }

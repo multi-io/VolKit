@@ -155,3 +155,16 @@ Exception in thread "AWT-EventQueue-0" java.lang.NullPointerException
 22:28 < multi_io_> in there a slider widget in TWL similar to JSlider? I.e. with a draggable "thumb" thingy?
 22:28 < multi_io_> MatthiasM2: ^^
 22:31 < multi_io_> these ValueAdjuster things look different
+
+23:22 < MatthiasM2> multi_io_: use a ScrollBar
+23:30 < MatthiasM2> multi_io_: you can hide the arrow button of the scrollbar by assign them an empty theme without any images and 
+                    size (eg "-defaults")
+23:31 < multi_io_> MatthiasM2: ok thanks
+23:32 < MatthiasM2> remember that in TWL the widgets define the behavior and not the look :)
+23:33 < multi_io_> hm
+23:34 < multi_io_> so ValueAdjusterFloat doesn't contain the buttons that make up its UI?
+23:41 < MatthiasM2> well - it does - but how it will look - eg take a look at the theme editor - it has a totally different look 
+                    compared to the one in the examples
+23:42 < MatthiasM2> but for a ScrollBar, if you hide the arrow buttons you get a track and a thumb (see theme editor scrollbars)
+23:43 < MatthiasM2> now if you use a background image for the scrollbar which shows a track like JSlider does, and make the thumb 
+                    look like the one from JSlider ...
