@@ -12,12 +12,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
-import java.util.prefs.Preferences;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.undo.UndoManager;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.AWTGLCanvas;
@@ -26,9 +27,12 @@ import org.lwjgl.opengl.GL11;
 import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
-import de.matthiasmann.twl.model.PersistentIntegerModel;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import de.matthiasmann.twl.theme.ThemeManager;
+import de.olafklischat.volkit.controller.MeasurementsController;
+import de.olafklischat.volkit.controller.TripleSliceViewerController;
+import de.olafklischat.volkit.model.MeasurementsDB;
+import de.olafklischat.volkit.view.SliceViewer;
 
 public class App {
 
@@ -79,12 +83,7 @@ public class App {
 
         protected LWJGLRenderer renderer;
         protected ThemeManager theme;
-        private /*static*/ final String[] THEME_FILES = {
-            "simple.xml",
-            "guiTheme.xml"
-        };
-
-        protected PersistentIntegerModel curThemeIdx;
+        
         protected Timer guiUpdateTimer;
         protected boolean resizePending = true;
 
@@ -181,12 +180,6 @@ public class App {
         protected void initGL() {
             super.initGL();
             try {
-                curThemeIdx = new PersistentIntegerModel(
-                        Preferences.userNodeForPackage(App.class),
-                        "currentThemeIndex", 0, THEME_FILES.length, 0);
-                
-                //loadTheme();
-                
                 createUI(false);
             } catch (Exception e) {
                 throw new RuntimeException(e.getLocalizedMessage(), e);
@@ -203,8 +196,7 @@ public class App {
             // This allows easy reloading of a theme for development.
             // If you want fast theme switching without reloading then use the existing
             // cache context for loading the new theme and don't destroy the old theme.
-            ThemeManager newTheme = ThemeManager.createThemeManager(
-                App.class.getResource(THEME_FILES[curThemeIdx.getValue()]), renderer);
+            ThemeManager newTheme = ThemeManager.createThemeManager(App.class.getResource("simple.xml"), renderer);
             long duration = System.nanoTime() - startTime;
             System.out.println("Loaded theme in " + (duration/1000) + " us");
 
@@ -221,35 +213,39 @@ public class App {
 
         public void createUI(boolean isApplet) throws LWJGLException, IOException {
             
-            de.olafklischat.twl.GridLayout grid = new de.olafklischat.twl.GridLayout(2, 2);
-            grid.setTheme(""); //"buttonBox");
+            de.olafklischat.twl.GridLayout mainPane = new de.olafklischat.twl.GridLayout(2, 2);
+            mainPane.setTheme(""); //"buttonBox");
             renderer = new LWJGLRenderer();
             renderer.setUseSWMouseCursors(true);
-            gui = new GUI(grid, renderer);
+            gui = new GUI(mainPane, renderer);
             
-            Button btn = new Button("left");
-            btn.addCallback(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println("left");
-                }
-            });
-            btn.setTooltipContent("left tooltip");
-            grid.add(btn);
+            Properties appProps = new Properties();
+            appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
             
-            Button btn2 = new Button("right");
-            btn2.addCallback(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println("right");
-                }
-            });
-            btn2.setTooltipContent("right tooltip");
-            grid.add(btn2);
+            final UndoManager undoMgr = new UndoManager();
             
-            grid.add(new Button("foo"));
-            //grid.add(new Label(":-)"));
-            grid.add(new Button(":-)"));
+            final JFrame f = new JFrame("SliceView");
+            
+            f.getContentPane().setBackground(Color.GRAY);
+            f.getContentPane().setLayout(new BorderLayout());
+            
+            SliceViewer sv1 = new SliceViewer();
+            mainPane.add(sv1);
+
+            SliceViewer sv2 = new SliceViewer();
+            mainPane.add(sv2);
+
+            SliceViewer sv3 = new SliceViewer();
+            mainPane.add(sv3);
+
+            final TripleSliceViewerController slicesController = new TripleSliceViewerController(this, sv1, sv2, sv3, undoMgr);
+            
+            MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
+            mdb.load();
+            JTable measurementsTable = new JTable();
+            final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
+
+            mainPane.add(new Button(":-)"));
 
             loadTheme();
         }

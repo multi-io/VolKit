@@ -46,6 +46,11 @@ import javax.swing.event.ChangeListener;
 
 import org.apache.log4j.Logger;
 
+import de.matthiasmann.twl.Button;
+import de.matthiasmann.twl.ValueAdjusterFloat;
+import de.matthiasmann.twl.ValueAdjusterInt;
+import de.matthiasmann.twl.Widget;
+import de.matthiasmann.twl.model.SimpleIntegerModel;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.sofd.util.IdentityHashSet;
@@ -55,7 +60,7 @@ import de.sofd.viskit.image3D.jogl.util.LinAlg;
 import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 
-public class SliceViewer extends JPanel {
+public class SliceViewer extends Widget {
 
     private static final long serialVersionUID = 3961980093372280907L;
 
@@ -150,8 +155,9 @@ public class SliceViewer extends JPanel {
 
     private GLCanvas glCanvas = null;
     private GLShader fragShader;
-    
-    private JSlider navZslider;
+
+    private Widget canvas;
+    private Widget navZslider;
     
     protected List<SliceViewer> trackedViewers = new ArrayList<SliceViewer>();
     
@@ -163,16 +169,18 @@ public class SliceViewer extends JPanel {
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
     public SliceViewer() {
-        setLayout(new BorderLayout());
-        if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
-            createGlCanvas();
-        }
-        instances.add(this);
-        navZslider = new JSlider(JSlider.HORIZONTAL);
-        this.add(navZslider, BorderLayout.SOUTH);
-        navZslider.getModel().setMinimum(0);
-        navZslider.getModel().setMaximum(10000);
-        navZslider.getModel().addChangeListener(navZsliderChangeListener);
+        //setLayout(new BorderLayout());
+        //if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
+        //    createGlCanvas();
+        //}
+        //instances.add(this);
+        setTheme("");
+        canvas = new Button("Canvas");
+        this.add(canvas);
+        navZslider = new ValueAdjusterInt(new SimpleIntegerModel(0, 10000, 5000));
+        //navZslider = new Button("navZslider");
+        this.add(navZslider);
+        //navZslider.getModel().addChangeListener(navZsliderChangeListener);
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
         LinAlg.fillIdentity(sliceToCanvasTransform);
@@ -184,6 +192,15 @@ public class SliceViewer extends JPanel {
     public SliceViewer(VolumeDataSet volumeDataSet) {
         this();
         setVolumeDataSet(volumeDataSet);
+    }
+    
+    @Override
+    protected void layout() {
+        int h = navZslider.getPreferredHeight();
+        canvas.setPosition(getInnerX(), getInnerY());
+        canvas.setSize(getInnerWidth(), getInnerHeight() - h);
+        navZslider.setPosition(getInnerX(), getInnerY() + getInnerHeight() - h);
+        navZslider.setSize(getInnerWidth(), h);
     }
 
     public VolumeDataSet getVolumeDataSet() {
@@ -214,9 +231,9 @@ public class SliceViewer extends JPanel {
         caps.setDoubleBuffered(true);
         glCanvas = new GLCanvas(caps, null, sharedContextData.getGlContext(), null);
         glCanvas.addGLEventListener(new GLEventHandler());
-        this.add(glCanvas, BorderLayout.CENTER);
-        revalidate();
-        setupInternalUiInteractions();
+        //this.add(glCanvas, BorderLayout.CENTER);
+        //revalidate();
+        ////setupInternalUiInteractions();
         //glCanvas.addKeyListener(internalMouseEventHandler);
         glCanvas.addMouseListener(canvasMouseEventDispatcher);
         glCanvas.addMouseMotionListener(canvasMouseEventDispatcher);
@@ -848,13 +865,13 @@ public class SliceViewer extends JPanel {
         if (! navZslider.isEnabled()) {
             navZslider.setEnabled(true);
         }
-        BoundedRangeModel sliderModel = navZslider.getModel();
-        internalNavZsliderValueIsAdjusting = true;
-        int min = sliderModel.getMinimum();
-        int max = sliderModel.getMaximum();
-        sliderModel.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength));
-        sliderModel.setExtent(1);
-        internalNavZsliderValueIsAdjusting = false;
+        //BoundedRangeModel sliderModel = navZslider.getModel();
+        //internalNavZsliderValueIsAdjusting = true;
+        //int min = sliderModel.getMinimum();
+        //int max = sliderModel.getMaximum();
+        //sliderModel.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength));
+        //sliderModel.setExtent(1);
+        //internalNavZsliderValueIsAdjusting = false;
     }
 
     private ChangeListener navZsliderChangeListener = new ChangeListener() {
@@ -865,16 +882,17 @@ public class SliceViewer extends JPanel {
             inCall = true;
             try {
                 if (internalNavZsliderValueIsAdjusting) { return; }
-                BoundedRangeModel sliderModel = navZslider.getModel();
-                int min = sliderModel.getMinimum();
-                int max = sliderModel.getMaximum();
-                setNavigationZ(navigationCubeLength * ((float)sliderModel.getValue() - min) / (max-min) - navigationCubeLength/2);
+                //BoundedRangeModel sliderModel = navZslider.getModel();
+                //int min = sliderModel.getMinimum();
+                //int max = sliderModel.getMaximum();
+                //setNavigationZ(navigationCubeLength * ((float)sliderModel.getValue() - min) / (max-min) - navigationCubeLength/2);
             } finally {
                 inCall = false;
             }
         }
     };
 
+    /*
     @Override
     public void setBackground(java.awt.Color bg) {
         super.setBackground(bg);
@@ -912,6 +930,7 @@ public class SliceViewer extends JPanel {
             actionMap.put("right", new SelectionShiftAction(1));
         }
     }
+    */
     
     protected class SelectionShiftAction extends AbstractAction {
         private int shift;

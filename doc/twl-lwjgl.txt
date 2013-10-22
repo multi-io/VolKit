@@ -150,3 +150,8 @@ Exception in thread "AWT-EventQueue-0" java.lang.NullPointerException
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:169)
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:161)
 	at java.awt.EventDispatchThread.run(EventDispatchThread.java:122)
+
+
+22:28 < multi_io_> in there a slider widget in TWL similar to JSlider? I.e. with a draggable "thumb" thingy?
+22:28 < multi_io_> MatthiasM2: ^^
+22:31 < multi_io_> these ValueAdjuster things look different

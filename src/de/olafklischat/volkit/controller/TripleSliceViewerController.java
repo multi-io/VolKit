@@ -1,5 +1,6 @@
 package de.olafklischat.volkit.controller;
 
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -25,6 +26,8 @@ public class TripleSliceViewerController {
 
     private static final int ZOOMPAN_MOUSE_BUTTON = MouseEvent.BUTTON2;
     private static final int ZOOMPAN_MOUSE_MASK = MouseEvent.BUTTON2_MASK;
+    
+    protected Component parentComponent;
 
     protected SliceViewer sv1;
     protected SliceViewer sv2;
@@ -32,11 +35,12 @@ public class TripleSliceViewerController {
     
     protected UndoManager vol2worldTransformUndoManager;
     
-    public TripleSliceViewerController(SliceViewer sv1, SliceViewer sv2, SliceViewer sv3) {
-        this(sv1, sv2, sv3, null);
+    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3) {
+        this(parentComponent, sv1, sv2, sv3, null);
     }
     
-    public TripleSliceViewerController(SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, UndoManager undoMgr) {
+    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, UndoManager undoMgr) {
+        this.parentComponent = parentComponent;
         this.sv1 = sv1;
         this.sv2 = sv2;
         this.sv3 = sv3;
@@ -274,7 +278,7 @@ public class TripleSliceViewerController {
                         vds = get();
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        JOptionPane.showMessageDialog(sv1, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(parentComponent, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                     sv1.setVolumeDataSet(vds);
@@ -283,7 +287,7 @@ public class TripleSliceViewerController {
                 }
             }
         };
-        final ProgressMonitor progressMonitor = new ProgressMonitor(sv1, "Loading DICOM data...", "", 0, 100);
+        final ProgressMonitor progressMonitor = new ProgressMonitor(parentComponent, "Loading DICOM data...", "", 0, 100);
         bkgTask.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
