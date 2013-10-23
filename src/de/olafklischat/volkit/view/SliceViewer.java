@@ -169,14 +169,21 @@ public class SliceViewer extends Widget {
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
     public SliceViewer() {
-        //setLayout(new BorderLayout());
-        //if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
-        //    createGlCanvas();
-        //}
-        //instances.add(this);
         setTheme("");
-        canvas = new Button("Canvas");
+        canvas = new Canvas();
+        canvas.setTheme("");
         this.add(canvas);
+
+        /*
+        ////TODO: reintegrate
+        setupInternalUiInteractions();
+        //canvas.addKeyListener(internalMouseEventHandler);
+        canvas.addMouseListener(canvasMouseEventDispatcher);
+        canvas.addMouseMotionListener(canvasMouseEventDispatcher);
+        canvas.addMouseWheelListener(canvasMouseEventDispatcher);
+        //canvas.addKeyListener(canvasMouseAndKeyHandler);
+         */
+
         navZslider = new ValueAdjusterInt(new SimpleIntegerModel(0, 10000, 5000));
         //navZslider = new Button("navZslider");
         this.add(navZslider);
@@ -224,21 +231,6 @@ public class SliceViewer extends Widget {
         updateNavZslider();
         needViewportReset = true;
         refresh();
-    }
-
-    private void createGlCanvas() {
-        GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL2));
-        caps.setDoubleBuffered(true);
-        glCanvas = new GLCanvas(caps, null, sharedContextData.getGlContext(), null);
-        glCanvas.addGLEventListener(new GLEventHandler());
-        //this.add(glCanvas, BorderLayout.CENTER);
-        //revalidate();
-        ////setupInternalUiInteractions();
-        //glCanvas.addKeyListener(internalMouseEventHandler);
-        glCanvas.addMouseListener(canvasMouseEventDispatcher);
-        glCanvas.addMouseMotionListener(canvasMouseEventDispatcher);
-        glCanvas.addMouseWheelListener(canvasMouseEventDispatcher);
-        //glCanvas.addKeyListener(canvasMouseAndKeyHandler);
     }
 
     public GLAutoDrawable getGlCanvas() {
@@ -360,15 +352,14 @@ public class SliceViewer extends Widget {
         uninitializedSlicePaintListeners.clear();
     }
     
-    protected class GLEventHandler implements GLEventListener {
+    protected class Canvas extends Widget {
 
         /**
          * dimensions of viewport in canvas coordinate system
          */
         float viewWidth, viewHeight;
 
-        @Override
-        public void init(GLAutoDrawable glAutoDrawable) {
+        public Canvas() {
             // Use debug pipeline
             glAutoDrawable.setGL(new DebugGL2(glAutoDrawable.getGL().getGL2()));
             GL2 gl = glAutoDrawable.getGL().getGL2();
