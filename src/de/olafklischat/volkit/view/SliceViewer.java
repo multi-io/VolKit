@@ -45,8 +45,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.log4j.Logger;
+import org.lwjgl.opengl.GL11;
 
 import de.matthiasmann.twl.Button;
+import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.ValueAdjusterFloat;
 import de.matthiasmann.twl.ValueAdjusterInt;
 import de.matthiasmann.twl.Widget;
@@ -353,50 +355,60 @@ public class SliceViewer extends Widget {
     }
     
     protected class Canvas extends Widget {
+        
+        protected boolean isInitialized = false;
 
         /**
          * dimensions of viewport in canvas coordinate system
          */
         float viewWidth, viewHeight;
 
-        public Canvas() {
-            // Use debug pipeline
-            glAutoDrawable.setGL(new DebugGL2(glAutoDrawable.getGL().getGL2()));
-            GL2 gl = glAutoDrawable.getGL().getGL2();
-            gl.setSwapInterval(1);
-            gl.glClearColor(0,0,0,0);
-            gl.glShadeModel(gl.GL_FLAT);
-            sharedContextData.ref(getGlCanvas().getContext());
-            logger.debug("new GLCanvas being initialized, refcount=" + sharedContextData.getRefCount());
-            if (sharedContextData.getRefCount() == 1) {
-                SharedContextData.callContextInitCallbacks(sharedContextData, gl);
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (SliceViewer v : instances) {
-                            if (v != SliceViewer.this) {
-                                v.createGlCanvas();
-                            }
-                        }
-                    }
-                });
+        protected void ensureInitialized() {
+            if (isInitialized) {
+                return;
             }
-
             try {
-                ShaderManager.read(gl, "sliceviewer");
-                fragShader = ShaderManager.get("sliceviewer");
-                fragShader.addProgramUniform("tex");
-                fragShader.addProgramUniform("scale");
-                fragShader.addProgramUniform("offset");
+                //TODO: reintegrate
+                //ShaderManager.read(gl, "sliceviewer");
+                //fragShader = ShaderManager.get("sliceviewer");
+                //fragShader.addProgramUniform("tex");
+                //fragShader.addProgramUniform("scale");
+                //fragShader.addProgramUniform("offset");
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
-            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+            //TODO: reintegrate
+            //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+            isInitialized = true;
         }
 
         @Override
-        public void display(GLAutoDrawable glAutoDrawable) {
-            GL2 gl = glAutoDrawable.getGL().getGL2();
+        protected void paintWidget(GUI gui) {
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT);
+            try {
+                GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glColor3f(1, 0, 0);
+                GL11.glBegin(GL11.GL_LINES);
+                GL11.glVertex2f(getInnerX(), getInnerY());
+                GL11.glVertex2f(getInnerX() + 100, getInnerY() + 50);
+                GL11.glEnd();
+
+            } finally {
+                GL11.glPopAttrib();
+            }
+        }
+
+        protected void paintWidget_(GUI gui) {
+            ensureInitialized();
+            
+            //TODO: reintegrate
+            //gl.glClearColor(0,0,0,0);
+            //gl.glShadeModel(gl.GL_FLAT);
+            
+            
+            //TODO: reintegrate
+            //GL2 gl = glAutoDrawable.getGL().getGL2();
+            GL2 gl = null; //tmp
             if (null != previousvolumeDataSet) {
                 previousvolumeDataSet.dispose(gl, sharedContextData);  // TODO: reference count on the VolumeDataSet
                 previousvolumeDataSet = null;
@@ -407,7 +419,8 @@ public class SliceViewer extends Widget {
             if (needViewportReset) {
                 setupEye2ViewportTransformation(gl);
             }
-            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+            //TODO: reintegrate
+            //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
             gl.glClear(gl.GL_COLOR_BUFFER_BIT);
             gl.glMatrixMode(gl.GL_MODELVIEW);
             gl.glLoadIdentity();
@@ -481,7 +494,7 @@ public class SliceViewer extends Widget {
         }
 
         
-        @Override
+        //@Override
         public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
             GL2 gl = (GL2) glAutoDrawable.getGL();
             if (null != previousvolumeDataSet) {
@@ -557,7 +570,7 @@ public class SliceViewer extends Widget {
             }
         }
 
-        @Override
+        //@Override
         public void dispose(final GLAutoDrawable glAutoDrawable) {
             logger.debug("disposing GLCanvas...");
             forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
