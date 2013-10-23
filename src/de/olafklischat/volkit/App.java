@@ -8,14 +8,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.undo.UndoManager;
@@ -33,6 +41,7 @@ import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import de.matthiasmann.twl.theme.ThemeManager;
+import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.model.MeasurementsDB;
@@ -215,8 +224,22 @@ public class App {
             
         }
 
+        BoxLayout toolbar;
+        
+        private void addToolbarAction(final Action a) {
+            Button b = new Button((String) a.getValue(Action.NAME));
+            b.setTooltipContent(a.getValue(Action.SHORT_DESCRIPTION));
+            b.addCallback(new Runnable() {
+                @Override
+                public void run() {
+                    a.actionPerformed(null);
+                }
+            });
+            toolbar.add(b);
+        }
+        
         public void createUI(boolean isApplet) throws LWJGLException, IOException {
-            final BoxLayout toolbar = new BoxLayout(Direction.HORIZONTAL);
+            toolbar = new BoxLayout(Direction.HORIZONTAL);
             toolbar.setTheme("");
             toolbar.setAlignment(Alignment.CENTER);
             
@@ -274,7 +297,133 @@ public class App {
 
             mainPane.add(new Button(":-)"));
 
-            toolbar.add(new Button("Tx RST"));
+            addToolbarAction(new AbstractAction("Tx RST") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    slicesController.resetVolumeToWorldTransform();
+                }
+            });
+            addToolbarAction(new AbstractAction("Nav RST") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    slicesController.resetZNavigations();
+                }
+            });
+                addToolbarAction(new AbstractAction("Undo") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (undoMgr.canUndo()) {
+                        undoMgr.undo();
+                    }
+                }
+            });
+            addToolbarAction(new AbstractAction("Redo") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (undoMgr.canRedo()) {
+                        undoMgr.redo();
+                    }
+                }
+            });
+            // TODO: UndoManager doesn't have PropertyChangeEvents for its
+            // canUndo/canRedo properties, so we can't easily enable/disable the above buttons
+            // at the right time. Would have to make all the involved components
+            // (TripleSliceViewerController in this case) fire UndoableEditEvents, which, frankly, sucks.
+
+            addToolbarAction(new AbstractAction("Zoom RST") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    slicesController.resetSliceToCanvasTransformations();
+                }
+            });
+            addToolbarAction(new AbstractAction("Load Volume") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final JFileChooser fc = new JFileChooser();
+                    fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int returnVal = fc.showOpenDialog(f);
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        File dir = fc.getSelectedFile();
+                        if (dir.isDirectory()) {
+                            slicesController.startLoadingVolumeDataSetInBackground(dir.getAbsolutePath(), 1);
+                        } else {
+                            JOptionPane.showMessageDialog(f, "not a directory: " + dir, "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            });
+            addToolbarAction(new AbstractAction("incisx") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/INCISIX", 1);
+                }
+            });
+            addToolbarAction(new AbstractAction("brainix") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
+                }
+            });
+            /*//TODO: put the transparency slider back in again
+            toolbar.add(new JLabel("transparency"));
+            final JSlider transpSlider = new JSlider(0, 10000);
+            toolbar.add(transpSlider);
+            transpSlider.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    measurementsController.setTransparencyCoeff((float)Math.exp((float)transpSlider.getValue()/1500f));
+                }
+            });
+            transpSlider.setValue(1650);
+            */
+            
+            // measurements frame
+
+            {
+                final JFrame measurementsFrame = new JFrame("Measurements");
+                JScrollPane scrollpane = new JScrollPane(measurementsTable);
+                measurementsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+
+                JToolBar measurementsToolbar = new JToolBar();
+                measurementsFrame.getContentPane().add(measurementsToolbar, BorderLayout.SOUTH);
+                measurementsToolbar.add(new AbstractAction("Export") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        JFileChooser fc = new JFileChooser();
+                        if (JFileChooser.APPROVE_OPTION == fc.showSaveDialog(measurementsFrame)) {
+                            try {
+                                measurementsController.exportAllMeasurements(fc.getSelectedFile());
+                            } catch (Exception ex) {
+                                JOptionPane.showMessageDialog(measurementsFrame, ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                });
+                
+                measurementsFrame.setSize(500,1000);
+                measurementsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                measurementsFrame.setVisible(true);
+            }
+            
+            // datasets frame
+
+            {
+                JFrame datasetsFrame = new JFrame("Datasets");
+                JList datasetsList = new JList();
+                datasetsList.setLayoutOrientation(JList.VERTICAL);
+                JScrollPane scrollpane = new JScrollPane(datasetsList);
+                datasetsFrame.getContentPane().add(scrollpane, BorderLayout.CENTER);
+                
+                datasetsFrame.setSize(300,1000);
+                datasetsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                datasetsFrame.setVisible(true);
+                
+                DatasetsController dsc = new DatasetsController(new File(appProps.getProperty("dataset.basedir")), datasetsList, slicesController);
+            }
+            
+            //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
+            //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
 
             loadTheme();
         }
