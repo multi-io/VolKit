@@ -49,6 +49,7 @@ import de.olafklischat.volkit.view.SliceViewer;
 
 public class App {
 
+    JFrame f;
     protected GUI gui;
     
     /**
@@ -72,7 +73,7 @@ public class App {
         Properties appProps = new Properties();
         appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
         
-        final JFrame f = new JFrame("SliceView");
+        f = new JFrame("SliceView");
         
         f.getContentPane().setBackground(Color.GRAY);
         f.getContentPane().setLayout(new BorderLayout());
@@ -109,10 +110,6 @@ public class App {
                     if (gui == null) {
                         return;
                     }
-                    gui.setSize();
-                    gui.updateTime();
-                    gui.updateTimers();
-                    gui.invokeRunables();
                     MainFrameCanvas.this.repaint();
                 }
             });
@@ -274,11 +271,6 @@ public class App {
             
             final UndoManager undoMgr = new UndoManager();
             
-            final JFrame f = new JFrame("SliceView");
-            
-            f.getContentPane().setBackground(Color.GRAY);
-            f.getContentPane().setLayout(new BorderLayout());
-            
             SliceViewer sv1 = new SliceViewer();
             mainPane.add(sv1);
 
@@ -361,7 +353,7 @@ public class App {
             addToolbarAction(new AbstractAction("brainix") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
+                    //slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                 }
             });
             /*//TODO: put the transparency slider back in again
@@ -441,6 +433,10 @@ public class App {
                 GL11.glClearColor(0, 0, 0, 1);
                 GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
+                gui.setSize();
+                gui.updateTime();
+                gui.updateTimers();
+                gui.invokeRunables();
                 gui.validateLayout();
                 gui.draw();
                 gui.handleTooltips();  // TODO: better do this after dispatching mouse events in here?

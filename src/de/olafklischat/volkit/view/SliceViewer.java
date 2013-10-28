@@ -1,11 +1,9 @@
 package de.olafklischat.volkit.view;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -24,32 +22,18 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.media.opengl.DebugGL2;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLCapabilities;
-import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLCanvas;
 import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.BoundedRangeModel;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
-import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.GUI;
-import de.matthiasmann.twl.ValueAdjusterFloat;
 import de.matthiasmann.twl.ValueAdjusterInt;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.model.SimpleIntegerModel;
@@ -355,7 +339,7 @@ public class SliceViewer extends Widget {
     }
     
     protected class Canvas extends Widget {
-        
+
         protected boolean isInitialized = false;
 
         /**
@@ -384,8 +368,9 @@ public class SliceViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT);
             try {
+                GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
                 GL11.glColor3f(1, 0, 0);
                 GL11.glBegin(GL11.GL_LINES);
