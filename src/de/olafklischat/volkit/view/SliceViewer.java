@@ -386,32 +386,27 @@ public class SliceViewer extends Widget {
         protected void paintWidget_(GUI gui) {
             ensureInitialized();
             
-            //TODO: reintegrate
-            //gl.glClearColor(0,0,0,0);
-            //gl.glShadeModel(gl.GL_FLAT);
-            
-            
-            //TODO: reintegrate
-            //GL2 gl = glAutoDrawable.getGL().getGL2();
-            GL2 gl = null; //tmp
-            if (null != previousvolumeDataSet) {
-                previousvolumeDataSet.dispose(gl, sharedContextData);  // TODO: reference count on the VolumeDataSet
-                previousvolumeDataSet = null;
-            }
-            if (null == volumeDataSet) {
-                return;
-            }
-            if (needViewportReset) {
-                setupEye2ViewportTransformation(gl);
-            }
-            //TODO: reintegrate
-            //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT);
-            gl.glMatrixMode(gl.GL_MODELVIEW);
-            gl.glLoadIdentity();
-
-            gl.glPushAttrib(gl.GL_COLOR_BUFFER_BIT|GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
+            GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT|GL11.GL_CURRENT_BIT|GL11.GL_ENABLE_BIT);
             try {
+                GL11.glClearColor(0,0,0,0);
+                GL11.glShadeModel(GL11.GL_FLAT);
+                
+                if (null != previousvolumeDataSet) {
+                    previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
+                    previousvolumeDataSet = null;
+                }
+                if (null == volumeDataSet) {
+                    return;
+                }
+                if (needViewportReset) {
+                    setupEye2ViewportTransformation();
+                }
+                //TODO: reintegrate
+                //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+                gl.glClear(gl.GL_COLOR_BUFFER_BIT);
+                gl.glMatrixMode(gl.GL_MODELVIEW);
+                gl.glLoadIdentity();
+
                 try {
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
                     fragShader.bind();
