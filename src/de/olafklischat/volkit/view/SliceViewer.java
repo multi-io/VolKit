@@ -368,21 +368,27 @@ public class SliceViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glPushMatrix();
+            setupEye2ViewportTransformation();
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
                 GL11.glColor3f(1, 0, 0);
                 GL11.glBegin(GL11.GL_LINES);
-                GL11.glVertex2f(getInnerX(), getInnerY());
-                GL11.glVertex2f(getInnerX() + 100, getInnerY() + 50);
+                GL11.glVertex2f(10, 10);
+                GL11.glVertex2f(100, 50);
                 GL11.glEnd();
 
             } finally {
+                GL11.glMatrixMode(GL11.GL_PROJECTION);
+                GL11.glPopMatrix();
                 GL11.glPopAttrib();
             }
         }
 
+        /*
         protected void paintWidget_(GUI gui) {
             ensureInitialized();
             
@@ -446,6 +452,7 @@ public class SliceViewer extends Widget {
                 gl.glPopAttrib();
             }
         }
+        */
         
         private void texturedCanvasPoint(GL2 gl, float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
@@ -484,7 +491,7 @@ public class SliceViewer extends Widget {
             if (null == volumeDataSet) {
                 return;
             }
-            setupEye2ViewportTransformation(gl);
+            setupEye2ViewportTransformation();
             Runnable r = new Runnable() {
                 @Override
                 public void run() {
@@ -502,52 +509,28 @@ public class SliceViewer extends Widget {
             }
         }
 
-        private void setupEye2ViewportTransformation(GL2 gl) {
-            gl.glMatrixMode(gl.GL_PROJECTION);
-            gl.glLoadIdentity();
-            Dimension sz = glCanvas.getSize();
-            if (sz != null) {
-                /*
-                 // visible area depending on canvas size
-                gl.glOrtho(-sz.width / 2,   //  GLdouble    left,
-                        sz.width / 2,   //    GLdouble      right,
-                       -sz.height / 2,  //    GLdouble      bottom,
-                        sz.height / 2,  //    GLdouble      top,
-                       -1000, //  GLdouble      nearVal,
-                        1000   //  GLdouble     farVal
-                       );
-                */
-                
-                if (sz.width > sz.height) {
-                    viewHeight = navigationCubeLength;
-                    viewWidth = viewHeight * sz.width / sz.height;
-                } else {
-                    viewWidth = navigationCubeLength;
-                    viewHeight = viewWidth * sz.height / sz.width;
-                }
-                gl.glOrtho(-viewWidth / 2,   //  GLdouble    left,
-                            viewWidth / 2,   //    GLdouble      right,
-                           -viewHeight / 2,  //    GLdouble      bottom,
-                            viewHeight / 2,  //    GLdouble      top,
-                           -navigationCubeLength, //  GLdouble      nearVal,
-                            navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
-                           );
-
-                /*
-                // TODO: if we have a glViewPort() call, strange things happen
-                //  (completely wrong viewport in some cells) if the J2D OGL pipeline is active.
-                //  If we don't include it, everything works. Why? The JOGL UserGuide says
-                //  that the viewport is automatically set to the drawable's size, but why
-                //  is it harmful to do this manually too?
-                gl.glViewport(0, //GLint x,
-                              0, //GLint y,
-                              getWidth(), //GLsizei width,
-                              getHeight() //GLsizei height
-                              );
-                */
-                gl.glDepthRange(0,1);
-                needViewportReset = false;
+        private void setupEye2ViewportTransformation() {
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glLoadIdentity();
+            if (getInnerWidth() > getInnerHeight()) {
+                viewHeight = navigationCubeLength;
+                viewWidth = viewHeight * getInnerWidth() / getInnerHeight();
+            } else {
+                viewWidth = navigationCubeLength;
+                viewHeight = viewWidth * getInnerHeight() / getInnerWidth();
             }
+            GL11.glOrtho(-viewWidth / 2,   //  GLdouble    left,
+                          viewWidth / 2,   //    GLdouble      right,
+                         -viewHeight / 2,  //    GLdouble      bottom,
+                          viewHeight / 2,  //    GLdouble      top,
+                         -navigationCubeLength, //  GLdouble      nearVal,
+                          navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
+                         );
+            //TODO: it's probably not a good idea to (temporarily) change the viewport dimensions
+            // when drawing in a TWL widget (as opposed to an AWTGLCanvas that hosts a single SliceViewer only)
+            GL11.glViewport(getInnerX(), getInnerY(), getInnerWidth(), getInnerHeight());
+            GL11.glDepthRange(0,1);
+            needViewportReset = false;
         }
 
         //@Override
