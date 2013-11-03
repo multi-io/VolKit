@@ -1,7 +1,6 @@
 package de.olafklischat.volkit.view;
 
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -338,9 +337,13 @@ public class SliceViewer extends Widget {
         uninitializedSlicePaintListeners.clear();
     }
     
+    static int stmp = 0;
+    
     protected class Canvas extends Widget {
 
         protected boolean isInitialized = false;
+        
+        private int oid = stmp++;
 
         /**
          * dimensions of viewport in canvas coordinate system
@@ -371,16 +374,27 @@ public class SliceViewer extends Widget {
             GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
-            setupEye2ViewportTransformation();
+            setupEye2ViewportTransformation(gui);
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
-                GL11.glColor3f(1, 0, 0);
+                switch (oid) {
+                case 0:
+                    GL11.glColor3f(1, 0, 0);
+                    break;
+                case 1:
+                    GL11.glColor3f(0, 1, 0);
+                    break;
+                case 2:
+                    GL11.glColor3f(0, 0, 1);
+                    break;
+                default:
+                    throw new RuntimeException();
+                }
                 GL11.glBegin(GL11.GL_LINES);
-                GL11.glVertex2f(10, 10);
-                GL11.glVertex2f(100, 50);
+                GL11.glVertex2f(10 + 10*oid, 10);
+                GL11.glVertex2f(100 + 10*oid, 50);
                 GL11.glEnd();
-
             } finally {
                 GL11.glMatrixMode(GL11.GL_PROJECTION);
                 GL11.glPopMatrix();
@@ -481,6 +495,7 @@ public class SliceViewer extends Widget {
         }
 
         
+        /*
         //@Override
         public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
             GL2 gl = (GL2) glAutoDrawable.getGL();
@@ -508,8 +523,9 @@ public class SliceViewer extends Widget {
                 }
             }
         }
+        */
 
-        private void setupEye2ViewportTransformation() {
+        private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glLoadIdentity();
             if (getInnerWidth() > getInnerHeight()) {
@@ -528,7 +544,7 @@ public class SliceViewer extends Widget {
                          );
             //TODO: it's probably not a good idea to (temporarily) change the viewport dimensions
             // when drawing in a TWL widget (as opposed to an AWTGLCanvas that hosts a single SliceViewer only)
-            GL11.glViewport(getInnerX(), getInnerY(), getInnerWidth(), getInnerHeight());
+            GL11.glViewport(getInnerX(), gui.getRenderer().getHeight() - getInnerY() - getInnerHeight(), getInnerWidth(), getInnerHeight());
             GL11.glDepthRange(0,1);
             needViewportReset = false;
         }

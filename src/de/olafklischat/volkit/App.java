@@ -235,7 +235,7 @@ public class App {
             toolbar.add(b);
         }
         
-        public void createUI(boolean isApplet) throws LWJGLException, IOException {
+        public void createUI(boolean isApplet) throws Exception, LWJGLException, IOException {
             toolbar = new BoxLayout(Direction.HORIZONTAL);
             toolbar.setTheme("");
             toolbar.setAlignment(Alignment.CENTER);
@@ -276,9 +276,11 @@ public class App {
 
             SliceViewer sv2 = new SliceViewer();
             mainPane.add(sv2);
+            //mainPane.add(new Button(":-|"));
 
             SliceViewer sv3 = new SliceViewer();
             mainPane.add(sv3);
+            //mainPane.add(new Button(":-("));
 
             final TripleSliceViewerController slicesController = new TripleSliceViewerController(this, sv1, sv2, sv3, undoMgr);
             
@@ -414,7 +416,7 @@ public class App {
                 DatasetsController dsc = new DatasetsController(new File(appProps.getProperty("dataset.basedir")), datasetsList, slicesController);
             }
             
-            //slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
+            slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
             //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
 
             loadTheme();
