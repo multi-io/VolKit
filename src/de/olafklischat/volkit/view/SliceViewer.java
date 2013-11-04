@@ -394,7 +394,7 @@ public class SliceViewer extends Widget {
                 GL11.glPushMatrix();
                 try {
                     GL11.glLoadIdentity();
-                    GL11.glColor3f(1, 0, 0);
+                    GL11.glColor3f(0, 1, 0);
                     //GL11.glBegin(GL11.GL_LINES);
                     //GL11.glVertex2f(10 + 10*oid, 10);
                     //GL11.glVertex2f(100 + 10*oid, 50);
@@ -428,9 +428,10 @@ public class SliceViewer extends Widget {
                         float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         GL11.glBegin(GL11.GL_LINES);
-                        GL11.glVertexPointer(3, 1, toFB3(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null)));
-                        GL11.glVertexPointer(3, 1, toFB3(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null)));
+                        glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null));
+                        glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null));
                         GL11.glEnd();
+                        // TODO: the lines don't look right (too thick and too dark). Must be some unwanted state from TWL.
                     }
 
                     //TODO: reintegrate
@@ -525,9 +526,8 @@ public class SliceViewer extends Widget {
                              1.0f/volumeDataSet.getDepthInMm(),
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
-            GL11.glTexCoordPointer(3, 1, toFB3(ptInTex));
-            //System.out.println("texCoord.Z="+ptInTex[2]);
-            GL11.glVertex2f(x, y);
+            glTexCoord3fv(ptInTex);
+            glVertex3fv(new float[]{x, y, 0});
         }
         
         private void outputSlicePoint(String caption, float x, float y) {
@@ -546,6 +546,22 @@ public class SliceViewer extends Widget {
             return fb3;
         }
         
+        //03:38 < multi_io> how would you port gl*3fv(arr) calls to lwjgl?
+        //03:38 < multi_io> gl*3f(arr[0],arr[1],arr[2]) ?
+        //03:38 < multi_io> or is there a variant that takes a FloatBuffer?
+
+        private void glVertex2fv(float[] arr) {
+            GL11.glVertex2f(arr[0], arr[1]);
+        }
+
+        private void glVertex3fv(float[] arr) {
+            GL11.glVertex3f(arr[0], arr[1], arr[2]);
+        }
+        
+        private void glTexCoord3fv(float[] arr) {
+            GL11.glTexCoord3f(arr[0], arr[1], arr[2]);
+        }
+
         /*
         //@Override
         public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
