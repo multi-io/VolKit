@@ -11,6 +11,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -22,7 +23,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.media.opengl.GL;
-import javax.media.opengl.GL2;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.awt.GLCanvas;
 import javax.swing.AbstractAction;
@@ -30,6 +30,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.log4j.Logger;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 import de.matthiasmann.twl.GUI;
@@ -378,23 +379,65 @@ public class SliceViewer extends Widget {
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
-                switch (oid) {
-                case 0:
-                    GL11.glColor3f(1, 0, 0);
-                    break;
-                case 1:
-                    GL11.glColor3f(0, 1, 0);
-                    break;
-                case 2:
-                    GL11.glColor3f(0, 0, 1);
-                    break;
-                default:
-                    throw new RuntimeException();
+
+                if (null != previousvolumeDataSet) {
+                    //TODO: reintegrate
+                    //previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
+                    previousvolumeDataSet = null;
                 }
-                GL11.glBegin(GL11.GL_LINES);
-                GL11.glVertex2f(10 + 10*oid, 10);
-                GL11.glVertex2f(100 + 10*oid, 50);
-                GL11.glEnd();
+                if (null == volumeDataSet) {
+                    return;
+                }
+                //TODO: reintegrate
+                //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+                GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                GL11.glPushMatrix();
+                try {
+                    GL11.glLoadIdentity();
+                    GL11.glColor3f(1, 0, 0);
+                    //GL11.glBegin(GL11.GL_LINES);
+                    //GL11.glVertex2f(10 + 10*oid, 10);
+                    //GL11.glVertex2f(100 + 10*oid, 50);
+                    //GL11.glEnd();
+                    
+                    //TODO: reintegrate
+                    //VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
+                    //fragShader.bind();
+                    //fragShader.bindUniform("tex", 0);
+                    //fragShader.bindUniform("scale", texRef.getPreScale());
+                    //fragShader.bindUniform("offset", texRef.getPreOffset());
+                    //gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
+                    GL11.glBegin(GL11.GL_QUADS);
+                    texturedCanvasPoint(-viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint( viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint( viewWidth/2,  viewHeight/2);
+                    texturedCanvasPoint(-viewWidth/2,  viewHeight/2);
+                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
+                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
+                    GL11.glEnd();
+                    //TODO: reintegrate
+                    //fragShader.unbind();
+                    //volumeDataSet.unbindCurrentTexture(gl);
+                    GL11.glShadeModel(GL11.GL_FLAT);
+                    for (SliceViewer trackedViewer : trackedViewers) {
+                        GL11.glColor3f(1f, 0f, 0f);
+                        float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
+                        LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
+                        LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
+                        LinAlg.fillMultiplication(getSliceToCanvasTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
+                        float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
+                        float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
+                        GL11.glBegin(GL11.GL_LINES);
+                        GL11.glVertexPointer(3, 1, toFB3(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null)));
+                        GL11.glVertexPointer(3, 1, toFB3(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null)));
+                        GL11.glEnd();
+                    }
+
+                    //TODO: reintegrate
+                    //firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
+                } finally {
+                    GL11.glPopMatrix();
+                }
             } finally {
                 GL11.glMatrixMode(GL11.GL_PROJECTION);
                 GL11.glPopMatrix();
@@ -468,7 +511,7 @@ public class SliceViewer extends Widget {
         }
         */
         
-        private void texturedCanvasPoint(GL2 gl, float x, float y) {
+        private void texturedCanvasPoint(float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] ptInCanvas = new float[]{x,y,0};
             float[] ptInSlice = LinAlg.mtimesv(canvasToSliceTransform, ptInCanvas, null);
@@ -482,9 +525,9 @@ public class SliceViewer extends Widget {
                              1.0f/volumeDataSet.getDepthInMm(),
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
-            gl.glTexCoord3fv(ptInTex, 0);
+            GL11.glTexCoordPointer(3, 1, toFB3(ptInTex));
             //System.out.println("texCoord.Z="+ptInTex[2]);
-            gl.glVertex2f(x, y);
+            GL11.glVertex2f(x, y);
         }
         
         private void outputSlicePoint(String caption, float x, float y) {
@@ -494,6 +537,14 @@ public class SliceViewer extends Widget {
             System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
 
+        private final FloatBuffer fb3 = BufferUtils.createFloatBuffer(3);
+        
+        private FloatBuffer toFB3(float[] arr) {
+            fb3.clear();
+            fb3.put(arr, 0, 3);
+            fb3.rewind();
+            return fb3;
+        }
         
         /*
         //@Override
