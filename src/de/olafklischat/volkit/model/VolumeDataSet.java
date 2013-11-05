@@ -3,17 +3,19 @@ package de.olafklischat.volkit.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.Buffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-import javax.media.opengl.GL;
-import javax.media.opengl.GL2;
-
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
+import org.lwjgl.opengl.ARBTextureFloat;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
 
 import com.sun.opengl.util.BufferUtil;
 
@@ -26,7 +28,7 @@ public class VolumeDataSet {
 
     protected String datasetName;
     protected int xCount, yCount, zCount;
-    protected List<Buffer> xyPixelPlaneBuffers = new ArrayList<Buffer>();  // invariant: depth == xyPixelPlaneBuffers.size()
+    protected List<Buffer> xyPixelPlaneBuffers = new ArrayList<Buffer>();  // invariant: zCount == xyPixelPlaneBuffers.size()
     protected float xSpacingInMm, ySpacingInMm, zSpacingInMm;
     protected int pixelFormat, pixelType;
 
@@ -239,50 +241,48 @@ public class VolumeDataSet {
         return datasetName;
     }
 
-    public TextureRef bindTexture(int texUnit, GL gl1, SharedContextData scd) {
-        GL2 gl = gl1.getGL2();
+    public TextureRef bindTexture(int texUnit, SharedContextData scd) {
         final String sharedTexIdKey = "VolumeDataSetTex" + hashCode();
         TextureRef result = (TextureRef) scd.getAttribute(sharedTexIdKey);
         if (result == null) {
             result = new TextureRef();
-            int[] tmp = new int[1];
-            gl.glGenTextures(1, tmp, 0);
-            result.texId = tmp[0];
+            result.texId = GL11.glGenTextures();
             scd.setAttribute(sharedTexIdKey, result);
 
-            gl.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1);
+            GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 
-            gl.glBindTexture(GL2.GL_TEXTURE_3D, result.getTexId());
+            GL11.glBindTexture(GL12.GL_TEXTURE_3D, result.getTexId());
 
             int glInternalFormat, glPixelFormat, glPixelType;
 
             // TODO: store the GL IDs in the VolumeDataSet directly
             if (pixelFormat == PIXEL_FORMAT_LUMINANCE && pixelType == PIXEL_TYPE_SIGNED_16BIT) {
-                glPixelFormat = GL.GL_LUMINANCE;
-                glPixelType = GL.GL_SHORT;
-                glInternalFormat = GL2.GL_LUMINANCE16F;
+                glPixelFormat = GL11.GL_LUMINANCE;
+                glPixelType = GL11.GL_SHORT;
+                glInternalFormat = ARBTextureFloat.GL_LUMINANCE16F_ARB;
                 result.preScale = 0.5F;
                 result.preOffset = 0.5F;
                 
                 result.preScale = 0.7F;
                 result.preOffset = 0.1F;
             } else if (pixelFormat == PIXEL_FORMAT_LUMINANCE && pixelType == PIXEL_TYPE_UNSIGNED_16BIT) {
-                glPixelFormat = GL.GL_LUMINANCE;
-                glPixelType = GL.GL_UNSIGNED_SHORT;
-                glInternalFormat = GL2.GL_LUMINANCE16F; // GL_*_SNORM result in GL_INVALID_ENUM and all-white texels on tack (GeForce 8600 GT/nvidia 190.42)
+                glPixelFormat = GL11.GL_LUMINANCE;
+                glPixelType = GL11.GL_UNSIGNED_SHORT;
+                glInternalFormat = ARBTextureFloat.GL_LUMINANCE16F_ARB; // GL_*_SNORM result in GL_INVALID_ENUM and all-white texels on tack (GeForce 8600 GT/nvidia 190.42)
                 result.preScale = 1.0F;
                 result.preOffset = 0.0F;
             } else if (pixelFormat == PIXEL_FORMAT_LUMINANCE && pixelType == PIXEL_TYPE_UNSIGNED_12BIT) {
-                glPixelFormat = GL.GL_LUMINANCE;
-                glPixelType = GL.GL_UNSIGNED_SHORT;
-                glInternalFormat = GL2.GL_LUMINANCE16; // NOT GL_LUMINANCE12 b/c pixelType is 16-bit and we'd thus lose precision
+                glPixelFormat = GL11.GL_LUMINANCE;
+                glPixelType = GL11.GL_UNSIGNED_SHORT;
+                glInternalFormat = GL11.GL_LUMINANCE16; // NOT GL_LUMINANCE12 b/c pixelType is 16-bit and we'd thus lose precision
                 result.preScale = (float) (1<<16) / (1<<12);
                 result.preOffset = 0.0F;
             } else {
                 throw new RuntimeException("this DICOM image format is not supported for now");
             }
 
-            gl.glTexImage3D(GL2.GL_TEXTURE_3D,    //target
+            //glTexImage3D(int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels) {
+            GL12.glTexImage3D(GL12.GL_TEXTURE_3D,    //target
                             0,                    //level
                             glInternalFormat,     //internalFormat
                             xCount+2,               //width
@@ -291,43 +291,43 @@ public class VolumeDataSet {
                             1,                    //border
                             glPixelFormat,        //format
                             glPixelType,          //type
-                            null);                //data
+                            (ShortBuffer)null);                //data
 
             for (int z = 0; z < zCount; z++) {
                 Buffer planeBuffer = xyPixelPlaneBuffers.get(z);
-                gl.glTexSubImage3D(GL2.GL_TEXTURE_3D, //target
-                                   0,  //level
-                                   0,  //xoffset
-                                   0,  //yoffset
-                                   z,  //zoffset
-                                   xCount,
-                                   yCount,
-                                   1,
-                                   glPixelFormat,
-                                   glPixelType,
-                                   planeBuffer);
+                GL12.glTexSubImage3D(GL12.GL_TEXTURE_3D, //target
+                                     0,  //level
+                                     0,  //xoffset
+                                     0,  //yoffset
+                                     z,  //zoffset
+                                     xCount,
+                                     yCount,
+                                     1,
+                                     glPixelFormat,
+                                     glPixelType,
+                                     (ShortBuffer)planeBuffer);  // type of buffer may later depend on image metadata
             }
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_S, GL2.GL_CLAMP_TO_BORDER );
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_T, GL2.GL_CLAMP_TO_BORDER );
-            gl.glTexParameteri(GL2.GL_TEXTURE_3D, GL2.GL_TEXTURE_WRAP_R, GL2.GL_CLAMP_TO_BORDER );
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER );
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER );
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL13.GL_CLAMP_TO_BORDER );
         }
-        gl.glEnable(GL2.GL_TEXTURE_3D);
-        gl.glActiveTexture(texUnit);
-        gl.glBindTexture(GL2.GL_TEXTURE_3D, result.getTexId());
+        GL11.glEnable(GL12.GL_TEXTURE_3D);
+        GL13.glActiveTexture(texUnit);
+        GL11.glBindTexture(GL12.GL_TEXTURE_3D, result.getTexId());
         return result;
     }
     
-    public void unbindCurrentTexture(GL2 gl) {
-        gl.glBindTexture(GL2.GL_TEXTURE_3D, 0);
+    public void unbindCurrentTexture() {
+        GL11.glBindTexture(GL12.GL_TEXTURE_3D, 0);
     }
     
-    public void dispose(GL gl, SharedContextData scd) {
+    public void dispose(SharedContextData scd) {
         final String sharedTexIdKey = "VolumeDataSetTex" + hashCode();
         TextureRef texRef = (TextureRef) scd.getAttribute(sharedTexIdKey);
         if (texRef != null) {
-            gl.glDeleteTextures(1, new int[]{texRef.getTexId()}, 0);
+            GL11.glDeleteTextures(texRef.getTexId());
             scd.removeAttribute(sharedTexIdKey);
         }
         // TODO: reference count to detect when we can actually free the texture?

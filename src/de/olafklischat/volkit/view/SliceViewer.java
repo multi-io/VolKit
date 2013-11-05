@@ -32,6 +32,7 @@ import javax.swing.event.ChangeListener;
 import org.apache.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.ValueAdjusterInt;
@@ -381,8 +382,7 @@ public class SliceViewer extends Widget {
                 GL11.glShadeModel(GL11.GL_FLAT);
 
                 if (null != previousvolumeDataSet) {
-                    //TODO: reintegrate
-                    //previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
+                    previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
                     previousvolumeDataSet = null;
                 }
                 if (null == volumeDataSet) {
@@ -400,8 +400,8 @@ public class SliceViewer extends Widget {
                     //GL11.glVertex2f(100 + 10*oid, 50);
                     //GL11.glEnd();
                     
+                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                     //TODO: reintegrate
-                    //VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
                     //fragShader.bind();
                     //fragShader.bindUniform("tex", 0);
                     //fragShader.bindUniform("scale", texRef.getPreScale());
@@ -417,7 +417,7 @@ public class SliceViewer extends Widget {
                     GL11.glEnd();
                     //TODO: reintegrate
                     //fragShader.unbind();
-                    //volumeDataSet.unbindCurrentTexture(gl);
+                    volumeDataSet.unbindCurrentTexture();
                     GL11.glShadeModel(GL11.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
                         GL11.glColor3f(1f, 0f, 0f);
