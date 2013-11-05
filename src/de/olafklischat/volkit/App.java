@@ -18,7 +18,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
@@ -35,7 +34,6 @@ import org.lwjgl.opengl.GL11;
 import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Button;
-import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
@@ -46,6 +44,7 @@ import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.olafklischat.twlawt.TwlAwtEventUtil;
 
 public class App {
 
@@ -151,10 +150,10 @@ public class App {
             int id = e.getID();
             switch(id) {
               case MouseEvent.MOUSE_PRESSED:
-                  wasHandled = gui.handleMouse(e.getX(), e.getY(), mouseButtonAwtToTwl(e.getButton()), true);
+                  wasHandled = gui.handleMouse(e.getX(), e.getY(), TwlAwtEventUtil.mouseButtonAwtToTwl(e.getButton()), true);
                   break;
               case MouseEvent.MOUSE_RELEASED:
-                  wasHandled = gui.handleMouse(e.getX(), e.getY(), mouseButtonAwtToTwl(e.getButton()), false);
+                  wasHandled = gui.handleMouse(e.getX(), e.getY(), TwlAwtEventUtil.mouseButtonAwtToTwl(e.getButton()), false);
                   break;
               case MouseEvent.MOUSE_DRAGGED:
                   wasHandled = gui.handleMouse(e.getX(), e.getY(), -1, false);
@@ -172,20 +171,6 @@ public class App {
                 MainFrameCanvas.this.repaint();
             }
         }
-        
-        protected int mouseButtonAwtToTwl(int awtButton) {
-            switch (awtButton) {
-            case MouseEvent.BUTTON1:
-                return Event.MOUSE_LBUTTON;
-            case MouseEvent.BUTTON2:
-                return Event.MOUSE_MBUTTON;
-            case MouseEvent.BUTTON3:
-                return Event.MOUSE_RBUTTON;
-            default:
-                return Event.MOUSE_LBUTTON; //or what?
-            }
-        }
-
 
         protected void initGL() {
             super.initGL();

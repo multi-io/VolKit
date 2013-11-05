@@ -3,7 +3,6 @@ package de.olafklischat.volkit.view;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -34,12 +33,14 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
+import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.ValueAdjusterInt;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.model.SimpleIntegerModel;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
+import de.olafklischat.twlawt.TwlAwtEventUtil;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
 import de.sofd.viskit.image3D.jogl.util.GLShader;
@@ -321,9 +322,7 @@ public class SliceViewer extends Widget {
     }
     
     public void refresh() {
-        if (glCanvas != null) {
-            glCanvas.repaint();
-        }
+        //TODO
     }
 
     protected void initializeUninitializedSlicePaintListeners(final GL gl, final GLAutoDrawable glAutoDrawable) {
@@ -445,72 +444,6 @@ public class SliceViewer extends Widget {
                 GL11.glPopAttrib();
             }
         }
-
-        /*
-        protected void paintWidget_(GUI gui) {
-            ensureInitialized();
-            
-            GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT|GL11.GL_CURRENT_BIT|GL11.GL_ENABLE_BIT);
-            try {
-                GL11.glClearColor(0,0,0,0);
-                GL11.glShadeModel(GL11.GL_FLAT);
-                
-                if (null != previousvolumeDataSet) {
-                    previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
-                    previousvolumeDataSet = null;
-                }
-                if (null == volumeDataSet) {
-                    return;
-                }
-                if (needViewportReset) {
-                    setupEye2ViewportTransformation();
-                }
-                //TODO: reintegrate
-                //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
-                gl.glClear(gl.GL_COLOR_BUFFER_BIT);
-                gl.glMatrixMode(gl.GL_MODELVIEW);
-                gl.glLoadIdentity();
-
-                try {
-                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
-                    fragShader.bind();
-                    fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", texRef.getPreScale());
-                    fragShader.bindUniform("offset", texRef.getPreOffset());
-                    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
-                    gl.glBegin(GL2.GL_QUADS);
-                    texturedCanvasPoint(gl,-viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint(gl, viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint(gl, viewWidth/2,  viewHeight/2);
-                    texturedCanvasPoint(gl,-viewWidth/2,  viewHeight/2);
-                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
-                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
-                    gl.glEnd();
-                    fragShader.unbind();
-                    volumeDataSet.unbindCurrentTexture(gl);
-                    gl.glShadeModel(gl.GL_FLAT);
-                    for (SliceViewer trackedViewer : trackedViewers) {
-                        gl.glColor3f(1f, 0f, 0f);
-                        float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
-                        LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        LinAlg.fillMultiplication(getSliceToCanvasTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
-                        float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
-                        gl.glBegin(gl.GL_LINES);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null), 0);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null), 0);
-                        gl.glEnd();
-                    }
-
-                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
-                } finally {
-                }
-            } finally {
-                gl.glPopAttrib();
-            }
-        }
-        */
         
         private void texturedCanvasPoint(float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
@@ -545,10 +478,10 @@ public class SliceViewer extends Widget {
             fb3.rewind();
             return fb3;
         }
-        
-        //03:38 < multi_io> how would you port gl*3fv(arr) calls to lwjgl?
-        //03:38 < multi_io> gl*3f(arr[0],arr[1],arr[2]) ?
-        //03:38 < multi_io> or is there a variant that takes a FloatBuffer?
+
+        //23:33 < multi_io> how would you port gl*3fv(arr) calls to lwjgl?
+        //23:34 < multi_io> gl*3f(arr[0],arr[1],arr[2]) ?
+        //23:34 < MatthiasM2> multi_io: yes
 
         private void glVertex2fv(float[] arr) {
             GL11.glVertex2f(arr[0], arr[1]);
@@ -561,36 +494,6 @@ public class SliceViewer extends Widget {
         private void glTexCoord3fv(float[] arr) {
             GL11.glTexCoord3f(arr[0], arr[1], arr[2]);
         }
-
-        /*
-        //@Override
-        public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
-            GL2 gl = (GL2) glAutoDrawable.getGL();
-            if (null != previousvolumeDataSet) {
-                previousvolumeDataSet.dispose(gl, sharedContextData);
-                previousvolumeDataSet = null;
-            }
-            if (null == volumeDataSet) {
-                return;
-            }
-            setupEye2ViewportTransformation();
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    //updateCellSizes(true, false);
-                }
-            };
-            if (EventQueue.isDispatchThread()) {
-                r.run();
-            } else {
-                try {
-                    EventQueue.invokeAndWait(r);
-                } catch (Exception e) {
-                    throw new RuntimeException("CAN'T HAPPEN");
-                }
-            }
-        }
-        */
 
         private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
@@ -632,50 +535,17 @@ public class SliceViewer extends Widget {
             logger.debug("GLCanvas disposed, refcount=" + sharedContextData.getRefCount() + ", GLCanvas inst. count = " + instances.size());
         }
 
-    };
-
-    private MouseAdapter canvasMouseEventDispatcher = new MouseAdapter() {
-
         @Override
-        public void mouseClicked(MouseEvent evt) {
-            dispatchEventToCanvas(evt);
+        protected boolean handleEvent(Event evt) {
+            MouseEvent awtMevt = TwlAwtEventUtil.mouseEventTwlToAwt(evt, this);
+            if (null != awtMevt) {
+                dispatchEventToCanvas(awtMevt);
+                return awtMevt.isConsumed();
+            } else {
+                return false;
+            }
         }
-
-        @Override
-        public void mousePressed(MouseEvent evt) {
-            dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseReleased(final MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent evt) {
-             //dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseExited(MouseEvent evt) {
-            //dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseMoved(MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseDragged(MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
+        
     };
 
     protected void dispatchEventToCanvas(MouseEvent evt) {
