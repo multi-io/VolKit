@@ -467,7 +467,7 @@ public class SliceViewer extends Widget {
             float[] ptInSlice = new float[]{x,y,0};
             float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
-            System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
+            //System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
 
         private final FloatBuffer fb3 = BufferUtils.createFloatBuffer(3);
@@ -519,28 +519,14 @@ public class SliceViewer extends Widget {
             needViewportReset = false;
         }
 
-        //@Override
-        public void dispose(final GLAutoDrawable glAutoDrawable) {
-            logger.debug("disposing GLCanvas...");
-            forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
-                @Override
-                public void run(SlicePaintListener l) {
-                    if (uninitializedSlicePaintListeners.contains(l)) {
-                        l.glDrawableDisposing(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
-                    }
-                }
-            });
-            sharedContextData.unref();
-            instances.remove(SliceViewer.this);
-            logger.debug("GLCanvas disposed, refcount=" + sharedContextData.getRefCount() + ", GLCanvas inst. count = " + instances.size());
-        }
-
         @Override
         protected boolean handleEvent(Event evt) {
+            System.out.println("evt: " + evt.getType());
             MouseEvent awtMevt = TwlAwtEventUtil.mouseEventTwlToAwt(evt, this);
             if (null != awtMevt) {
                 dispatchEventToCanvas(awtMevt);
-                return awtMevt.isConsumed();
+                return true; // consume all mouse event b/c otherwise TWL won't send some other events, apparently
+                //return awtMevt.isConsumed() || evt.getType().equals(Event.Type.MOUSE_ENTERED); //always handle MOUSE_ENTERED b/c otherwise TWL assumes the widget doesn't handle any mouse events
             } else {
                 return false;
             }
