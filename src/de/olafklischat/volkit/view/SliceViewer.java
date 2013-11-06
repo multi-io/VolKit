@@ -40,12 +40,12 @@ import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.model.SimpleIntegerModel;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
+import de.olafklischat.lwjgl.GLShader;
+import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.twlawt.TwlAwtEventUtil;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
-import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
-import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 
 public class SliceViewer extends Widget {
@@ -356,12 +356,11 @@ public class SliceViewer extends Widget {
                 return;
             }
             try {
-                //TODO: reintegrate
-                //ShaderManager.read(gl, "sliceviewer");
-                //fragShader = ShaderManager.get("sliceviewer");
-                //fragShader.addProgramUniform("tex");
-                //fragShader.addProgramUniform("scale");
-                //fragShader.addProgramUniform("offset");
+                ShaderManager.read("sliceviewer");
+                fragShader = ShaderManager.get("sliceviewer");
+                fragShader.addProgramUniform("tex");
+                fragShader.addProgramUniform("scale");
+                fragShader.addProgramUniform("offset");
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
@@ -373,6 +372,7 @@ public class SliceViewer extends Widget {
         @Override
         protected void paintWidget(GUI gui) {
             GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            ensureInitialized();
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
             setupEye2ViewportTransformation(gui);
@@ -400,12 +400,11 @@ public class SliceViewer extends Widget {
                     //GL11.glEnd();
                     
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
-                    //TODO: reintegrate
-                    //fragShader.bind();
-                    //fragShader.bindUniform("tex", 0);
-                    //fragShader.bindUniform("scale", texRef.getPreScale());
-                    //fragShader.bindUniform("offset", texRef.getPreOffset());
-                    //gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
+                    fragShader.bind();
+                    fragShader.bindUniform("tex", 0);
+                    fragShader.bindUniform("scale", texRef.getPreScale());
+                    fragShader.bindUniform("offset", texRef.getPreOffset());
+                    GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     GL11.glBegin(GL11.GL_QUADS);
                     texturedCanvasPoint(-viewWidth/2, -viewHeight/2);
                     texturedCanvasPoint( viewWidth/2, -viewHeight/2);
@@ -414,8 +413,7 @@ public class SliceViewer extends Widget {
                     outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
                     outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
                     GL11.glEnd();
-                    //TODO: reintegrate
-                    //fragShader.unbind();
+                    fragShader.unbind();
                     volumeDataSet.unbindCurrentTexture();
                     GL11.glShadeModel(GL11.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
