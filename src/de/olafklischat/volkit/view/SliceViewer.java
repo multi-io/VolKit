@@ -40,7 +40,6 @@ import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.ShaderManager;
-import de.olafklischat.twlawt.TwlAwtEventUtil;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
@@ -158,16 +157,6 @@ public class SliceViewer extends Widget {
         canvas.setTheme("");
         this.add(canvas);
 
-        /*
-        ////TODO: reintegrate
-        setupInternalUiInteractions();
-        //canvas.addKeyListener(internalMouseEventHandler);
-        canvas.addMouseListener(canvasMouseEventDispatcher);
-        canvas.addMouseMotionListener(canvasMouseEventDispatcher);
-        canvas.addMouseWheelListener(canvasMouseEventDispatcher);
-        //canvas.addKeyListener(canvasMouseAndKeyHandler);
-         */
-
         navZslider = new ValueAdjusterInt(new SimpleIntegerModel(0, 10000, 5000));
         //navZslider = new Button("navZslider");
         this.add(navZslider);
@@ -213,7 +202,6 @@ public class SliceViewer extends Widget {
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
-        needViewportReset = true;
         refresh();
     }
 
@@ -257,7 +245,6 @@ public class SliceViewer extends Widget {
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
         recomputeMatrices();
-        needViewportReset = true;
         refresh();
     }
     
@@ -506,7 +493,6 @@ public class SliceViewer extends Widget {
             // when drawing in a TWL widget (as opposed to an AWTGLCanvas that hosts a single SliceViewer only)
             GL11.glViewport(getInnerX(), gui.getRenderer().getHeight() - getInnerY() - getInnerHeight(), getInnerWidth(), getInnerHeight());
             GL11.glDepthRange(0,1);
-            needViewportReset = false;
         }
         
         protected TwlToAwtMouseEventConverter mouseEvtConv = new TwlToAwtMouseEventConverter();
@@ -789,46 +775,6 @@ public class SliceViewer extends Widget {
         }
     };
 
-    /*
-    @Override
-    public void setBackground(java.awt.Color bg) {
-        super.setBackground(bg);
-        if (navZslider != null) {
-            navZslider.setBackground(bg);
-        }
-    }
-    
-    protected void setupInternalUiInteractions() {
-        this.setFocusable(true);
-        glCanvas.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-        });
-
-        InputMap inputMap = this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        ActionMap actionMap = this.getActionMap();
-        if (inputMap != null && actionMap != null) {
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "up");
-            actionMap.put("up", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "down");
-            actionMap.put("down", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "left");
-            actionMap.put("left", new SelectionShiftAction(-1));
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "right");
-            actionMap.put("right", new SelectionShiftAction(1));
-        }
-    }
-    */
-    
     protected class SelectionShiftAction extends AbstractAction {
         private int shift;
         public SelectionShiftAction(int shift) {
