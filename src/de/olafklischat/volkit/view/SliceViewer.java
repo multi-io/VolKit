@@ -1,6 +1,5 @@
 package de.olafklischat.volkit.view;
 
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
@@ -23,7 +22,6 @@ import java.util.TreeSet;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.awt.GLCanvas;
 import javax.swing.AbstractAction;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -43,6 +41,7 @@ import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.twlawt.TwlAwtEventUtil;
+import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
@@ -121,8 +120,6 @@ public class SliceViewer extends Widget {
      */
     private float navigationCubeLength;
 
-    private boolean needViewportReset = false;
-    
     static {
         // TODO: verify
         LinAlg.fillIdentity(BASE_SLICE_XY);
@@ -141,7 +138,6 @@ public class SliceViewer extends Widget {
 
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
-    private GLCanvas glCanvas = null;
     private GLShader fragShader;
 
     private Widget canvas;
@@ -221,10 +217,6 @@ public class SliceViewer extends Widget {
         refresh();
     }
 
-    public GLAutoDrawable getGlCanvas() {
-        return glCanvas;
-    }
-    
     public float getNavigationZ() {
         return navigationZ;
     }
@@ -516,11 +508,13 @@ public class SliceViewer extends Widget {
             GL11.glDepthRange(0,1);
             needViewportReset = false;
         }
+        
+        protected TwlToAwtMouseEventConverter mouseEvtConv = new TwlToAwtMouseEventConverter();
 
         @Override
         protected boolean handleEvent(Event evt) {
             System.out.println("evt: " + evt.getType());
-            MouseEvent awtMevt = TwlAwtEventUtil.mouseEventTwlToAwt(evt, this);
+            MouseEvent awtMevt = mouseEvtConv.mouseEventTwlToAwt(evt, this);
             if (null != awtMevt) {
                 dispatchEventToCanvas(awtMevt);
                 return true; // consume all mouse event b/c otherwise TWL won't send some other events, apparently
@@ -544,16 +538,15 @@ public class SliceViewer extends Widget {
 
     public float[] convertAwtToCanvas(Point awtPtOnGlCanvas) {
         // TODO: have a tx matrix for this as well
-        // TODO: unify with code in reshape() / setupEye2ViewportTransformation()
-        Dimension sz = glCanvas.getSize();
+        // TODO: unify with code in setupEye2ViewportTransformation()
         float mmPerPixel;
-        if (sz.width > sz.height) {
-            mmPerPixel = navigationCubeLength / sz.height;
+        if (canvas.getWidth() > canvas.getHeight()) {
+            mmPerPixel = navigationCubeLength / canvas.getHeight();
         } else {
-            mmPerPixel = navigationCubeLength / sz.width;
+            mmPerPixel = navigationCubeLength / canvas.getWidth();
         }
-        float x = awtPtOnGlCanvas.x - sz.width / 2;
-        float y = - (awtPtOnGlCanvas.y - sz.height / 2);
+        float x = awtPtOnGlCanvas.x - canvas.getWidth() / 2;
+        float y = - (awtPtOnGlCanvas.y - canvas.getHeight() / 2);
         return new float[]{x*mmPerPixel, y*mmPerPixel, 0};
     }
 

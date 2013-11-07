@@ -1,10 +1,8 @@
 package de.olafklischat.twlawt;
 
-import java.awt.Component;
 import java.awt.event.MouseEvent;
 
 import de.matthiasmann.twl.Event;
-import de.matthiasmann.twl.Widget;
 
 public class TwlAwtEventUtil {
     
@@ -30,7 +28,7 @@ public class TwlAwtEventUtil {
         case Event.MOUSE_RBUTTON:
             return MouseEvent.BUTTON3;
         default:
-            return MouseEvent.BUTTON1; //or what?
+            return MouseEvent.NOBUTTON; //or what?
         }
     }
     
@@ -85,37 +83,5 @@ public class TwlAwtEventUtil {
         }
         return result;
     }
-
-    public static MouseEvent mouseEventTwlToAwt(Event evt) {
-        return mouseEventTwlToAwt(evt, (Object)null);
-    }
-    
-    public static MouseEvent mouseEventTwlToAwt(Event evt, Widget sourceWidget) {
-        MouseEvent result = mouseEventTwlToAwt(evt, (Object)sourceWidget);
-        result.translatePoint(- sourceWidget.getX(), - sourceWidget.getY());
-        return result;
-    }
-
-    public static MouseEvent mouseEventTwlToAwt(Event evt, Object source) {
-        if(!evt.isMouseEvent()) {
-            return null;
-        }
-        int id = mouseEventTypeTwlToAwt(evt.getType());
-        int modifiers = modifiersTwlToAwt(evt.getModifiers());
-        long when = System.currentTimeMillis();
-        int x = evt.getMouseX();
-        int y = evt.getMouseY();
-        int xAbs = evt.getMouseX();
-        int yAbs = evt.getMouseY();
-        int clickCount = evt.getMouseClickCount();
-        boolean popupTrigger = false; //...?
-        int button = mouseButtonTwlToAwt(evt.getMouseButton());
-        MouseEvent result = new MouseEvent(dummy, id, when, modifiers, x, y, xAbs, yAbs, clickCount, popupTrigger, button);
-        result.setSource(source);
-        return result;
-    }
-    
-    protected static Component dummy = new Component() {
-    };
 
 }
