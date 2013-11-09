@@ -23,8 +23,6 @@ import java.util.TreeSet;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.swing.AbstractAction;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.BufferUtils;
@@ -160,7 +158,8 @@ public class SliceViewer extends Widget {
         navZslider = new Scrollbar(Orientation.HORIZONTAL);
         this.add(navZslider);
         navZslider.setTheme("hslider");
-        //navZslider.getModel().addChangeListener(navZsliderChangeListener);
+        navZslider.setMinMaxValue(0, 10000);
+        navZslider.addCallback(navZsliderChangeListener);
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
         LinAlg.fillIdentity(sliceToCanvasTransform);
@@ -499,7 +498,6 @@ public class SliceViewer extends Widget {
 
         @Override
         protected boolean handleEvent(Event evt) {
-            System.out.println("evt: " + evt.getType());
             MouseEvent awtMevt = mouseEvtConv.mouseEventTwlToAwt(evt, this);
             if (null != awtMevt) {
                 dispatchEventToCanvas(awtMevt);
@@ -731,16 +729,6 @@ public class SliceViewer extends Widget {
     }
 
     
-    /**
-     * need our own valueIsAdjusting for navZslider instead of using
-     * navZslider.getModel().getValueIsAdjusting() because we want to be able to
-     * tell the difference between the user dragging the thumb (we want to
-     * update the display during that) and our own temporarily invalid
-     * model value settings in updateNavZslider() (we do NOT want to update
-     * the display during that)
-     */
-    private boolean internalNavZsliderValueIsAdjusting = false;
-    
     private void updateNavZslider() {
         if (null == navZslider) {
             return;
@@ -748,27 +736,21 @@ public class SliceViewer extends Widget {
         if (! navZslider.isEnabled()) {
             navZslider.setEnabled(true);
         }
-        //BoundedRangeModel sliderModel = navZslider.getModel();
-        //internalNavZsliderValueIsAdjusting = true;
-        //int min = sliderModel.getMinimum();
-        //int max = sliderModel.getMaximum();
-        //sliderModel.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength));
-        //sliderModel.setExtent(1);
-        //internalNavZsliderValueIsAdjusting = false;
+        int min = navZslider.getMinValue();
+        int max = navZslider.getMaxValue();
+        navZslider.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength), false);
     }
 
-    private ChangeListener navZsliderChangeListener = new ChangeListener() {
+    private Runnable navZsliderChangeListener = new Runnable() {
         private boolean inCall = false;
         @Override
-        public void stateChanged(ChangeEvent e) {
+        public void run() {
             if (inCall) { return; }
             inCall = true;
             try {
-                if (internalNavZsliderValueIsAdjusting) { return; }
-                //BoundedRangeModel sliderModel = navZslider.getModel();
-                //int min = sliderModel.getMinimum();
-                //int max = sliderModel.getMaximum();
-                //setNavigationZ(navigationCubeLength * ((float)sliderModel.getValue() - min) / (max-min) - navigationCubeLength/2);
+                int min = navZslider.getMinValue();
+                int max = navZslider.getMaxValue();
+                setNavigationZ(navigationCubeLength * ((float)navZslider.getValue() - min) / (max-min) - navigationCubeLength/2);
             } finally {
                 inCall = false;
             }
