@@ -448,6 +448,20 @@
         <param name="minHeight"><int>48</int></param>
     </theme>
 
+    <theme name="hslider" ref="-defaults" allowWildcard="true">
+        <param name="background"><image>scrollbar.background</image></param>
+        <theme name="leftbutton" ref="-defaults">
+        </theme>
+        <theme name="rightbutton" ref="-defaults">
+        </theme>
+        <theme name="thumb" ref="-defaults">
+            <param name=""><image>scrollbar.thumb.*</image></param>
+        </theme>
+        <param name="scaleThumb"><bool>false</bool></param>
+        <param name="minWidth"><int>48</int></param>
+        <param name="minHeight"><int>16</int></param>
+    </theme>
+
     <fontDef name="listbox-display" filename="font.fnt" color="black">
         <fontParam if="selected" color="white"/>
     </fontDef>
@@ -900,28 +914,6 @@
     </theme>
 
 
-
-
-
-    <textures file="TWL Logo.png" format="RGBA">
-        <texture name="twl-logo" x="0" y="0" width="256" height="128" inset="-8"/>
-    </textures>
-    <theme name="licenseTextArea" ref="textarea">
-        <param name="background"><image>none</image></param>
-        <param name="images"><map>
-            <param name="twl-logo"><image>twl-logo</image></param>
-            <param name="ul-bullet"><image>textarea.ul-bullet</image></param>
-        </map></param>
-        <param name="minWidth"><int>400</int></param>
-    </theme>
-    <theme name="licenseFrame" ref="resizableframe-title">
-        <theme name="scrollpane" ref="scrollpane">
-            <param name="background"><image>-borderC</image></param>
-            <param name="border"><border>background.border</border></param>
-            <theme name="textarea" ref="licenseTextArea"/>
-        </theme>
-    </theme>
-
     <theme name="tableScrollPane" ref="scrollpane">
         <param name="background"><image>-borderC</image></param>
         <param name="border"><border>2</border></param>
@@ -932,14 +924,6 @@
         <param name="border"><border>4</border></param>
         <theme name="" ref="*"/>
     </theme>
-
-    <textures file="chaos_sphere_blue_800x600.png" format="RGB" filter="linear">
-        <texture name="image" x="0" y="0" width="800" height="600"/>
-    </textures>
-    <theme name="scrollPaneDemoContent" ref="label">
-        <param name="background"><image>image</image></param>
-    </theme>
-    <theme name="scrollPaneDemoDialog1" ref="resizableframe-resizeHandle"/>
 
     <theme name="settings" ref="dialoglayout">
         <theme name="" ref="*"/>

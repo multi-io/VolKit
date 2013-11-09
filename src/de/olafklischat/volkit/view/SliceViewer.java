@@ -33,9 +33,9 @@ import org.lwjgl.opengl.GL13;
 
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
-import de.matthiasmann.twl.ValueAdjusterInt;
+import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.Widget;
-import de.matthiasmann.twl.model.SimpleIntegerModel;
+import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
@@ -140,7 +140,7 @@ public class SliceViewer extends Widget {
     private GLShader fragShader;
 
     private Widget canvas;
-    private Widget navZslider;
+    private Scrollbar navZslider;
     
     protected List<SliceViewer> trackedViewers = new ArrayList<SliceViewer>();
     
@@ -157,9 +157,9 @@ public class SliceViewer extends Widget {
         canvas.setTheme("");
         this.add(canvas);
 
-        navZslider = new ValueAdjusterInt(new SimpleIntegerModel(0, 10000, 5000));
-        //navZslider = new Button("navZslider");
+        navZslider = new Scrollbar(Orientation.HORIZONTAL);
         this.add(navZslider);
+        navZslider.setTheme("hslider");
         //navZslider.getModel().addChangeListener(navZsliderChangeListener);
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
