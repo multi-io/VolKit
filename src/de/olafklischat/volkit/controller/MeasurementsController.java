@@ -28,8 +28,8 @@ import org.lwjgl.opengl.GL11;
 import de.olafklischat.volkit.model.Measurement;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.model.VolumeDataSet;
-import de.olafklischat.volkit.view.SlicePaintEvent;
-import de.olafklischat.volkit.view.SlicePaintListener;
+import de.olafklischat.volkit.view.PaintEvent;
+import de.olafklischat.volkit.view.PaintListener;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
@@ -331,7 +331,7 @@ public class MeasurementsController {
         refreshViewers();
     }
     
-    private SlicePaintListener sliceViewersPaintHandler = new SlicePaintListener() {
+    private PaintListener<SliceViewer> sliceViewersPaintHandler = new PaintListener<SliceViewer>() {
 
         Map<SliceViewer, GLShader> measShaderBySV = new IdentityHashMap<SliceViewer, GLShader>();
 
@@ -364,7 +364,7 @@ public class MeasurementsController {
         }
 
         @Override
-        public void onPaint(SlicePaintEvent e) {
+        public void onPaint(PaintEvent<SliceViewer> e) {
             SliceViewer sv = e.getSource();
             GLShader measShader = measShaderBySV.get(sv);
             if (null == measShader) {

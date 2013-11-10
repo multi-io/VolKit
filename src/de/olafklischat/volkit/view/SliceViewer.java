@@ -139,7 +139,7 @@ public class SliceViewer extends Widget {
     protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
     
-    private final Collection<SlicePaintListener> uninitializedSlicePaintListeners = new IdentityHashSet<SlicePaintListener>();
+    private final Collection<PaintListener<SliceViewer>> uninitializedSlicePaintListeners = new IdentityHashSet<PaintListener<SliceViewer>>();
 
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
@@ -306,9 +306,9 @@ public class SliceViewer extends Widget {
     }
 
     protected void initializeUninitializedSlicePaintListeners() {
-        forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
+        forEachPaintListenerInZOrder(new Runnable1<PaintListener<SliceViewer>>() {
             @Override
-            public void run(SlicePaintListener l) {
+            public void run(PaintListener<SliceViewer> l) {
                 if (uninitializedSlicePaintListeners.contains(l)) {
                     l.glSharedContextDataInitialization(SliceViewer.this, sharedContextData.getAttributes());
                     l.glDrawableInitialized(SliceViewer.this, sharedContextData.getAttributes());
@@ -405,7 +405,7 @@ public class SliceViewer extends Widget {
                         // TODO: the lines don't look right (too thick and too dark). Must be some unwanted state from TWL.
                     }
 
-                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, sharedContextData.getAttributes()));
+                    firePaintEvent(new PaintEvent<SliceViewer>(SliceViewer.this, sharedContextData.getAttributes()));
                 } finally {
                     GL11.glPopMatrix();
                 }
@@ -610,17 +610,17 @@ public class SliceViewer extends Widget {
     }
 
     
-    public void addSlicePaintListener(SlicePaintListener listener) {
+    public void addSlicePaintListener(PaintListener<SliceViewer> listener) {
         addSlicePaintListener(PAINT_ZORDER_DEFAULT, listener);
     }
 
-    public void addSlicePaintListener(int zOrder, SlicePaintListener listener) {
-        slicePaintListeners.add(new ListenerRecord<SlicePaintListener>(listener, zOrder));
+    public void addSlicePaintListener(int zOrder, PaintListener<SliceViewer> listener) {
+        slicePaintListeners.add(new ListenerRecord<PaintListener<SliceViewer>>(listener, zOrder));
         uninitializedSlicePaintListeners.add(listener);
     }
     
-    public void removeSlicePaintListener(SlicePaintListener listener) {
-        for (Iterator<ListenerRecord<SlicePaintListener>> it = slicePaintListeners.iterator(); it.hasNext();) {
+    public void removeSlicePaintListener(PaintListener<SliceViewer> listener) {
+        for (Iterator<ListenerRecord<PaintListener<SliceViewer>>> it = slicePaintListeners.iterator(); it.hasNext();) {
             if (it.next().listener == listener) {
                 it.remove();
                 uninitializedSlicePaintListeners.remove(listener);
@@ -635,8 +635,8 @@ public class SliceViewer extends Widget {
      * (method is defined public so internal classes in subpackages can call it)
      * @param e
      */
-    public void firePaintEvent(SlicePaintEvent e) {
-        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners) {
+    public void firePaintEvent(PaintEvent<SliceViewer> e) {
+        for (ListenerRecord<PaintListener<SliceViewer>> rec : slicePaintListeners) {
             rec.listener.onPaint(e);
             if (e.isConsumed()) {
                 break;
@@ -644,14 +644,14 @@ public class SliceViewer extends Widget {
         }
     }
 
-    protected void forEachPaintListenerInZOrder(Runnable1<SlicePaintListener> callback) {
-        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners) {
+    protected void forEachPaintListenerInZOrder(Runnable1<PaintListener<SliceViewer>> callback) {
+        for (ListenerRecord<PaintListener<SliceViewer>> rec : slicePaintListeners) {
             callback.run(rec.listener);
         }
     }
     
-    protected void firePaintEvent(SlicePaintEvent e, int minZ, int maxZ) {
-        SlicePaintListener dummy = new SlicePaintListener() {
+    protected void firePaintEvent(PaintEvent<SliceViewer> e, int minZ, int maxZ) {
+        PaintListener<SliceViewer> dummy = new PaintListener<SliceViewer>() {
             @Override
             public void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData) {
             }
@@ -659,15 +659,15 @@ public class SliceViewer extends Widget {
             public void glDrawableInitialized(SliceViewer sv, Map<String, Object> sharedData) {
             }
             @Override
-            public void onPaint(SlicePaintEvent e) {
+            public void onPaint(PaintEvent<SliceViewer> e) {
             }
             @Override
             public void glDrawableDisposing(SliceViewer sv, Map<String, Object> sharedData) {
             }
         };
-        ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);
-        ListenerRecord<SlicePaintListener> max = new ListenerRecord<SlicePaintListener>(dummy, maxZ);
-        for (ListenerRecord<SlicePaintListener> rec : slicePaintListeners.subSet(min, max)) {
+        ListenerRecord<PaintListener<SliceViewer>> min = new ListenerRecord<PaintListener<SliceViewer>>(dummy, minZ);
+        ListenerRecord<PaintListener<SliceViewer>> max = new ListenerRecord<PaintListener<SliceViewer>>(dummy, maxZ);
+        for (ListenerRecord<PaintListener<SliceViewer>> rec : slicePaintListeners.subSet(min, max)) {
             rec.listener.onPaint(e);
             if (e.isConsumed()) {
                 break;
@@ -675,7 +675,7 @@ public class SliceViewer extends Widget {
         }
     }
 
-    private NavigableSet<ListenerRecord<SlicePaintListener>> slicePaintListeners = new TreeSet<ListenerRecord<SlicePaintListener>>();
+    private NavigableSet<ListenerRecord<PaintListener<SliceViewer>>> slicePaintListeners = new TreeSet<ListenerRecord<PaintListener<SliceViewer>>>();
     
     private static class ListenerRecord<ListenerType> implements Comparable<ListenerRecord<ListenerType>> {
         ListenerType listener;
