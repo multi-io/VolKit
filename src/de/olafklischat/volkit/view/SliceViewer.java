@@ -1,7 +1,6 @@
 package de.olafklischat.volkit.view;
 
 import java.awt.Point;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -9,7 +8,6 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -20,12 +18,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.media.opengl.GL;
-import javax.media.opengl.GLAutoDrawable;
-import javax.swing.AbstractAction;
-
 import org.apache.log4j.Logger;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
@@ -37,6 +30,7 @@ import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
+import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
@@ -303,27 +297,23 @@ public class SliceViewer extends Widget {
         //TODO
     }
 
-    protected void initializeUninitializedSlicePaintListeners(final GL gl, final GLAutoDrawable glAutoDrawable) {
+    protected void initializeUninitializedSlicePaintListeners() {
         forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
             @Override
             public void run(SlicePaintListener l) {
                 if (uninitializedSlicePaintListeners.contains(l)) {
-                    l.glSharedContextDataInitialization(SliceViewer.this, gl, sharedContextData.getAttributes());
-                    l.glDrawableInitialized(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
+                    l.glSharedContextDataInitialization(SliceViewer.this, sharedContextData.getAttributes());
+                    l.glDrawableInitialized(SliceViewer.this, sharedContextData.getAttributes());
                 }
             }
         });
         uninitializedSlicePaintListeners.clear();
     }
     
-    static int stmp = 0;
-    
     protected class Canvas extends Widget {
 
         protected boolean isInitialized = false;
         
-        private int oid = stmp++;
-
         /**
          * dimensions of viewport in canvas coordinate system
          */
@@ -342,8 +332,7 @@ public class SliceViewer extends Widget {
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
-            //TODO: reintegrate
-            //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+            initializeUninitializedSlicePaintListeners();
             isInitialized = true;
         }
 
@@ -365,8 +354,7 @@ public class SliceViewer extends Widget {
                 if (null == volumeDataSet) {
                     return;
                 }
-                //TODO: reintegrate
-                //initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+                initializeUninitializedSlicePaintListeners();
                 GL11.glMatrixMode(GL11.GL_MODELVIEW);
                 GL11.glPushMatrix();
                 try {
@@ -403,14 +391,13 @@ public class SliceViewer extends Widget {
                         float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         GL11.glBegin(GL11.GL_LINES);
-                        glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null));
-                        glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null));
+                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null));
+                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null));
                         GL11.glEnd();
                         // TODO: the lines don't look right (too thick and too dark). Must be some unwanted state from TWL.
                     }
 
-                    //TODO: reintegrate
-                    //firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
+                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, sharedContextData.getAttributes()));
                 } finally {
                     GL11.glPopMatrix();
                 }
@@ -435,8 +422,8 @@ public class SliceViewer extends Widget {
                              1.0f/volumeDataSet.getDepthInMm(),
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
-            glTexCoord3fv(ptInTex);
-            glVertex3fv(new float[]{x, y, 0});
+            LWJGLTools.glTexCoord3fv(ptInTex);
+            LWJGLTools.glVertex3fv(new float[]{x, y, 0});
         }
         
         private void outputSlicePoint(String caption, float x, float y) {
@@ -444,31 +431,6 @@ public class SliceViewer extends Widget {
             float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
             //System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
-        }
-
-        private final FloatBuffer fb3 = BufferUtils.createFloatBuffer(3);
-        
-        private FloatBuffer toFB3(float[] arr) {
-            fb3.clear();
-            fb3.put(arr, 0, 3);
-            fb3.rewind();
-            return fb3;
-        }
-
-        //23:33 < multi_io> how would you port gl*3fv(arr) calls to lwjgl?
-        //23:34 < multi_io> gl*3f(arr[0],arr[1],arr[2]) ?
-        //23:34 < MatthiasM2> multi_io: yes
-
-        private void glVertex2fv(float[] arr) {
-            GL11.glVertex2f(arr[0], arr[1]);
-        }
-
-        private void glVertex3fv(float[] arr) {
-            GL11.glVertex3f(arr[0], arr[1], arr[2]);
-        }
-        
-        private void glTexCoord3fv(float[] arr) {
-            GL11.glTexCoord3f(arr[0], arr[1], arr[2]);
         }
 
         private void setupEye2ViewportTransformation(GUI gui) {
@@ -683,16 +645,16 @@ public class SliceViewer extends Widget {
     protected void firePaintEvent(SlicePaintEvent e, int minZ, int maxZ) {
         SlicePaintListener dummy = new SlicePaintListener() {
             @Override
-            public void glSharedContextDataInitialization(SliceViewer sv, GL gl, Map<String, Object> sharedData) {
+            public void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData) {
             }
             @Override
-            public void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+            public void glDrawableInitialized(SliceViewer sv, Map<String, Object> sharedData) {
             }
             @Override
             public void onPaint(SlicePaintEvent e) {
             }
             @Override
-            public void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+            public void glDrawableDisposing(SliceViewer sv, Map<String, Object> sharedData) {
             }
         };
         ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);
@@ -756,15 +718,5 @@ public class SliceViewer extends Widget {
             }
         }
     };
-
-    protected class SelectionShiftAction extends AbstractAction {
-        private int shift;
-        public SelectionShiftAction(int shift) {
-            this.shift = shift;
-        }
-        @Override
-        public void actionPerformed(ActionEvent e) {
-        }
-    }
 
 }
