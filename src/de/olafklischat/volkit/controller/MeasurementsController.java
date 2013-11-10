@@ -15,9 +15,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.media.opengl.GL;
-import javax.media.opengl.GL2;
-import javax.media.opengl.GLAutoDrawable;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -26,15 +23,18 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 
+import org.lwjgl.opengl.GL11;
+
 import de.olafklischat.volkit.model.Measurement;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SlicePaintEvent;
 import de.olafklischat.volkit.view.SlicePaintListener;
 import de.olafklischat.volkit.view.SliceViewer;
-import de.sofd.viskit.image3D.jogl.util.GLShader;
+import de.olafklischat.lwjgl.GLShader;
+import de.olafklischat.lwjgl.LWJGLTools;
+import de.olafklischat.lwjgl.ShaderManager;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
-import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 public class MeasurementsController {
 
@@ -336,7 +336,7 @@ public class MeasurementsController {
         Map<SliceViewer, GLShader> measShaderBySV = new IdentityHashMap<SliceViewer, GLShader>();
 
         @Override
-        public void glSharedContextDataInitialization(SliceViewer sv, GL gl1, Map<String, Object> sharedData) {
+        public void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData) {
             /*
             // TODO: this is how we should initialize measShader (just one, not one per SliceViewer), but it doesn't work for now
             // because measShader stored the GL object, which won't be usable in other contexts
@@ -356,22 +356,21 @@ public class MeasurementsController {
         }
         
         @Override
-        public void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+        public void glDrawableInitialized(SliceViewer sv, Map<String, Object> sharedData) {
         }
         
         @Override
-        public void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+        public void glDrawableDisposing(SliceViewer sv, Map<String, Object> sharedData) {
         }
 
         @Override
         public void onPaint(SlicePaintEvent e) {
             SliceViewer sv = e.getSource();
-            GL2 gl = e.getGl().getGL2();
             GLShader measShader = measShaderBySV.get(sv);
             if (null == measShader) {
                 try {
                     // TODO: this is the wrong place to initialize measShader -- see above
-                    ShaderManager.read(gl, "measurements");
+                    ShaderManager.read("measurements");
                     measShader = ShaderManager.get("measurements");
                     measShader.addProgramUniform("transpCoeff");
                     measShaderBySV.put(sv, measShader);
@@ -382,42 +381,42 @@ public class MeasurementsController {
             
             measShader.bind();
             measShader.bindUniform("transpCoeff", getTransparencyCoeff());
-            gl.glMatrixMode(GL2.GL_MODELVIEW);
-            gl.glPushMatrix();
-            gl.glPushAttrib(GL.GL_COLOR_BUFFER_BIT);  // b/c we set up alpha blending
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glPushMatrix();
+            GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT);  // b/c we set up alpha blending
             try {
-                gl.glEnable(GL.GL_BLEND);
-                gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-                gl.glLoadIdentity();
-                gl.glMultMatrixf(sv.getSliceToCanvasTransform(), 0);
-                gl.glMultMatrixf(sv.getVolumeToSliceTransform(), 0);
+                GL11.glEnable(GL11.GL_BLEND);
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                GL11.glLoadIdentity();
+                GL11.glMultMatrix(LWJGLTools.toFB(sv.getSliceToCanvasTransform()));
+                GL11.glMultMatrix(LWJGLTools.toFB(sv.getVolumeToSliceTransform()));
                 if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
-                    paintMeasurement(gl, currentMeasurement);
+                    paintMeasurement(currentMeasurement);
                 }
                 for (Measurement m : mdb.getMeasurements()) {
                     if (m.getDatasetName().equals(sv.getVolumeDataSet().getDatasetName())) {
-                        paintMeasurement(gl, m);
+                        paintMeasurement(m);
                     }
                 }
             } finally {
-                gl.glPopAttrib();
-                gl.glPopMatrix();
+                GL11.glPopAttrib();
+                GL11.glPopMatrix();
                 measShader.unbind();
             }
         }
         
-        private void paintMeasurement(GL2 gl, Measurement m) {
+        private void paintMeasurement(Measurement m) {
             if (isSelected(m)) {
-                gl.glColor3f(1f, 1f, 0f);
+                GL11.glColor3f(1f, 1f, 0f);
             } else {
-                gl.glColor3f((float) m.getColor().getRed() / 255F,
-                        (float) m.getColor().getGreen() / 255F,
-                        (float) m.getColor().getBlue() / 255F);
+                GL11.glColor3f((float) m.getColor().getRed() / 255F,
+                               (float) m.getColor().getGreen() / 255F,
+                               (float) m.getColor().getBlue() / 255F);
             }
-            gl.glBegin(GL.GL_LINE_STRIP);
-            gl.glVertex3fv(m.getPt0InVolume(), 0);
-            gl.glVertex3fv(m.getPt1InVolume(), 0);
-            gl.glEnd();
+            GL11.glBegin(GL11.GL_LINE_STRIP);
+            LWJGLTools.glVertex3fv(m.getPt0InVolume());
+            LWJGLTools.glVertex3fv(m.getPt1InVolume());
+            GL11.glEnd();
         }
         
     };

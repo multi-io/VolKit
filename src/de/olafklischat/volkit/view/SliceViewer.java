@@ -1,12 +1,6 @@
 package de.olafklischat.volkit.view;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -24,38 +18,27 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.media.opengl.DebugGL2;
-import javax.media.opengl.GL;
-import javax.media.opengl.GL2;
-import javax.media.opengl.GLAutoDrawable;
-import javax.media.opengl.GLCapabilities;
-import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLProfile;
-import javax.media.opengl.awt.GLCanvas;
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.BoundedRangeModel;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import org.apache.log4j.Logger;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
+import de.matthiasmann.twl.Event;
+import de.matthiasmann.twl.GUI;
+import de.matthiasmann.twl.Scrollbar;
+import de.matthiasmann.twl.Widget;
+import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
+import de.olafklischat.lwjgl.GLShader;
+import de.olafklischat.lwjgl.LWJGLTools;
+import de.olafklischat.lwjgl.ShaderManager;
+import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
-import de.sofd.viskit.image3D.jogl.util.GLShader;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
-import de.sofd.viskit.image3D.jogl.util.ShaderManager;
 
 
-public class SliceViewer extends JPanel {
+public class SliceViewer extends Widget {
 
     private static final long serialVersionUID = 3961980093372280907L;
 
@@ -128,8 +111,6 @@ public class SliceViewer extends JPanel {
      */
     private float navigationCubeLength;
 
-    private boolean needViewportReset = false;
-    
     static {
         // TODO: verify
         LinAlg.fillIdentity(BASE_SLICE_XY);
@@ -148,10 +129,10 @@ public class SliceViewer extends JPanel {
 
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
-    private GLCanvas glCanvas = null;
     private GLShader fragShader;
-    
-    private JSlider navZslider;
+
+    private Widget canvas;
+    private Scrollbar navZslider;
     
     protected List<SliceViewer> trackedViewers = new ArrayList<SliceViewer>();
     
@@ -163,16 +144,16 @@ public class SliceViewer extends JPanel {
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
     public SliceViewer() {
-        setLayout(new BorderLayout());
-        if (instances.isEmpty() || sharedContextData.getGlContext() != null) {
-            createGlCanvas();
-        }
-        instances.add(this);
-        navZslider = new JSlider(JSlider.HORIZONTAL);
-        this.add(navZslider, BorderLayout.SOUTH);
-        navZslider.getModel().setMinimum(0);
-        navZslider.getModel().setMaximum(10000);
-        navZslider.getModel().addChangeListener(navZsliderChangeListener);
+        setTheme("");
+        canvas = new Canvas();
+        canvas.setTheme("");
+        this.add(canvas);
+
+        navZslider = new Scrollbar(Orientation.HORIZONTAL);
+        this.add(navZslider);
+        navZslider.setTheme("hslider");
+        navZslider.setMinMaxValue(0, 10000);
+        navZslider.addCallback(navZsliderChangeListener);
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToBaseSliceTransform);
         LinAlg.fillIdentity(sliceToCanvasTransform);
@@ -184,6 +165,15 @@ public class SliceViewer extends JPanel {
     public SliceViewer(VolumeDataSet volumeDataSet) {
         this();
         setVolumeDataSet(volumeDataSet);
+    }
+    
+    @Override
+    protected void layout() {
+        int h = navZslider.getPreferredHeight();
+        canvas.setPosition(getInnerX(), getInnerY());
+        canvas.setSize(getInnerWidth(), getInnerHeight() - h);
+        navZslider.setPosition(getInnerX(), getInnerY() + getInnerHeight() - h);
+        navZslider.setSize(getInnerWidth(), h);
     }
 
     public VolumeDataSet getVolumeDataSet() {
@@ -205,29 +195,9 @@ public class SliceViewer extends JPanel {
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
-        needViewportReset = true;
         refresh();
     }
 
-    private void createGlCanvas() {
-        GLCapabilities caps = new GLCapabilities(GLProfile.get(GLProfile.GL2));
-        caps.setDoubleBuffered(true);
-        glCanvas = new GLCanvas(caps, null, sharedContextData.getGlContext(), null);
-        glCanvas.addGLEventListener(new GLEventHandler());
-        this.add(glCanvas, BorderLayout.CENTER);
-        revalidate();
-        setupInternalUiInteractions();
-        //glCanvas.addKeyListener(internalMouseEventHandler);
-        glCanvas.addMouseListener(canvasMouseEventDispatcher);
-        glCanvas.addMouseMotionListener(canvasMouseEventDispatcher);
-        glCanvas.addMouseWheelListener(canvasMouseEventDispatcher);
-        //glCanvas.addKeyListener(canvasMouseAndKeyHandler);
-    }
-
-    public GLAutoDrawable getGlCanvas() {
-        return glCanvas;
-    }
-    
     public float getNavigationZ() {
         return navigationZ;
     }
@@ -272,7 +242,6 @@ public class SliceViewer extends JPanel {
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
         LinAlg.copyArr(volumeToWorldTransform, this.volumeToWorldTransform);
         recomputeMatrices();
-        needViewportReset = true;
         refresh();
     }
     
@@ -329,61 +298,41 @@ public class SliceViewer extends JPanel {
     }
     
     public void refresh() {
-        if (glCanvas != null) {
-            glCanvas.repaint();
-        }
+        //TODO
     }
     
     public float getNavigationCubeLength() {
         return navigationCubeLength;
     }
 
-    protected void initializeUninitializedSlicePaintListeners(final GL gl, final GLAutoDrawable glAutoDrawable) {
+    protected void initializeUninitializedSlicePaintListeners() {
         forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
             @Override
             public void run(SlicePaintListener l) {
                 if (uninitializedSlicePaintListeners.contains(l)) {
-                    l.glSharedContextDataInitialization(SliceViewer.this, gl, sharedContextData.getAttributes());
-                    l.glDrawableInitialized(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
+                    l.glSharedContextDataInitialization(SliceViewer.this, sharedContextData.getAttributes());
+                    l.glDrawableInitialized(SliceViewer.this, sharedContextData.getAttributes());
                 }
             }
         });
         uninitializedSlicePaintListeners.clear();
     }
     
-    protected class GLEventHandler implements GLEventListener {
+    protected class Canvas extends Widget {
 
+        protected boolean isInitialized = false;
+        
         /**
          * dimensions of viewport in canvas coordinate system
          */
         float viewWidth, viewHeight;
 
-        @Override
-        public void init(GLAutoDrawable glAutoDrawable) {
-            // Use debug pipeline
-            glAutoDrawable.setGL(new DebugGL2(glAutoDrawable.getGL().getGL2()));
-            GL2 gl = glAutoDrawable.getGL().getGL2();
-            gl.setSwapInterval(1);
-            gl.glClearColor(0,0,0,0);
-            gl.glShadeModel(gl.GL_FLAT);
-            sharedContextData.ref(getGlCanvas().getContext());
-            logger.debug("new GLCanvas being initialized, refcount=" + sharedContextData.getRefCount());
-            if (sharedContextData.getRefCount() == 1) {
-                SharedContextData.callContextInitCallbacks(sharedContextData, gl);
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        for (SliceViewer v : instances) {
-                            if (v != SliceViewer.this) {
-                                v.createGlCanvas();
-                            }
-                        }
-                    }
-                });
+        protected void ensureInitialized() {
+            if (isInitialized) {
+                return;
             }
-
             try {
-                ShaderManager.read(gl, "sliceviewer");
+                ShaderManager.read("sliceviewer");
                 fragShader = ShaderManager.get("sliceviewer");
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
@@ -391,70 +340,83 @@ public class SliceViewer extends JPanel {
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
-            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
+            initializeUninitializedSlicePaintListeners();
+            isInitialized = true;
         }
 
         @Override
-        public void display(GLAutoDrawable glAutoDrawable) {
-            GL2 gl = glAutoDrawable.getGL().getGL2();
-            if (null != previousvolumeDataSet) {
-                previousvolumeDataSet.dispose(gl, sharedContextData);  // TODO: reference count on the VolumeDataSet
-                previousvolumeDataSet = null;
-            }
-            if (null == volumeDataSet) {
-                return;
-            }
-            if (needViewportReset) {
-                setupEye2ViewportTransformation(gl);
-            }
-            initializeUninitializedSlicePaintListeners(gl, glAutoDrawable);
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT);
-            gl.glMatrixMode(gl.GL_MODELVIEW);
-            gl.glLoadIdentity();
-
-            gl.glPushAttrib(gl.GL_COLOR_BUFFER_BIT|GL2.GL_CURRENT_BIT|GL2.GL_ENABLE_BIT);
+        protected void paintWidget(GUI gui) {
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            ensureInitialized();
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glPushMatrix();
+            setupEye2ViewportTransformation(gui);
             try {
+                GL11.glDisable(GL11.GL_TEXTURE_2D);
+                GL11.glShadeModel(GL11.GL_FLAT);
+
+                if (null != previousvolumeDataSet) {
+                    previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
+                    previousvolumeDataSet = null;
+                }
+                if (null == volumeDataSet) {
+                    return;
+                }
+                initializeUninitializedSlicePaintListeners();
+                GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                GL11.glPushMatrix();
                 try {
-                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL2.GL_TEXTURE0, gl, sharedContextData);
+                    GL11.glLoadIdentity();
+                    GL11.glColor3f(0, 1, 0);
+                    //GL11.glBegin(GL11.GL_LINES);
+                    //GL11.glVertex2f(10 + 10*oid, 10);
+                    //GL11.glVertex2f(100 + 10*oid, 50);
+                    //GL11.glEnd();
+                    
+                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
                     fragShader.bindUniform("scale", texRef.getPreScale());
                     fragShader.bindUniform("offset", texRef.getPreOffset());
-                    gl.glTexEnvi(GL2.GL_TEXTURE_ENV, GL2.GL_TEXTURE_ENV_MODE, gl.GL_REPLACE);
-                    gl.glBegin(GL2.GL_QUADS);
-                    texturedCanvasPoint(gl,-viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint(gl, viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint(gl, viewWidth/2,  viewHeight/2);
-                    texturedCanvasPoint(gl,-viewWidth/2,  viewHeight/2);
+                    GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
+                    GL11.glBegin(GL11.GL_QUADS);
+                    texturedCanvasPoint(-viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint( viewWidth/2, -viewHeight/2);
+                    texturedCanvasPoint( viewWidth/2,  viewHeight/2);
+                    texturedCanvasPoint(-viewWidth/2,  viewHeight/2);
                     outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
                     outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
-                    gl.glEnd();
+                    GL11.glEnd();
                     fragShader.unbind();
-                    volumeDataSet.unbindCurrentTexture(gl);
-                    gl.glShadeModel(gl.GL_FLAT);
+                    volumeDataSet.unbindCurrentTexture();
+                    GL11.glShadeModel(GL11.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
-                        gl.glColor3f(1f, 0f, 0f);
+                        GL11.glColor3f(1f, 0f, 0f);
                         float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
                         LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
                         LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
                         LinAlg.fillMultiplication(getSliceToCanvasTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
                         float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
                         float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
-                        gl.glBegin(gl.GL_LINES);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null), 0);
-                        gl.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null), 0);
-                        gl.glEnd();
+                        GL11.glBegin(GL11.GL_LINES);
+                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null));
+                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null));
+                        GL11.glEnd();
+                        // TODO: the lines don't look right (too thick and too dark). Must be some unwanted state from TWL.
                     }
 
-                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, gl, sharedContextData.getAttributes()));
+                    firePaintEvent(new SlicePaintEvent(SliceViewer.this, sharedContextData.getAttributes()));
                 } finally {
+                    GL11.glPopMatrix();
                 }
             } finally {
-                gl.glPopAttrib();
+                GL11.glMatrixMode(GL11.GL_PROJECTION);
+                GL11.glPopMatrix();
+                GL11.glPopAttrib();
             }
         }
         
-        private void texturedCanvasPoint(GL2 gl, float x, float y) {
+        private void texturedCanvasPoint(float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] ptInCanvas = new float[]{x,y,0};
             float[] ptInSlice = LinAlg.mtimesv(canvasToSliceTransform, ptInCanvas, null);
@@ -468,155 +430,54 @@ public class SliceViewer extends JPanel {
                              1.0f/volumeDataSet.getDepthInMm(),
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
-            gl.glTexCoord3fv(ptInTex, 0);
-            //System.out.println("texCoord.Z="+ptInTex[2]);
-            gl.glVertex2f(x, y);
+            LWJGLTools.glTexCoord3fv(ptInTex);
+            LWJGLTools.glVertex3fv(new float[]{x, y, 0});
         }
         
         private void outputSlicePoint(String caption, float x, float y) {
             float[] ptInSlice = new float[]{x,y,0};
             float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
             //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
-            System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
+            //System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
         }
 
-        
-        @Override
-        public void reshape(GLAutoDrawable glAutoDrawable, int x, int y, int width, int height) {
-            GL2 gl = (GL2) glAutoDrawable.getGL();
-            if (null != previousvolumeDataSet) {
-                previousvolumeDataSet.dispose(gl, sharedContextData);
-                previousvolumeDataSet = null;
-            }
-            if (null == volumeDataSet) {
-                return;
-            }
-            setupEye2ViewportTransformation(gl);
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    //updateCellSizes(true, false);
-                }
-            };
-            if (EventQueue.isDispatchThread()) {
-                r.run();
+        private void setupEye2ViewportTransformation(GUI gui) {
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glLoadIdentity();
+            if (getInnerWidth() > getInnerHeight()) {
+                viewHeight = navigationCubeLength;
+                viewWidth = viewHeight * getInnerWidth() / getInnerHeight();
             } else {
-                try {
-                    EventQueue.invokeAndWait(r);
-                } catch (Exception e) {
-                    throw new RuntimeException("CAN'T HAPPEN");
-                }
+                viewWidth = navigationCubeLength;
+                viewHeight = viewWidth * getInnerHeight() / getInnerWidth();
+            }
+            GL11.glOrtho(-viewWidth / 2,   //  GLdouble    left,
+                          viewWidth / 2,   //    GLdouble      right,
+                         -viewHeight / 2,  //    GLdouble      bottom,
+                          viewHeight / 2,  //    GLdouble      top,
+                         -navigationCubeLength, //  GLdouble      nearVal,
+                          navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
+                         );
+            //TODO: it's probably not a good idea to (temporarily) change the viewport dimensions
+            // when drawing in a TWL widget (as opposed to an AWTGLCanvas that hosts a single SliceViewer only)
+            GL11.glViewport(getInnerX(), gui.getRenderer().getHeight() - getInnerY() - getInnerHeight(), getInnerWidth(), getInnerHeight());
+            GL11.glDepthRange(0,1);
+        }
+        
+        protected TwlToAwtMouseEventConverter mouseEvtConv = new TwlToAwtMouseEventConverter();
+
+        @Override
+        protected boolean handleEvent(Event evt) {
+            MouseEvent awtMevt = mouseEvtConv.mouseEventTwlToAwt(evt, this);
+            if (null != awtMevt) {
+                dispatchEventToCanvas(awtMevt);
+                return true; // consume all mouse event b/c otherwise TWL won't send some other events, apparently
+                //return awtMevt.isConsumed() || evt.getType().equals(Event.Type.MOUSE_ENTERED); //always handle MOUSE_ENTERED b/c otherwise TWL assumes the widget doesn't handle any mouse events
+            } else {
+                return false;
             }
         }
-
-        private void setupEye2ViewportTransformation(GL2 gl) {
-            gl.glMatrixMode(gl.GL_PROJECTION);
-            gl.glLoadIdentity();
-            Dimension sz = glCanvas.getSize();
-            if (sz != null) {
-                /*
-                 // visible area depending on canvas size
-                gl.glOrtho(-sz.width / 2,   //  GLdouble    left,
-                        sz.width / 2,   //    GLdouble      right,
-                       -sz.height / 2,  //    GLdouble      bottom,
-                        sz.height / 2,  //    GLdouble      top,
-                       -1000, //  GLdouble      nearVal,
-                        1000   //  GLdouble     farVal
-                       );
-                */
-                
-                if (sz.width > sz.height) {
-                    viewHeight = navigationCubeLength;
-                    viewWidth = viewHeight * sz.width / sz.height;
-                } else {
-                    viewWidth = navigationCubeLength;
-                    viewHeight = viewWidth * sz.height / sz.width;
-                }
-                gl.glOrtho(-viewWidth / 2,   //  GLdouble    left,
-                            viewWidth / 2,   //    GLdouble      right,
-                           -viewHeight / 2,  //    GLdouble      bottom,
-                            viewHeight / 2,  //    GLdouble      top,
-                           -navigationCubeLength, //  GLdouble      nearVal,
-                            navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
-                           );
-
-                /*
-                // TODO: if we have a glViewPort() call, strange things happen
-                //  (completely wrong viewport in some cells) if the J2D OGL pipeline is active.
-                //  If we don't include it, everything works. Why? The JOGL UserGuide says
-                //  that the viewport is automatically set to the drawable's size, but why
-                //  is it harmful to do this manually too?
-                gl.glViewport(0, //GLint x,
-                              0, //GLint y,
-                              getWidth(), //GLsizei width,
-                              getHeight() //GLsizei height
-                              );
-                */
-                gl.glDepthRange(0,1);
-                needViewportReset = false;
-            }
-        }
-
-        @Override
-        public void dispose(final GLAutoDrawable glAutoDrawable) {
-            logger.debug("disposing GLCanvas...");
-            forEachPaintListenerInZOrder(new Runnable1<SlicePaintListener>() {
-                @Override
-                public void run(SlicePaintListener l) {
-                    if (uninitializedSlicePaintListeners.contains(l)) {
-                        l.glDrawableDisposing(SliceViewer.this, glAutoDrawable, sharedContextData.getAttributes());
-                    }
-                }
-            });
-            sharedContextData.unref();
-            instances.remove(SliceViewer.this);
-            logger.debug("GLCanvas disposed, refcount=" + sharedContextData.getRefCount() + ", GLCanvas inst. count = " + instances.size());
-        }
-
-    };
-
-    private MouseAdapter canvasMouseEventDispatcher = new MouseAdapter() {
-
-        @Override
-        public void mouseClicked(MouseEvent evt) {
-            dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mousePressed(MouseEvent evt) {
-            dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseReleased(final MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseEntered(MouseEvent evt) {
-             //dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseExited(MouseEvent evt) {
-            //dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseMoved(MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseDragged(MouseEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent evt) {
-             dispatchEventToCanvas(evt);
-        }
-
+        
     };
 
     protected void dispatchEventToCanvas(MouseEvent evt) {
@@ -631,16 +492,15 @@ public class SliceViewer extends JPanel {
 
     public float[] convertAwtToCanvas(Point awtPtOnGlCanvas) {
         // TODO: have a tx matrix for this as well
-        // TODO: unify with code in reshape() / setupEye2ViewportTransformation()
-        Dimension sz = glCanvas.getSize();
+        // TODO: unify with code in setupEye2ViewportTransformation()
         float mmPerPixel;
-        if (sz.width > sz.height) {
-            mmPerPixel = navigationCubeLength / sz.height;
+        if (canvas.getWidth() > canvas.getHeight()) {
+            mmPerPixel = navigationCubeLength / canvas.getHeight();
         } else {
-            mmPerPixel = navigationCubeLength / sz.width;
+            mmPerPixel = navigationCubeLength / canvas.getWidth();
         }
-        float x = awtPtOnGlCanvas.x - sz.width / 2;
-        float y = - (awtPtOnGlCanvas.y - sz.height / 2);
+        float x = awtPtOnGlCanvas.x - canvas.getWidth() / 2;
+        float y = - (awtPtOnGlCanvas.y - canvas.getHeight() / 2);
         return new float[]{x*mmPerPixel, y*mmPerPixel, 0};
     }
 
@@ -793,16 +653,16 @@ public class SliceViewer extends JPanel {
     protected void firePaintEvent(SlicePaintEvent e, int minZ, int maxZ) {
         SlicePaintListener dummy = new SlicePaintListener() {
             @Override
-            public void glSharedContextDataInitialization(SliceViewer sv, GL gl, Map<String, Object> sharedData) {
+            public void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData) {
             }
             @Override
-            public void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+            public void glDrawableInitialized(SliceViewer sv, Map<String, Object> sharedData) {
             }
             @Override
             public void onPaint(SlicePaintEvent e) {
             }
             @Override
-            public void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData) {
+            public void glDrawableDisposing(SliceViewer sv, Map<String, Object> sharedData) {
             }
         };
         ListenerRecord<SlicePaintListener> min = new ListenerRecord<SlicePaintListener>(dummy, minZ);
@@ -839,16 +699,6 @@ public class SliceViewer extends JPanel {
     }
 
     
-    /**
-     * need our own valueIsAdjusting for navZslider instead of using
-     * navZslider.getModel().getValueIsAdjusting() because we want to be able to
-     * tell the difference between the user dragging the thumb (we want to
-     * update the display during that) and our own temporarily invalid
-     * model value settings in updateNavZslider() (we do NOT want to update
-     * the display during that)
-     */
-    private boolean internalNavZsliderValueIsAdjusting = false;
-    
     private void updateNavZslider() {
         if (null == navZslider) {
             return;
@@ -856,79 +706,25 @@ public class SliceViewer extends JPanel {
         if (! navZslider.isEnabled()) {
             navZslider.setEnabled(true);
         }
-        BoundedRangeModel sliderModel = navZslider.getModel();
-        internalNavZsliderValueIsAdjusting = true;
-        int min = sliderModel.getMinimum();
-        int max = sliderModel.getMaximum();
-        sliderModel.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength));
-        sliderModel.setExtent(1);
-        internalNavZsliderValueIsAdjusting = false;
+        int min = navZslider.getMinValue();
+        int max = navZslider.getMaxValue();
+        navZslider.setValue((int)((max-min) * (navigationZ + navigationCubeLength/2)/navigationCubeLength), false);
     }
 
-    private ChangeListener navZsliderChangeListener = new ChangeListener() {
+    private Runnable navZsliderChangeListener = new Runnable() {
         private boolean inCall = false;
         @Override
-        public void stateChanged(ChangeEvent e) {
+        public void run() {
             if (inCall) { return; }
             inCall = true;
             try {
-                if (internalNavZsliderValueIsAdjusting) { return; }
-                BoundedRangeModel sliderModel = navZslider.getModel();
-                int min = sliderModel.getMinimum();
-                int max = sliderModel.getMaximum();
-                setNavigationZ(navigationCubeLength * ((float)sliderModel.getValue() - min) / (max-min) - navigationCubeLength/2);
+                int min = navZslider.getMinValue();
+                int max = navZslider.getMaxValue();
+                setNavigationZ(navigationCubeLength * ((float)navZslider.getValue() - min) / (max-min) - navigationCubeLength/2);
             } finally {
                 inCall = false;
             }
         }
     };
-
-    @Override
-    public void setBackground(java.awt.Color bg) {
-        super.setBackground(bg);
-        if (navZslider != null) {
-            navZslider.setBackground(bg);
-        }
-    }
-    
-    protected void setupInternalUiInteractions() {
-        this.setFocusable(true);
-        glCanvas.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            }
-        });
-
-        InputMap inputMap = this.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        ActionMap actionMap = this.getActionMap();
-        if (inputMap != null && actionMap != null) {
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "up");
-            actionMap.put("up", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "down");
-            actionMap.put("down", new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "left");
-            actionMap.put("left", new SelectionShiftAction(-1));
-            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "right");
-            actionMap.put("right", new SelectionShiftAction(1));
-        }
-    }
-    
-    protected class SelectionShiftAction extends AbstractAction {
-        private int shift;
-        public SelectionShiftAction(int shift) {
-            this.shift = shift;
-        }
-        @Override
-        public void actionPerformed(ActionEvent e) {
-        }
-    }
 
 }

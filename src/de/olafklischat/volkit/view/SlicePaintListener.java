@@ -2,9 +2,6 @@ package de.olafklischat.volkit.view;
 
 import java.util.Map;
 
-import javax.media.opengl.GL;
-import javax.media.opengl.GLAutoDrawable;
-
 import de.sofd.viskit.ui.imagelist.glimpl.JGLImageListView;
 import de.sofd.viskit.ui.imagelist.gridlistimpl.JGridImageListView;
 
@@ -44,7 +41,7 @@ public interface SlicePaintListener {
      * @param glAutoDrawable
      * @param sharedData
      */
-    void glDrawableInitialized(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData);
+    void glDrawableInitialized(SliceViewer sv, Map<String, Object> sharedData);
 
     /**
      * Method that will be called every time a GL context is being set up whose
@@ -62,22 +59,21 @@ public interface SlicePaintListener {
      * the map. Thus, it is advised to use unique strings for the keys in the
      * map, e.g. dotted names similar to Java class names.
      * <p>
-     * Just like {@link #glDrawableInitialized(GLAutoDrawable)}, this method
+     * Just like {@link #glDrawableInitialized(SliceViewer, Map)}, this method
      * will be called at least once per listener.
      * 
-     * @param gl
      * @param sharedData
      */
-    void glSharedContextDataInitialization(SliceViewer sv, GL gl, Map<String, Object> sharedData);
+    void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData);
 
     /**
      * An OpenGL/JOGL drawable that has previously been initialized (and for
-     * which {@link #glDrawableInitialized(GLAutoDrawable)} was called then) is
+     * which {@link #glDrawableInitialized(SliceViewer, Map)} was called then) is
      * being disposed.
      * 
-     * @param glAutoDrawable
+     * @param sv
      * @param sharedData
      */
-    void glDrawableDisposing(SliceViewer sv, GLAutoDrawable glAutoDrawable, Map<String, Object> sharedData);
+    void glDrawableDisposing(SliceViewer sv, Map<String, Object> sharedData);
 
 }
