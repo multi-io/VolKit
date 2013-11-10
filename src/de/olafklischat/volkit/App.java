@@ -35,6 +35,8 @@ import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.GUI;
+import de.matthiasmann.twl.Label;
+import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
@@ -288,7 +290,7 @@ public class App {
                     slicesController.resetZNavigations();
                 }
             });
-                addToolbarAction(new AbstractAction("Undo") {
+            addToolbarAction(new AbstractAction("Undo") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     if (undoMgr.canUndo()) {
@@ -343,18 +345,19 @@ public class App {
                     //slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                 }
             });
-            /*//TODO: put the transparency slider back in again
-            toolbar.add(new JLabel("transparency"));
-            final JSlider transpSlider = new JSlider(0, 10000);
+            toolbar.add(new Label("transparency"));
+            final Scrollbar transpSlider = new Scrollbar(Scrollbar.Orientation.HORIZONTAL);
+            transpSlider.setTheme("hslider");
+            transpSlider.setMinMaxValue(0, 10000);
+            //transpSlider.setMinSize(300, 1);
             toolbar.add(transpSlider);
-            transpSlider.addChangeListener(new ChangeListener() {
+            transpSlider.addCallback(new Runnable() {
                 @Override
-                public void stateChanged(ChangeEvent e) {
+                public void run() {
                     measurementsController.setTransparencyCoeff((float)Math.exp((float)transpSlider.getValue()/1500f));
                 }
             });
             transpSlider.setValue(1650);
-            */
             
             // measurements frame
 
