@@ -45,6 +45,7 @@ import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
 import de.olafklischat.volkit.controller.TrackedViewerDraggingController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
+import de.olafklischat.volkit.controller.VolumeCameraController;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
@@ -279,6 +280,8 @@ public class App {
             
             VolumeViewer vv = new VolumeViewer();
             mainPane.add(vv);
+            
+            new VolumeCameraController(vv);
 
             final TripleSliceViewerController slicesController = new TripleSliceViewerController(this, sv1, sv2, sv3, vv, undoMgr);
             
