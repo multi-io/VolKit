@@ -46,12 +46,16 @@ public class VolumeCameraController {
                 float roty = ((float)pos.x - lastPos.x) / 400 * 180;
                 float rotx = ((float)pos.y - lastPos.y) / 400 * 180;
                 float[] deltaTransform = new float[16];
+                float[] w2e = controlledViewer.getWorldToEyeTransform();
+                float[] eyeToOriginVec = new float[]{w2e[12], w2e[13], w2e[14]};  //first 2 components always 0... b/c the eye points to origin??
+                float eyeToOriginDist = LinAlg.length(eyeToOriginVec);  // == w2e[12], thus
+
                 LinAlg.fillIdentity(deltaTransform);
+                LinAlg.fillTranslation(deltaTransform, 0, 0, -eyeToOriginDist, deltaTransform);
                 LinAlg.fillRotation(deltaTransform, rotx, 1, 0, 0, deltaTransform);
                 LinAlg.fillRotation(deltaTransform, roty, 0, 1, 0, deltaTransform);
-                float[] w2e = controlledViewer.getWorldToEyeTransform();
-                //LinAlg.fillMultiplication(viewerDeltaTransform, w2e, w2e);  //rotate around camera
-                LinAlg.fillMultiplication(w2e, deltaTransform, w2e);  //rotate around world origin -- doesn't work very well
+                LinAlg.fillTranslation(deltaTransform, 0, 0, eyeToOriginDist, deltaTransform);
+                LinAlg.fillMultiplication(deltaTransform, w2e, w2e);
                 controlledViewer.setWorldToEyeTransform(w2e);
                 controlledViewer.refresh();
 
