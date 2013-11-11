@@ -1,10 +1,12 @@
 package de.olafklischat.volkit.controller;
 
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import de.olafklischat.volkit.view.VolumeViewer;
+import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 public class VolumeCameraController {
     
@@ -40,7 +42,19 @@ public class VolumeCameraController {
         @Override
         public void mouseDragged(java.awt.event.MouseEvent e) {
             if (lastPos != null && (e.getButton() == MOUSE_BUTTON || (e.getModifiers() & MOUSE_MASK) != 0)) {
-                System.out.println("drag " + (e.getX() - lastPos.getX()));
+                Point pos = e.getPoint();
+                float roty = ((float)pos.x - lastPos.x) / 400 * 180;
+                float rotx = ((float)pos.y - lastPos.y) / 400 * 180;
+                float[] deltaTransform = new float[16];
+                LinAlg.fillIdentity(deltaTransform);
+                LinAlg.fillRotation(deltaTransform, rotx, 1, 0, 0, deltaTransform);
+                LinAlg.fillRotation(deltaTransform, roty, 0, 1, 0, deltaTransform);
+                float[] w2e = controlledViewer.getWorldToEyeTransform();
+                //LinAlg.fillMultiplication(viewerDeltaTransform, w2e, w2e);  //rotate around camera
+                LinAlg.fillMultiplication(w2e, deltaTransform, w2e);  //rotate around world origin -- doesn't work very well
+                controlledViewer.setWorldToEyeTransform(w2e);
+                controlledViewer.refresh();
+
                 lastPos = new Point(e.getPoint());
                 e.consume();
             } else {
