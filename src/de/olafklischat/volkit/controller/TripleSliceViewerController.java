@@ -14,6 +14,7 @@ import javax.swing.undo.UndoManager;
 
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.olafklischat.volkit.view.VolumeViewer;
 import de.sofd.util.ProgressReportage;
 import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
@@ -33,17 +34,20 @@ public class TripleSliceViewerController {
     protected SliceViewer sv2;
     protected SliceViewer sv3;
     
+    protected VolumeViewer vv;
+    
     protected UndoManager vol2worldTransformUndoManager;
     
-    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3) {
-        this(parentComponent, sv1, sv2, sv3, null);
+    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, VolumeViewer vv) {
+        this(parentComponent, sv1, sv2, sv3, vv, null);
     }
     
-    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, UndoManager undoMgr) {
+    public TripleSliceViewerController(Component parentComponent, SliceViewer sv1, SliceViewer sv2, SliceViewer sv3, VolumeViewer vv, UndoManager undoMgr) {
         this.parentComponent = parentComponent;
         this.sv1 = sv1;
         this.sv2 = sv2;
         this.sv3 = sv3;
+        this.vv = vv;
         
         if (undoMgr == null) {
             this.vol2worldTransformUndoManager = new UndoManager();
@@ -56,6 +60,7 @@ public class TripleSliceViewerController {
         sv1.setVolumeToWorldTransform(identity);
         sv2.setVolumeToWorldTransform(identity);
         sv3.setVolumeToWorldTransform(identity);
+        vv.setVolumeToWorldTransform(identity);
 
         sv1.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_XZ);
         sv2.setWorldToBaseSliceTransform(SliceViewer.BASE_SLICE_YZ);
@@ -94,6 +99,10 @@ public class TripleSliceViewerController {
         sv2.addTrackedViewer(sv3);
         sv3.addTrackedViewer(sv1);
         sv3.addTrackedViewer(sv2);
+        
+        vv.addTrackedSliceViewer(sv1);
+        vv.addTrackedSliceViewer(sv2);
+        vv.addTrackedSliceViewer(sv3);
     }
     
 
@@ -148,6 +157,7 @@ public class TripleSliceViewerController {
                     sv1.setVolumeToWorldTransform(vol2worlTx);
                     sv2.setVolumeToWorldTransform(vol2worlTx);
                     sv3.setVolumeToWorldTransform(vol2worlTx);
+                    vv.setVolumeToWorldTransform(vol2worlTx);
                     e.consume();
                 }
                 lastPos = pos;
@@ -157,7 +167,7 @@ public class TripleSliceViewerController {
         @Override
         public void mouseReleased(MouseEvent e) {
             if (lastPos != null && (e.getButton() == ROTATION_MOUSE_BUTTON || (e.getModifiers() & ROTATION_MOUSE_MASK) != 0)) {
-                vol2worldTransformUndoManager.addEdit(new UndoableVol2WorldTransformChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), sv1, sv2, sv3));
+                vol2worldTransformUndoManager.addEdit(new UndoableVol2WorldTransformChange(preDragVol2WorldTr, sv1.getVolumeToWorldTransform(), vv, sv1, sv2, sv3));
                 e.consume();
             }
         }
@@ -232,6 +242,7 @@ public class TripleSliceViewerController {
         sv1.setVolumeToWorldTransform(identity);
         sv2.setVolumeToWorldTransform(identity);
         sv3.setVolumeToWorldTransform(identity);
+        vv.setVolumeToWorldTransform(identity);
     }
     
     public void resetZNavigations() {
@@ -255,6 +266,7 @@ public class TripleSliceViewerController {
         sv1.setVolumeDataSet(vds);
         sv2.setVolumeDataSet(vds);
         sv3.setVolumeDataSet(vds);
+        vv.setVolumeDataSet(vds);
     }
     
     public void startLoadingVolumeDataSetInBackground(final String pathName, final int stride) {
@@ -288,6 +300,7 @@ public class TripleSliceViewerController {
                     sv1.setVolumeDataSet(vds);
                     sv2.setVolumeDataSet(vds);
                     sv3.setVolumeDataSet(vds);
+                    vv.setVolumeDataSet(vds);
                 }
             }
         };

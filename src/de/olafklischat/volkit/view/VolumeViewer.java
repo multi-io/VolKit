@@ -1,6 +1,5 @@
 package de.olafklischat.volkit.view;
 
-import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -29,6 +28,7 @@ import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
+import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
@@ -112,7 +112,7 @@ public class VolumeViewer extends Widget {
     private Widget canvas;
     private Widget toolPane;
     
-    protected List<VolumeViewer> trackedViewers = new ArrayList<VolumeViewer>();
+    protected List<SliceViewer> trackedSliceViewers = new ArrayList<SliceViewer>();
     
     protected static final Set<VolumeViewer> instances = new IdentityHashSet<VolumeViewer>();
     private static final SharedContextData sharedContextData = new SharedContextData();
@@ -165,7 +165,9 @@ public class VolumeViewer extends Widget {
                 volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
 
         LinAlg.fillIdentity(volumeToWorldTransform);
-        // TODO: reset eye position (worldToEyeTransform)
+        LinAlg.fillIdentity(worldToEyeTransform);
+        LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - 3 * navigationCubeLength, worldToEyeTransform);
+        
         vpWidthInRadiants = 0.9F;
         recomputeMatrices();
         refresh();
@@ -187,8 +189,8 @@ public class VolumeViewer extends Widget {
         return LinAlg.copyArr(eyeToWorldTransform, null);
     }
     
-    public List<VolumeViewer> getTrackedViewers() {
-        return trackedViewers;
+    public List<SliceViewer> getTrackedSliceViewers() {
+        return trackedSliceViewers;
     }
     
     public void setVolumeToWorldTransform(float[] volumeToWorldTransform) {
@@ -217,15 +219,15 @@ public class VolumeViewer extends Widget {
         refresh();
     }
     
-    public void addTrackedViewer(VolumeViewer sv) {
-        trackedViewers.add(sv);
+    public void addTrackedSliceViewer(SliceViewer sv) {
+        trackedSliceViewers.add(sv);
         sv.addPropertyChangeListener(trackedViewersPropChangeHandler);
         refresh();
     }
     
     public void removeTrackedViewer(VolumeViewer sv) {
         sv.removePropertyChangeListener(trackedViewersPropChangeHandler);
-        trackedViewers.remove(sv);
+        trackedSliceViewers.remove(sv);
         refresh();
     }
     
@@ -291,7 +293,7 @@ public class VolumeViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
             ensureInitialized();
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
@@ -299,6 +301,7 @@ public class VolumeViewer extends Widget {
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
                 if (null != previousvolumeDataSet) {
                     previousvolumeDataSet.dispose(sharedContextData);  // TODO: reference count on the VolumeDataSet
@@ -311,10 +314,35 @@ public class VolumeViewer extends Widget {
                 GL11.glMatrixMode(GL11.GL_MODELVIEW);
                 GL11.glPushMatrix();
                 try {
-                    /*
-                    GL11.glLoadIdentity();
+                    GL11.glShadeModel(GL11.GL_FLAT);
                     GL11.glColor3f(0, 1, 0);
+                    GL11.glLoadIdentity();
+                    GL11.glMultMatrix(LWJGLTools.toFB(worldToEyeTransform));
                     
+                    {
+                        GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
+                        drawVolumeBounds();
+                        GL11.glPopMatrix();
+                    }
+
+                    //TODO: the following draws the right thing principally, but with strange flickering
+                    /*
+                    for (SliceViewer trackedViewer : trackedSliceViewers) {
+                        GL11.glColor3f(1f, 0f, 0f);
+                        GL11.glMultMatrix(LWJGLTools.toFB(trackedViewer.getBaseSliceToWorldTransform()));  //TODO: must be sliceToWorld to account for navigationZ too
+                        GL11.glBegin(GL11.GL_QUADS);
+                        GL11.glVertex3f(-navigationCubeLength, -navigationCubeLength, 0);
+                        GL11.glVertex3f( navigationCubeLength, -navigationCubeLength, 0);
+                        GL11.glVertex3f( navigationCubeLength,  navigationCubeLength, 0);
+                        GL11.glVertex3f(-navigationCubeLength,  navigationCubeLength, 0);
+                        GL11.glEnd();
+                        GL11.glPopMatrix();
+                    }
+                    */
+                    
+                    GL11.glPopMatrix(); //worldToEyeTransform
+
+                    /*
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
@@ -332,7 +360,7 @@ public class VolumeViewer extends Widget {
                     fragShader.unbind();
                     volumeDataSet.unbindCurrentTexture();
                     GL11.glShadeModel(GL11.GL_FLAT);
-                    for (VolumeViewer trackedViewer : trackedViewers) {
+                    for (SliceViewer trackedViewer : trackedSliceViewers) {
                         GL11.glColor3f(1f, 0f, 0f);
                         float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
                         LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
@@ -357,6 +385,21 @@ public class VolumeViewer extends Widget {
                 GL11.glPopMatrix();
                 GL11.glPopAttrib();
             }
+        }
+
+        private void drawVolumeBounds() {
+            GL11.glBegin(GL11.GL_QUAD_STRIP);
+            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f(-navigationCubeLength/2,  navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f( navigationCubeLength/2,  navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f(-navigationCubeLength/2,  navigationCubeLength/2, -navigationCubeLength/2);
+            GL11.glVertex3f( navigationCubeLength/2,  navigationCubeLength/2, -navigationCubeLength/2);
+            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2, -navigationCubeLength/2);
+            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2, -navigationCubeLength/2);
+            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glEnd();
         }
 
         /*
@@ -389,20 +432,22 @@ public class VolumeViewer extends Widget {
         private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glLoadIdentity();
-            if (getInnerWidth() > getInnerHeight()) {
-                viewHeight = navigationCubeLength;
-                viewWidth = viewHeight * getInnerWidth() / getInnerHeight();
-            } else {
-                viewWidth = navigationCubeLength;
-                viewHeight = viewWidth * getInnerHeight() / getInnerWidth();
-            }
-            GL11.glOrtho(-viewWidth / 2,   //  GLdouble    left,
-                          viewWidth / 2,   //    GLdouble      right,
-                         -viewHeight / 2,  //    GLdouble      bottom,
-                          viewHeight / 2,  //    GLdouble      top,
-                         -navigationCubeLength, //  GLdouble      nearVal,
-                          navigationCubeLength   //  GLdouble     farVal  // depth 2 times the navigationCubeLength to support navZ in [-ncl,ncl]
-                         );
+            float nearVal = 0.01f;
+            float farVal = 10 * navigationCubeLength;
+            float vpHeightInRadiants = vpWidthInRadiants * getInnerHeight() / getInnerWidth();
+            float right = nearVal * (float) Math.tan(vpWidthInRadiants/2);
+            float left = -right;
+            float top = nearVal * (float) Math.tan(vpHeightInRadiants/2);
+            float bottom = -top;
+
+            GL11.glFrustum(left,
+                           right,
+                           bottom,
+                           top,
+                           nearVal,
+                           farVal
+                           );
+
             //TODO: it's probably not a good idea to (temporarily) change the viewport dimensions
             // when drawing in a TWL widget (as opposed to an AWTGLCanvas that hosts a single SliceViewer only)
             GL11.glViewport(getInnerX(), gui.getRenderer().getHeight() - getInnerY() - getInnerHeight(), getInnerWidth(), getInnerHeight());
@@ -435,20 +480,6 @@ public class VolumeViewer extends Widget {
         } else {
             fireCanvasMouseEvent(ce);
         }
-    }
-
-    public float[] convertAwtToCanvas(Point awtPtOnGlCanvas) {
-        // TODO: have a tx matrix for this as well
-        // TODO: unify with code in setupEye2ViewportTransformation()
-        float mmPerPixel;
-        if (canvas.getWidth() > canvas.getHeight()) {
-            mmPerPixel = navigationCubeLength / canvas.getHeight();
-        } else {
-            mmPerPixel = navigationCubeLength / canvas.getWidth();
-        }
-        float x = awtPtOnGlCanvas.x - canvas.getWidth() / 2;
-        float y = - (awtPtOnGlCanvas.y - canvas.getHeight() / 2);
-        return new float[]{x*mmPerPixel, y*mmPerPixel, 0};
     }
 
     public void addCanvasMouseListener(MouseListener listener) {

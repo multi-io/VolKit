@@ -47,6 +47,7 @@ import de.olafklischat.volkit.controller.TrackedViewerDraggingController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.twlawt.TwlAwtEventUtil;
 
 public class App {
@@ -275,15 +276,17 @@ public class App {
                 new TrackedViewerDraggingController(sv2);
                 new TrackedViewerDraggingController(sv3);
             }
+            
+            VolumeViewer vv = new VolumeViewer();
+            mainPane.add(vv);
 
-            final TripleSliceViewerController slicesController = new TripleSliceViewerController(this, sv1, sv2, sv3, undoMgr);
+            final TripleSliceViewerController slicesController = new TripleSliceViewerController(this, sv1, sv2, sv3, vv, undoMgr);
             
             MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
             mdb.load();
             JTable measurementsTable = new JTable();
             final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
 
-            mainPane.add(new Button(":-)"));
 
             addToolbarAction(new AbstractAction("Tx RST") {
                 @Override
