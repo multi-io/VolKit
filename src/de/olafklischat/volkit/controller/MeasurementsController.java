@@ -31,6 +31,7 @@ import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.PaintEvent;
 import de.olafklischat.volkit.view.PaintListener;
 import de.olafklischat.volkit.view.SliceViewer;
+import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
@@ -44,6 +45,7 @@ public class MeasurementsController {
 
     private MeasurementsDB mdb;
     private JTable measurementsTable;
+    private VolumeViewer volumeViewer;
     private List<SliceViewer> sliceViewers = new ArrayList<SliceViewer>();
     private Measurement currentMeasurement;
     
@@ -62,10 +64,11 @@ public class MeasurementsController {
      * @param measurementsTable
      * @param svs
      */
-    public MeasurementsController(final MeasurementsDB mdb, final JTable measurementsTable, SliceViewer... svs) {
+    public MeasurementsController(final MeasurementsDB mdb, final JTable measurementsTable, VolumeViewer vv, SliceViewer... svs) {
         this.mdb = mdb;
         this.measurementsTable = measurementsTable;
         measurementsTable.setModel(measurementsTableModel);
+        volumeViewer = vv;
         for (SliceViewer sv: svs) {
             sv.addCanvasMouseListener(sliceViewersMouseHandler);
             sv.addCanvasMouseMotionListener(sliceViewersMouseHandler);
@@ -257,6 +260,7 @@ public class MeasurementsController {
             sliceViewers.get(i).setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
             sliceViewers.get(i).setNavigationZ(m.getNavigationZs()[i]);
         }
+        volumeViewer.setVolumeToWorldTransform(m.getVolumeToWorldTransformation());
     }
     
     public boolean isSelected(Measurement m) {

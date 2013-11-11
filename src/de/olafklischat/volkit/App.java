@@ -285,7 +285,7 @@ public class App {
             MeasurementsDB mdb = new MeasurementsDB(appProps.getProperty("mdb.basedir"));
             mdb.load();
             JTable measurementsTable = new JTable();
-            final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, sv1, sv2, sv3);
+            final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, vv, sv1, sv2, sv3);
 
 
             addToolbarAction(new AbstractAction("Tx RST") {
