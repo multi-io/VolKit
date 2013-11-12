@@ -14,11 +14,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
@@ -114,14 +114,14 @@ public class VolumeViewer extends Widget {
     
     protected List<SliceViewer> trackedSliceViewers = new ArrayList<SliceViewer>();
     
-    protected static final Set<VolumeViewer> instances = new IdentityHashSet<VolumeViewer>();
-    private static final SharedContextData sharedContextData = new SharedContextData();
+    private final SharedContextData sharedContextData;
     
     private final Collection<PaintListener<VolumeViewer>> uninitializedSlicePaintListeners = new IdentityHashSet<PaintListener<VolumeViewer>>();
 
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
-    public VolumeViewer() {
+    public VolumeViewer(SharedContextData scd) {
+        this.sharedContextData = scd;
         setTheme("");
         canvas = new Canvas();
         canvas.setTheme("");
@@ -136,8 +136,8 @@ public class VolumeViewer extends Widget {
         recomputeMatrices();
     }
     
-    public VolumeViewer(VolumeDataSet volumeDataSet) {
-        this();
+    public VolumeViewer(SharedContextData scd, VolumeDataSet volumeDataSet) {
+        this(scd);
         setVolumeDataSet(volumeDataSet);
     }
     
@@ -279,8 +279,8 @@ public class VolumeViewer extends Widget {
                 return;
             }
             try {
-                ShaderManager.read("sliceviewer");
-                fragShader = ShaderManager.get("sliceviewer");
+                ShaderManager.read("volumeviewer");
+                fragShader = ShaderManager.get("volumeviewer");
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
@@ -293,7 +293,7 @@ public class VolumeViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_COLOR_BUFFER_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
             ensureInitialized();
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
@@ -301,6 +301,7 @@ public class VolumeViewer extends Widget {
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
+
                 GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
                 if (null != previousvolumeDataSet) {
@@ -339,41 +340,42 @@ public class VolumeViewer extends Widget {
                         GL11.glPopMatrix();
                     }
                     
-                    GL11.glPopMatrix(); //worldToEyeTransform
+                    float[] viewDirInVol =  LinAlg.vminusv(LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0,-1}, null),
+                                                           LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0, 0}, null),
+                                                           null);
+                    System.out.println("viewDirInVol: "); printPt(viewDirInVol);
+                    
+                    if (viewDirInVol[2] < -0.58) {
+                        System.out.println("drawing...");
 
-                    /*
-                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
-                    fragShader.bind();
-                    fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", texRef.getPreScale());
-                    fragShader.bindUniform("offset", texRef.getPreOffset());
-                    GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-                    GL11.glBegin(GL11.GL_QUADS);
-                    texturedCanvasPoint(-viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint( viewWidth/2, -viewHeight/2);
-                    texturedCanvasPoint( viewWidth/2,  viewHeight/2);
-                    texturedCanvasPoint(-viewWidth/2,  viewHeight/2);
-                    outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
-                    outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
-                    GL11.glEnd();
-                    fragShader.unbind();
-                    volumeDataSet.unbindCurrentTexture();
-                    GL11.glShadeModel(GL11.GL_FLAT);
-                    for (SliceViewer trackedViewer : trackedSliceViewers) {
-                        GL11.glColor3f(1f, 0f, 0f);
-                        float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
-                        LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        LinAlg.fillMultiplication(getSliceToCanvasTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
-                        float[] pt1 = new float[]{-trackedViewer.navigationCubeLength/2, -trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
-                        float[] pt2 = new float[]{ trackedViewer.navigationCubeLength/2,  trackedViewer.navigationCubeLength/2, trackedViewer.getNavigationZ()};
-                        GL11.glBegin(GL11.GL_LINES);
-                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt1, null));
-                        LWJGLTools.glVertex3fv(LinAlg.mtimesv(trackedViewerSliceToOurCanvas, pt2, null));
-                        GL11.glEnd();
-                        // TODO: the lines don't look right (too thick and too dark). Must be some unwanted state from TWL.
+                        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+                        GL11.glEnable(GL11.GL_BLEND);
+                        GL11.glAlphaFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                        
+                        GL11.glPushMatrix();
+                        GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
+
+                        VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
+                        fragShader.bind();
+                        fragShader.bindUniform("tex", 0);
+                        fragShader.bindUniform("scale", texRef.getPreScale());
+                        fragShader.bindUniform("offset", texRef.getPreOffset());
+                        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
+                        float step = navigationCubeLength / 500;
+                        for (float z = -navigationCubeLength/2; z < navigationCubeLength/2; z += step) {
+                            GL11.glBegin(GL11.GL_QUADS);
+                            texturedVolumePoint(-navigationCubeLength/2, -navigationCubeLength/2, z);
+                            texturedVolumePoint( navigationCubeLength/2, -navigationCubeLength/2, z);
+                            texturedVolumePoint( navigationCubeLength/2,  navigationCubeLength/2, z);
+                            texturedVolumePoint(-navigationCubeLength/2,  navigationCubeLength/2, z);
+                            GL11.glEnd();
+                        }
+                        fragShader.unbind();
+
+                        GL11.glPopMatrix(); //volumeToWorldTransform
                     }
-                    */
+
+                    GL11.glPopMatrix(); //worldToEyeTransform
 
                     firePaintEvent(new PaintEvent<VolumeViewer>(VolumeViewer.this, sharedContextData.getAttributes()));
                 } finally {
@@ -384,6 +386,10 @@ public class VolumeViewer extends Widget {
                 GL11.glPopMatrix();
                 GL11.glPopAttrib();
             }
+        }
+
+        private void printPt(float[] p) {
+            System.out.println(""+p[0] + " " + p[1] + " " + p[2]);
         }
 
         private void drawVolumeBounds() {
@@ -401,12 +407,9 @@ public class VolumeViewer extends Widget {
             GL11.glEnd();
         }
 
-        /*
-        private void texturedCanvasPoint(float x, float y) {
+        private void texturedVolumePoint(float x, float y, float z) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
-            float[] ptInCanvas = new float[]{x,y,0};
-            float[] ptInSlice = LinAlg.mtimesv(canvasToSliceTransform, ptInCanvas, null);
-            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
+            float[] ptInVolume = new float[]{x,y,z};  // /2 for debugging, 2b removed later
             float[] vol2tex = new float[16];
             LinAlg.fillIdentity(vol2tex);
             LinAlg.fillTranslation(vol2tex, 0.5f, 0.5f, 0.5f, vol2tex);
@@ -417,17 +420,9 @@ public class VolumeViewer extends Widget {
                              vol2tex);
             float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
             LWJGLTools.glTexCoord3fv(ptInTex);
-            LWJGLTools.glVertex3fv(new float[]{x, y, 0});
+            LWJGLTools.glVertex3fv(ptInVolume);
         }
         
-        private void outputSlicePoint(String caption, float x, float y) {
-            float[] ptInSlice = new float[]{x,y,0};
-            float[] ptInVolume = LinAlg.mtimesv(sliceToVolumeTransform, ptInSlice, null);
-            //float[] ptInWorld = LinAlg.mtimesv(baseSliceToWorldTransform, ptInBase, null);
-            //System.out.println(caption + ": x=" + ptInVolume[0] + ", y=" + ptInVolume[1] + ", z=" + ptInVolume[2]);
-        }
-        */
-
         private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glLoadIdentity();

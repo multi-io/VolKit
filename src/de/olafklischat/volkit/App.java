@@ -47,6 +47,7 @@ import de.olafklischat.volkit.controller.TrackedViewerDraggingController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.controller.VolumeCameraController;
 import de.olafklischat.volkit.model.MeasurementsDB;
+import de.olafklischat.volkit.view.SharedContextData;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.twlawt.TwlAwtEventUtil;
@@ -261,14 +262,16 @@ public class App {
             
             final UndoManager undoMgr = new UndoManager();
             
-            SliceViewer sv1 = new SliceViewer();
+            SharedContextData scd = new SharedContextData();
+            
+            SliceViewer sv1 = new SliceViewer(scd);
             mainPane.add(sv1);
 
-            SliceViewer sv2 = new SliceViewer();
+            SliceViewer sv2 = new SliceViewer(scd);
             mainPane.add(sv2);
             //mainPane.add(new Button(":-|"));
 
-            SliceViewer sv3 = new SliceViewer();
+            SliceViewer sv3 = new SliceViewer(scd);
             mainPane.add(sv3);
             //mainPane.add(new Button(":-("));
 
@@ -278,7 +281,7 @@ public class App {
                 new TrackedViewerDraggingController(sv3);
             }
             
-            VolumeViewer vv = new VolumeViewer();
+            VolumeViewer vv = new VolumeViewer(scd);
             mainPane.add(vv);
             
             new VolumeCameraController(vv);

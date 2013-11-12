@@ -15,7 +15,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
@@ -136,14 +135,14 @@ public class SliceViewer extends Widget {
     
     protected List<SliceViewer> trackedViewers = new ArrayList<SliceViewer>();
     
-    protected static final Set<SliceViewer> instances = new IdentityHashSet<SliceViewer>();
-    private static final SharedContextData sharedContextData = new SharedContextData();
+    private final SharedContextData sharedContextData;
     
     private final Collection<PaintListener<SliceViewer>> uninitializedSlicePaintListeners = new IdentityHashSet<PaintListener<SliceViewer>>();
 
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
-    public SliceViewer() {
+    public SliceViewer(SharedContextData scd) {
+        this.sharedContextData = scd;
         setTheme("");
         canvas = new Canvas();
         canvas.setTheme("");
@@ -162,8 +161,8 @@ public class SliceViewer extends Widget {
         updateNavZslider();
     }
     
-    public SliceViewer(VolumeDataSet volumeDataSet) {
-        this();
+    public SliceViewer(SharedContextData scd, VolumeDataSet volumeDataSet) {
+        this(scd);
         setVolumeDataSet(volumeDataSet);
     }
     
