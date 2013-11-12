@@ -301,6 +301,10 @@ public class VolumeViewer extends Widget {
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
+                
+                // depth buffer for hiding lines -- TODO: works somewhat, but the rendered volume looks quite different (more transparent, and much lower quality). Why??
+                //GL11.glEnable(GL11.GL_DEPTH_TEST);
+                //GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);   //clears the complete depth buffer (not just in this widget's area), which might theoretically interact with other widgets in undesired ways
 
                 GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
