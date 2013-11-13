@@ -284,6 +284,7 @@ public class VolumeViewer extends Widget {
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
+                fragShader.addProgramUniform("debugColor");
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
@@ -303,8 +304,8 @@ public class VolumeViewer extends Widget {
                 GL11.glShadeModel(GL11.GL_FLAT);
                 
                 // depth buffer for hiding lines -- TODO: works somewhat, but the rendered volume looks quite different (more transparent, and much lower quality). Why??
-                //GL11.glEnable(GL11.GL_DEPTH_TEST);
-                //GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);   //clears the complete depth buffer (not just in this widget's area), which might theoretically interact with other widgets in undesired ways
+                GL11.glEnable(GL11.GL_DEPTH_TEST);
+                GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);   //clears the complete depth buffer (not just in this widget's area), which might theoretically interact with other widgets in undesired ways
 
                 GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 
@@ -347,7 +348,7 @@ public class VolumeViewer extends Widget {
                     float[] viewDirInVol =  LinAlg.vminusv(LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0,-1}, null),
                                                            LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0, 0}, null),
                                                            null);
-                    System.out.println("viewDirInVol: "); printPt(viewDirInVol);
+                    //System.out.println("viewDirInVol: "); printPt(viewDirInVol);
                     
                     if (viewDirInVol[2] < -0.58) {
                         System.out.println("drawing...");
@@ -359,6 +360,9 @@ public class VolumeViewer extends Widget {
                         GL11.glPushMatrix();
                         GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
 
+                        float[] debugColor1 = new float[]{0,1,1};
+                        float[] debugColor2 = new float[]{0,0,1};
+                        
                         VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                         fragShader.bind();
                         fragShader.bindUniform("tex", 0);
@@ -366,13 +370,17 @@ public class VolumeViewer extends Widget {
                         fragShader.bindUniform("offset", texRef.getPreOffset());
                         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                         float step = navigationCubeLength / 500;
+                        int idx = 0;
                         for (float z = -navigationCubeLength/2; z < navigationCubeLength/2; z += step) {
+                            //fragShader.bindUniform("debugColor", (idx%2==0?debugColor1:debugColor2));  //debugging (visualize depth buffer accuracy)
                             GL11.glBegin(GL11.GL_QUADS);
+                            //TODO: only render the volume boundaries, not the whole navigation cube
                             texturedVolumePoint(-navigationCubeLength/2, -navigationCubeLength/2, z);
                             texturedVolumePoint( navigationCubeLength/2, -navigationCubeLength/2, z);
                             texturedVolumePoint( navigationCubeLength/2,  navigationCubeLength/2, z);
                             texturedVolumePoint(-navigationCubeLength/2,  navigationCubeLength/2, z);
                             GL11.glEnd();
+                            idx++;
                         }
                         fragShader.unbind();
 
@@ -413,6 +421,8 @@ public class VolumeViewer extends Widget {
 
         private void texturedVolumePoint(float x, float y, float z) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
+            // This is very inefficient (for starters, it recomputes the unchanging vol2tex transformation every time).
+            // Ideally, we'd render the whole cube with normalized vertex coordinates from a vertex buffer
             float[] ptInVolume = new float[]{x,y,z};  // /2 for debugging, 2b removed later
             float[] vol2tex = new float[16];
             LinAlg.fillIdentity(vol2tex);
@@ -430,8 +440,8 @@ public class VolumeViewer extends Widget {
         private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glLoadIdentity();
-            float nearVal = 0.01f;
-            float farVal = 10 * navigationCubeLength;
+            float nearVal = 0.3f * navigationCubeLength;  // http://www.opengl.org/resources/faq/technical/depthbuffer.htm "roughly log2(zFar/zNear) bits of precision are lost"
+            float farVal = 10 * navigationCubeLength;     // (see also http://www.sjbaker.org/steve/omniv/love_your_z_buffer.html)
             float vpHeightInRadiants = vpWidthInRadiants * getInnerHeight() / getInnerWidth();
             float right = nearVal * (float) Math.tan(vpWidthInRadiants/2);
             float left = -right;
