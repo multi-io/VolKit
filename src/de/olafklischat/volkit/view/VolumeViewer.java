@@ -363,26 +363,40 @@ public class VolumeViewer extends Widget {
                         float[] debugColor1 = new float[]{0,1,1};
                         float[] debugColor2 = new float[]{0,0,1};
                         
+                        GL11.glPushMatrix();
+                        GL11.glScalef(volumeDataSet.getWidthInMm()/2, volumeDataSet.getHeightInMm()/2, volumeDataSet.getDepthInMm()/2);
                         VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                         fragShader.bind();
                         fragShader.bindUniform("tex", 0);
                         fragShader.bindUniform("scale", texRef.getPreScale());
                         fragShader.bindUniform("offset", texRef.getPreOffset());
                         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-                        float step = navigationCubeLength / 500;
+                        float step = 2f / 150; // TODO: should somehow depend on the volume's physical extent in that direction (in relation to the other 2 directions)
+                                               // TODO: the alpha value set in the shader should depend on step such that the transparency of the volume is independent of step
                         int idx = 0;
-                        for (float z = -navigationCubeLength/2; z < navigationCubeLength/2; z += step) {
+                        // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
+                        //   => maybe render the minimum surrounding cube of the volume
+                        for (float z = -1f; z < 1f; z += step) {
                             //fragShader.bindUniform("debugColor", (idx%2==0?debugColor1:debugColor2));  //debugging (visualize depth buffer accuracy)
                             GL11.glBegin(GL11.GL_QUADS);
-                            //TODO: only render the volume boundaries, not the whole navigation cube
-                            texturedVolumePoint(-navigationCubeLength/2, -navigationCubeLength/2, z);
-                            texturedVolumePoint( navigationCubeLength/2, -navigationCubeLength/2, z);
-                            texturedVolumePoint( navigationCubeLength/2,  navigationCubeLength/2, z);
-                            texturedVolumePoint(-navigationCubeLength/2,  navigationCubeLength/2, z);
+                            
+                            GL11.glTexCoord3f(0, 0, z/2 + 0.5f);
+                            GL11.glVertex3f(-1, -1, z);
+
+                            GL11.glTexCoord3f( 1, 0, z/2 + 0.5f);
+                            GL11.glVertex3f( 1, -1, z);
+                            
+                            GL11.glTexCoord3f( 1,  1, z/2 + 0.5f);
+                            GL11.glVertex3f( 1,  1, z);
+                            
+                            GL11.glTexCoord3f(0,  1, z/2 + 0.5f);
+                            GL11.glVertex3f(-1,  1, z);
+                            
                             GL11.glEnd();
                             idx++;
                         }
                         fragShader.unbind();
+                        GL11.glPopMatrix();
 
                         GL11.glPopMatrix(); //volumeToWorldTransform
                     }
@@ -422,24 +436,6 @@ public class VolumeViewer extends Widget {
             GL11.glPopMatrix();
         }
 
-        private void texturedVolumePoint(float x, float y, float z) {
-            // TODO: use the texture matrix rather than calculating the tex coordinates in here
-            // This is very inefficient (for starters, it recomputes the unchanging vol2tex transformation every time).
-            // Ideally, we'd render the whole cube with normalized vertex coordinates from a vertex buffer
-            float[] ptInVolume = new float[]{x,y,z};  // /2 for debugging, 2b removed later
-            float[] vol2tex = new float[16];
-            LinAlg.fillIdentity(vol2tex);
-            LinAlg.fillTranslation(vol2tex, 0.5f, 0.5f, 0.5f, vol2tex);
-            LinAlg.fillScale(vol2tex,
-                             1.0f/volumeDataSet.getWidthInMm(),
-                             1.0f/volumeDataSet.getHeightInMm(),
-                             1.0f/volumeDataSet.getDepthInMm(),
-                             vol2tex);
-            float[] ptInTex = LinAlg.mtimesv(vol2tex, ptInVolume, null);
-            LWJGLTools.glTexCoord3fv(ptInTex);
-            LWJGLTools.glVertex3fv(ptInVolume);
-        }
-        
         private void setupEye2ViewportTransformation(GUI gui) {
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glLoadIdentity();
