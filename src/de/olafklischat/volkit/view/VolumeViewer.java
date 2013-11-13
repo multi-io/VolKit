@@ -351,7 +351,7 @@ public class VolumeViewer extends Widget {
                     //System.out.println("viewDirInVol: "); printPt(viewDirInVol);
                     
                     if (viewDirInVol[2] < -0.58) {
-                        System.out.println("drawing...");
+                        //System.out.println("drawing...");
 
                         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
                         GL11.glEnable(GL11.GL_BLEND);
@@ -405,18 +405,21 @@ public class VolumeViewer extends Widget {
         }
 
         private void drawVolumeBounds() {
+            GL11.glPushMatrix();
+            GL11.glScalef(volumeDataSet.getWidthInMm()/2, volumeDataSet.getHeightInMm()/2, volumeDataSet.getDepthInMm()/2);
             GL11.glBegin(GL11.GL_QUAD_STRIP);
-            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
-            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
-            GL11.glVertex3f(-navigationCubeLength/2,  navigationCubeLength/2,  navigationCubeLength/2);
-            GL11.glVertex3f( navigationCubeLength/2,  navigationCubeLength/2,  navigationCubeLength/2);
-            GL11.glVertex3f(-navigationCubeLength/2,  navigationCubeLength/2, -navigationCubeLength/2);
-            GL11.glVertex3f( navigationCubeLength/2,  navigationCubeLength/2, -navigationCubeLength/2);
-            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2, -navigationCubeLength/2);
-            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2, -navigationCubeLength/2);
-            GL11.glVertex3f(-navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
-            GL11.glVertex3f( navigationCubeLength/2, -navigationCubeLength/2,  navigationCubeLength/2);
+            GL11.glVertex3f(-1, -1,  1);
+            GL11.glVertex3f( 1, -1,  1);
+            GL11.glVertex3f(-1,  1,  1);
+            GL11.glVertex3f( 1,  1,  1);
+            GL11.glVertex3f(-1,  1, -1);
+            GL11.glVertex3f( 1,  1, -1);
+            GL11.glVertex3f(-1, -1, -1);
+            GL11.glVertex3f( 1, -1, -1);
+            GL11.glVertex3f(-1, -1,  1);
+            GL11.glVertex3f( 1, -1,  1);
             GL11.glEnd();
+            GL11.glPopMatrix();
         }
 
         private void texturedVolumePoint(float x, float y, float z) {
