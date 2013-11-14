@@ -107,6 +107,17 @@ public class VolumeViewer extends Widget {
     private float[] eyeToVolumeTransform = new float[16];
     private float[] eyeToWorldTransform = new float[16];
 
+    /**
+     * 6 matrices that transform slices centered on positions -1 to 1 on the z
+     * axis to slices centered on vertices on any of the three main axes, in
+     * positive or negative direction.
+     * 
+     * first index: 0: x, 1: y, 2: z
+     * 
+     * second index: 0: -1...1, 1: 1...-1 (back-to-front direction)
+     */
+    private final float[][][] sliceBackToFrontTransforms = new float[3][][];
+
     private GLShader fragShader;
 
     private Widget canvas;
@@ -134,6 +145,18 @@ public class VolumeViewer extends Widget {
         LinAlg.fillIdentity(worldToEyeTransform);
         vpWidthInRadiants = 0.9F;
         recomputeMatrices();
+
+        sliceBackToFrontTransforms[0] = new float[2][];
+        sliceBackToFrontTransforms[1] = new float[2][];
+        sliceBackToFrontTransforms[2] = new float[2][];
+
+        sliceBackToFrontTransforms[2][0] = LinAlg.fillIdentity(null);
+        //LinAlg.fillRotation(a, angle, x, y, z, res);
+        sliceBackToFrontTransforms[2][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
+        sliceBackToFrontTransforms[1][0] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
+        sliceBackToFrontTransforms[1][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
+        sliceBackToFrontTransforms[0][0] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
+        sliceBackToFrontTransforms[0][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
     }
     
     public VolumeViewer(SharedContextData scd, VolumeDataSet volumeDataSet) {
@@ -350,56 +373,60 @@ public class VolumeViewer extends Widget {
                                                            null);
                     //System.out.println("viewDirInVol: "); printPt(viewDirInVol);
                     
-                    if (viewDirInVol[2] < -0.58) {
-                        //System.out.println("drawing...");
+                    int dirIdx = maxIndex(Math.abs(viewDirInVol[0]), Math.abs(viewDirInVol[1]), Math.abs(viewDirInVol[2]));
+                    int direction = (viewDirInVol[dirIdx] < 0 ? 0 : 1);
 
-                        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-                        GL11.glEnable(GL11.GL_BLEND);
-                        GL11.glAlphaFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                    System.out.println("dirIdx=" + dirIdx + ", direction=" + direction);
+                    
+                    float[] sliceBackToFrontTransform = sliceBackToFrontTransforms[dirIdx][direction];
+                    
+                    GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+                    GL11.glEnable(GL11.GL_BLEND);
+                    GL11.glAlphaFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                    
+                    GL11.glPushMatrix();
+                    GL11.glMultMatrix(LWJGLTools.toFB(sliceBackToFrontTransform));
+                    GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
+
+                    float[] debugColor1 = new float[]{0,1,1};
+                    float[] debugColor2 = new float[]{0,0,1};
+                    
+                    GL11.glPushMatrix();
+                    GL11.glScalef(volumeDataSet.getWidthInMm()/2, volumeDataSet.getHeightInMm()/2, volumeDataSet.getDepthInMm()/2);
+                    VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
+                    fragShader.bind();
+                    fragShader.bindUniform("tex", 0);
+                    fragShader.bindUniform("scale", texRef.getPreScale());
+                    fragShader.bindUniform("offset", texRef.getPreOffset());
+                    GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
+                    float step = 2f / 150; // TODO: should somehow depend on the volume's physical extent in that direction (in relation to the other 2 directions)
+                                           // TODO: the alpha value set in the shader should depend on step such that the transparency of the volume is independent of step
+                    int idx = 0;
+                    // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
+                    //   => maybe render the minimum surrounding cube of the volume
+                    for (float z = -1f; z < 1f; z += step) {
+                        //fragShader.bindUniform("debugColor", (idx%2==0?debugColor1:debugColor2));  //debugging (visualize depth buffer accuracy)
+                        GL11.glBegin(GL11.GL_QUADS);
                         
-                        GL11.glPushMatrix();
-                        GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
+                        GL11.glTexCoord3f(0, 0, z/2 + 0.5f);
+                        GL11.glVertex3f(-1, -1, z);
 
-                        float[] debugColor1 = new float[]{0,1,1};
-                        float[] debugColor2 = new float[]{0,0,1};
+                        GL11.glTexCoord3f( 1, 0, z/2 + 0.5f);
+                        GL11.glVertex3f( 1, -1, z);
                         
-                        GL11.glPushMatrix();
-                        GL11.glScalef(volumeDataSet.getWidthInMm()/2, volumeDataSet.getHeightInMm()/2, volumeDataSet.getDepthInMm()/2);
-                        VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
-                        fragShader.bind();
-                        fragShader.bindUniform("tex", 0);
-                        fragShader.bindUniform("scale", texRef.getPreScale());
-                        fragShader.bindUniform("offset", texRef.getPreOffset());
-                        GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-                        float step = 2f / 150; // TODO: should somehow depend on the volume's physical extent in that direction (in relation to the other 2 directions)
-                                               // TODO: the alpha value set in the shader should depend on step such that the transparency of the volume is independent of step
-                        int idx = 0;
-                        // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
-                        //   => maybe render the minimum surrounding cube of the volume
-                        for (float z = -1f; z < 1f; z += step) {
-                            //fragShader.bindUniform("debugColor", (idx%2==0?debugColor1:debugColor2));  //debugging (visualize depth buffer accuracy)
-                            GL11.glBegin(GL11.GL_QUADS);
-                            
-                            GL11.glTexCoord3f(0, 0, z/2 + 0.5f);
-                            GL11.glVertex3f(-1, -1, z);
-
-                            GL11.glTexCoord3f( 1, 0, z/2 + 0.5f);
-                            GL11.glVertex3f( 1, -1, z);
-                            
-                            GL11.glTexCoord3f( 1,  1, z/2 + 0.5f);
-                            GL11.glVertex3f( 1,  1, z);
-                            
-                            GL11.glTexCoord3f(0,  1, z/2 + 0.5f);
-                            GL11.glVertex3f(-1,  1, z);
-                            
-                            GL11.glEnd();
-                            idx++;
-                        }
-                        fragShader.unbind();
-                        GL11.glPopMatrix();
-
-                        GL11.glPopMatrix(); //volumeToWorldTransform
+                        GL11.glTexCoord3f( 1,  1, z/2 + 0.5f);
+                        GL11.glVertex3f( 1,  1, z);
+                        
+                        GL11.glTexCoord3f(0,  1, z/2 + 0.5f);
+                        GL11.glVertex3f(-1,  1, z);
+                        
+                        GL11.glEnd();
+                        idx++;
                     }
+                    fragShader.unbind();
+                    GL11.glPopMatrix();
+
+                    GL11.glPopMatrix(); //volumeToWorldTransform
 
                     GL11.glPopMatrix(); //worldToEyeTransform
 
@@ -411,6 +438,16 @@ public class VolumeViewer extends Widget {
                 GL11.glMatrixMode(GL11.GL_PROJECTION);
                 GL11.glPopMatrix();
                 GL11.glPopAttrib();
+            }
+        }
+        
+        private int maxIndex(float f1, float f2, float f3) {
+            if (f1 < f2) {
+                return f2 < f3 ? 2 : 1;
+            } else if (f2 < f3) {
+                return f1 < f3 ? 2 : 0;
+            } else {
+                return f1 < f2 ? 1 : 0;
             }
         }
 
