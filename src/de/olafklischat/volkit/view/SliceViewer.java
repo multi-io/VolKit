@@ -31,10 +31,10 @@ import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
+import de.olafklischat.math.LinAlg;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
-import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 
 public class SliceViewer extends Widget {

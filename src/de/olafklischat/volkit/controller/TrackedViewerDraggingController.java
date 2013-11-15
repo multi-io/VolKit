@@ -6,8 +6,8 @@ import java.awt.event.MouseEvent;
 import java.util.Set;
 
 import de.olafklischat.volkit.view.SliceViewer;
+import de.olafklischat.math.LinAlg;
 import de.sofd.util.IdentityHashSet;
-import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 public class TrackedViewerDraggingController {
     

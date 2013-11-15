@@ -6,7 +6,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import de.olafklischat.volkit.view.VolumeViewer;
-import de.sofd.viskit.image3D.jogl.util.LinAlg;
+import de.olafklischat.math.LinAlg;
 
 public class VolumeCameraController {
     

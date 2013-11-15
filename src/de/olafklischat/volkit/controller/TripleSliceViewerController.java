@@ -15,8 +15,8 @@ import javax.swing.undo.UndoManager;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
+import de.olafklischat.math.LinAlg;
 import de.sofd.util.ProgressReportage;
-import de.sofd.viskit.image3D.jogl.util.LinAlg;
 
 
 public class TripleSliceViewerController {

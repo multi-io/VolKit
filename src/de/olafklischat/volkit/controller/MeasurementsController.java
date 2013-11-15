@@ -35,7 +35,7 @@ import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
-import de.sofd.viskit.image3D.jogl.util.LinAlg;
+import de.olafklischat.math.LinAlg;
 
 public class MeasurementsController {
 
