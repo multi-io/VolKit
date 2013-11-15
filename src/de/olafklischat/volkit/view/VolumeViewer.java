@@ -110,7 +110,8 @@ public class VolumeViewer extends Widget {
     /**
      * 6 matrices that transform slices centered on positions -1 to 1 on the z
      * axis to slices centered on vertices on any of the three main axes, in
-     * positive or negative direction.
+     * positive or negative direction. Needed for being able to draw slices in
+     * back-to-front order in any of the 6 possible main axis directions.
      * 
      * first index: 0: x, 1: y, 2: z
      * 
@@ -151,12 +152,11 @@ public class VolumeViewer extends Widget {
         sliceBackToFrontTransforms[2] = new float[2][];
 
         sliceBackToFrontTransforms[2][0] = LinAlg.fillIdentity(null);
-        sliceBackToFrontTransforms[0][0] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], -90, 0, 0, 1, null);
-        sliceBackToFrontTransforms[2][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
-        sliceBackToFrontTransforms[1][0] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
-        sliceBackToFrontTransforms[1][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
-        //sliceBackToFrontTransforms[0][0] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
-        sliceBackToFrontTransforms[0][1] = LinAlg.copyArr(sliceBackToFrontTransforms[2][0], null);
+        sliceBackToFrontTransforms[0][0] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 90, 0, 1, 0, null);
+        sliceBackToFrontTransforms[2][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 180, 0, 1, 0, null);
+        sliceBackToFrontTransforms[1][0] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 1, 0, 0, null);
+        sliceBackToFrontTransforms[1][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 90, 1, 0, 0, null);
+        sliceBackToFrontTransforms[0][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 0, 1, 0, null);
     }
     
     public VolumeViewer(SharedContextData scd, VolumeDataSet volumeDataSet) {
@@ -307,8 +307,8 @@ public class VolumeViewer extends Widget {
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
-                fragShader.addProgramUniform("debugColor");
-                fragShader.addProgramUniform("debugZ");
+                //fragShader.addProgramUniform("debugColor");
+                //fragShader.addProgramUniform("debugZ");
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
@@ -327,7 +327,6 @@ public class VolumeViewer extends Widget {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
                 
-                // depth buffer for hiding lines -- TODO: works somewhat, but the rendered volume looks quite different (more transparent, and much lower quality). Why??
                 GL11.glEnable(GL11.GL_DEPTH_TEST);
                 GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);   //clears the complete depth buffer (not just in this widget's area), which might theoretically interact with other widgets in undesired ways
 
@@ -391,9 +390,17 @@ public class VolumeViewer extends Widget {
                     float[] debugColor1 = new float[]{0,1,1};
                     float[] debugColor2 = new float[]{0,0,1};
                     
-                    GL11.glPushMatrix();
                     GL11.glScalef(volumeDataSet.getWidthInMm()/2, volumeDataSet.getHeightInMm()/2, volumeDataSet.getDepthInMm()/2);
                     GL11.glMultMatrix(LWJGLTools.toFB(sliceBackToFrontTransform));
+                    
+                    GL11.glMatrixMode(GL11.GL_TEXTURE);
+                    GL11.glPushMatrix();
+                    GL11.glLoadIdentity();
+                    GL11.glTranslatef(0.5f, 0.5f, 0.5f);
+                    GL11.glMultMatrix(LWJGLTools.toFB(sliceBackToFrontTransform));
+                    GL11.glTranslatef(-0.5f, -0.5f, -0.5f);
+                    GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                    
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
@@ -405,10 +412,9 @@ public class VolumeViewer extends Widget {
                     int idx = 0;
                     // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
                     //   => maybe render the minimum surrounding cube of the volume
-                    // TODO: need to set the texture matrix as well to make this work
                     for (float z = -1f; z < 1f; z += step) {
                         //fragShader.bindUniform("debugColor", (idx%2==0?debugColor1:debugColor2));  //debugging (visualize depth buffer accuracy)
-                        fragShader.bindUniform("debugZ", z);
+                        //fragShader.bindUniform("debugZ", z);
                         
                         GL11.glBegin(GL11.GL_QUADS);
                         
@@ -428,7 +434,11 @@ public class VolumeViewer extends Widget {
                         idx++;
                     }
                     fragShader.unbind();
+
+                    GL11.glMatrixMode(GL11.GL_TEXTURE);
                     GL11.glPopMatrix();
+
+                    GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
                     GL11.glPopMatrix(); //volumeToWorldTransform
 
