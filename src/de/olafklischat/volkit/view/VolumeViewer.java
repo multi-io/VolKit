@@ -119,6 +119,22 @@ public class VolumeViewer extends Widget {
      */
     private final float[][][] sliceBackToFrontTransforms = new float[3][][];
 
+    /**
+     * Number of slices to use when slicing the volume, depending on direction
+     * in the volume.
+     * 
+     * first index: 0: x, 1: y, 2: z
+     */
+    private final float[] sliceCountByDirIdx = new float[3];
+
+    /**
+     * Maximum number of slices to use. The volume will be sliced into that many
+     * slices in the physically longest direction, and proportionally less in
+     * the other directions. (so, if the volume is cube-shaped, there will
+     * MAX_SLICE_COUNT slices in all three directions)
+     */
+    public static final int MAX_SLICE_COUNT = 500;
+
     private GLShader fragShader;
 
     private Widget canvas;
@@ -183,10 +199,17 @@ public class VolumeViewer extends Widget {
         }
         previousvolumeDataSet = this.volumeDataSet;
         this.volumeDataSet = volumeDataSet;
-        navigationCubeLength = (float) Math.sqrt(volumeDataSet.getWidthInMm() * volumeDataSet.getWidthInMm() +
-                volumeDataSet.getHeightInMm() * volumeDataSet.getHeightInMm() +
-                volumeDataSet.getDepthInMm() * volumeDataSet.getDepthInMm());
-
+        float w = volumeDataSet.getWidthInMm();
+        float h = volumeDataSet.getHeightInMm();
+        float d = volumeDataSet.getDepthInMm();
+        navigationCubeLength = (float) Math.sqrt(w * w + h * h + d * d);
+        float[] lenghts = new float[]{w,h,d};
+        int maxLenIdx = maxIndex(w, h, d);
+        float maxLen = lenghts[maxLenIdx];
+        for (int i=0; i<3; i++) {
+            sliceCountByDirIdx[i] = MAX_SLICE_COUNT * lenghts[i] / maxLen;
+        }
+        
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToEyeTransform);
         LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - 3 * navigationCubeLength, worldToEyeTransform);
@@ -407,8 +430,8 @@ public class VolumeViewer extends Widget {
                     fragShader.bindUniform("scale", texRef.getPreScale());
                     fragShader.bindUniform("offset", texRef.getPreOffset());
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-                    float step = 2f / 150; // TODO: should somehow depend on the volume's physical extent in that direction (in relation to the other 2 directions)
-                                           // TODO: the alpha value set in the shader should depend on step such that the transparency of the volume is independent of step
+                    float sliceCount = sliceCountByDirIdx[dirIdx];
+                    float step = 2f / sliceCount;
                     int idx = 0;
                     // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
                     //   => maybe render the minimum surrounding cube of the volume
@@ -455,16 +478,6 @@ public class VolumeViewer extends Widget {
             }
         }
         
-        private int maxIndex(float f1, float f2, float f3) {
-            if (f1 < f2) {
-                return f2 < f3 ? 2 : 1;
-            } else if (f2 < f3) {
-                return f1 < f3 ? 2 : 0;
-            } else {
-                return f1 < f2 ? 1 : 0;
-            }
-        }
-
         private void printPt(float[] p) {
             System.out.println(""+p[0] + " " + p[1] + " " + p[2]);
         }
@@ -528,6 +541,16 @@ public class VolumeViewer extends Widget {
         
     };
     
+    private static int maxIndex(float f1, float f2, float f3) {
+        if (f1 < f2) {
+            return f2 < f3 ? 2 : 1;
+        } else if (f2 < f3) {
+            return f1 < f3 ? 2 : 0;
+        } else {
+            return f1 < f2 ? 1 : 0;
+        }
+    }
+
     //TODO: the following is copy&paste from SliceViewer. Introduce a common base class.
 
     protected void dispatchEventToCanvas(MouseEvent evt) {
