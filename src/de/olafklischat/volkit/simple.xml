@@ -540,6 +540,14 @@
         <param name="namedGaps"><map/></param>
     </theme>
 
+    <theme name="panel" ref="-defaults">
+        <param name="background"><image>-borderA</image></param>
+        <param name="border"><border>background.border</border></param>
+        <theme name="label" ref="label" allowWildcard="true"/>
+        <theme name="button" ref="button" allowWildcard="true"/>
+        <theme name="hslider" ref="hslider" allowWildcard="true"/>
+    </theme>
+
     <theme name="textarea" ref="-defaults" allowWildcard="true">
         <param name="background"><image>-borderC</image></param>
         <param name="border"><border>background.border</border></param>

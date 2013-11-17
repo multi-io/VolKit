@@ -228,7 +228,7 @@ public class App {
         
         public void createUI(boolean isApplet) throws Exception, LWJGLException, IOException {
             toolbar = new BoxLayout(Direction.HORIZONTAL);
-            toolbar.setTheme("");
+            toolbar.setTheme("panel");
             toolbar.setAlignment(Alignment.CENTER);
             
             final de.olafklischat.twl.GridLayout mainPane = new de.olafklischat.twl.GridLayout(2, 2);
@@ -237,7 +237,7 @@ public class App {
             Widget root = new Widget() {
                 @Override
                 protected void layout() {
-                    int h = 10 + toolbar.getPreferredHeight();
+                    int h = /*10 + */toolbar.getPreferredHeight();
                     toolbar.setPosition(getInnerX(), getInnerY());
                     toolbar.setSize(getInnerWidth(), h);
                     mainPane.setPosition(getInnerX(), getInnerY() + h);
@@ -361,11 +361,11 @@ public class App {
                 addToolbarAction(new AbstractAction("brainix") {
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        //slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
+                        slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
                     }
                 });
             }
-            toolbar.add(new Label("transparency"));
+            toolbar.add(new Label("    transparency:"));
             final Scrollbar transpSlider = new Scrollbar(Scrollbar.Orientation.HORIZONTAL);
             transpSlider.setTheme("hslider");
             transpSlider.setMinMaxValue(0, 10000);

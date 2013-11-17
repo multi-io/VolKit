@@ -20,10 +20,13 @@ import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
+import de.matthiasmann.twl.Alignment;
+import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.Widget;
+import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
@@ -155,9 +158,11 @@ public class VolumeViewer extends Widget {
         canvas.setTheme("");
         this.add(canvas);
 
-        toolPane = new Scrollbar(Orientation.HORIZONTAL);
+        toolPane = new BoxLayout(Direction.HORIZONTAL);
         this.add(toolPane);
-        toolPane.setTheme("hslider");
+        toolPane.setTheme("panel");
+        ((BoxLayout)toolPane).setAlignment(Alignment.CENTER);
+
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToEyeTransform);
         vpWidthInRadiants = 0.9F;
