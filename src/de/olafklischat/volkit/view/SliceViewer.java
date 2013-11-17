@@ -1,5 +1,6 @@
 package de.olafklischat.volkit.view;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -50,6 +51,8 @@ public class SliceViewer extends Widget {
     
     private VolumeDataSet volumeDataSet;
     private VolumeDataSet previousvolumeDataSet;
+    
+    private Color color = Color.red;
     
     /**
      * transformation from volume system to world system.
@@ -141,11 +144,16 @@ public class SliceViewer extends Widget {
 
     public static final int PAINT_ZORDER_DEFAULT = 100;
 
+    // for debugging
+    private final int instNumber = lastInstNumber++;
+    private static int lastInstNumber = 0;
+
     public SliceViewer(SharedContextData scd) {
         this.sharedContextData = scd;
         setTheme("");
         canvas = new Canvas();
         canvas.setTheme("");
+        //canvas.setBorderSize(5);
         this.add(canvas);
 
         navZslider = new Scrollbar(Orientation.HORIZONTAL);
@@ -267,6 +275,15 @@ public class SliceViewer extends Widget {
         recomputeMatrices();
         refresh();
     }
+
+    public Color getColor() {
+        return color;
+    }
+    
+    public void setColor(Color color) {
+        this.color = color;
+        refresh();
+    }
     
     public void addTrackedViewer(SliceViewer sv) {
         trackedViewers.add(sv);
@@ -345,7 +362,7 @@ public class SliceViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
             ensureInitialized();
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
@@ -366,11 +383,6 @@ public class SliceViewer extends Widget {
                 GL11.glPushMatrix();
                 try {
                     GL11.glLoadIdentity();
-                    GL11.glColor3f(0, 1, 0);
-                    //GL11.glBegin(GL11.GL_LINES);
-                    //GL11.glVertex2f(10 + 10*oid, 10);
-                    //GL11.glVertex2f(100 + 10*oid, 50);
-                    //GL11.glEnd();
                     
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
                     fragShader.bind();
@@ -390,7 +402,10 @@ public class SliceViewer extends Widget {
                     volumeDataSet.unbindCurrentTexture();
                     GL11.glShadeModel(GL11.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {
-                        GL11.glColor3f(1f, 0f, 0f);
+                        Color color = trackedViewer.getColor();
+                        GL11.glColor3f((float) color.getRed() / 255F,
+                                       (float) color.getGreen() / 255F,
+                                       (float) color.getBlue() / 255F);
                         float[] trackedViewerSliceToOurCanvas = LinAlg.fillIdentity(null);
                         LinAlg.fillMultiplication(trackedViewer.getBaseSliceToVolumeTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
                         LinAlg.fillMultiplication(getVolumeToBaseSliceTransform(), trackedViewerSliceToOurCanvas, trackedViewerSliceToOurCanvas);
@@ -411,10 +426,28 @@ public class SliceViewer extends Widget {
             } finally {
                 GL11.glMatrixMode(GL11.GL_PROJECTION);
                 GL11.glPopMatrix();
+
+                GL11.glPopAttrib();
+
+                // back in TWL's transformation -- paint our border
+                GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+                GL11.glMatrixMode(GL11.GL_MODELVIEW);
+                GL11.glDisable(GL11.GL_TEXTURE_2D);
+                GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+                GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glColor3f((float) color.getRed() / 255F,
+                        (float) color.getGreen() / 255F,
+                        (float) color.getBlue() / 255F);
+                GL11.glBegin(GL11.GL_QUADS);
+                GL11.glVertex2f(getInnerX()+1, getInnerY()+1);
+                GL11.glVertex2f(getInnerX() + getInnerWidth()-1, getInnerY()+1);
+                GL11.glVertex2f(getInnerX() + getInnerWidth()-1, getInnerY() + getInnerHeight()-1);
+                GL11.glVertex2f(getInnerX()+1, getInnerY() + getInnerHeight()-1);
+                GL11.glEnd();
                 GL11.glPopAttrib();
             }
         }
-        
+
         private void texturedCanvasPoint(float x, float y) {
             // TODO: use the texture matrix rather than calculating the tex coordinates in here
             float[] ptInCanvas = new float[]{x,y,0};

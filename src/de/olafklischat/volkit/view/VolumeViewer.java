@@ -1,5 +1,6 @@
 package de.olafklischat.volkit.view;
 
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -384,7 +385,10 @@ public class VolumeViewer extends Widget {
                     }
 
                     for (SliceViewer trackedViewer : trackedSliceViewers) {
-                        GL11.glColor3f(1f, 0f, 0f);
+                        Color color = trackedViewer.getColor();
+                        GL11.glColor3f((float) color.getRed() / 255F,
+                                       (float) color.getGreen() / 255F,
+                                       (float) color.getBlue() / 255F);
                         GL11.glPushMatrix();
                         GL11.glMultMatrix(LWJGLTools.toFB(trackedViewer.getBaseSliceToWorldTransform()));
                         GL11.glBegin(GL11.GL_QUADS);
@@ -404,7 +408,7 @@ public class VolumeViewer extends Widget {
                     int dirIdx = maxIndex(Math.abs(viewDirInVol[0]), Math.abs(viewDirInVol[1]), Math.abs(viewDirInVol[2]));
                     int direction = (viewDirInVol[dirIdx] < 0 ? 0 : 1);
 
-                    System.out.println("dirIdx=" + dirIdx + ", direction=" + direction);
+                    //System.out.println("dirIdx=" + dirIdx + ", direction=" + direction);
                     
                     float[] sliceBackToFrontTransform = sliceBackToFrontTransforms[dirIdx][direction];
                     

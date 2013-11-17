@@ -265,13 +265,16 @@ public class App {
             SharedContextData scd = new SharedContextData();
             
             SliceViewer sv1 = new SliceViewer(scd);
+            sv1.setColor(Color.blue);
             mainPane.add(sv1);
 
             SliceViewer sv2 = new SliceViewer(scd);
+            sv2.setColor(Color.red);
             mainPane.add(sv2);
             //mainPane.add(new Button(":-|"));
 
             SliceViewer sv3 = new SliceViewer(scd);
+            sv3.setColor(Color.yellow);
             mainPane.add(sv3);
             //mainPane.add(new Button(":-("));
 
