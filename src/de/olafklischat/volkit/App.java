@@ -326,7 +326,7 @@ public class App {
                     vv.setShadingPostScale(1f);
                 }
             });
-            if (isDebugMode()) {
+            //if (isDebugMode()) {
             addToolbarAction(new AbstractAction("Undo") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -343,7 +343,7 @@ public class App {
                     }
                 }
             });
-            }
+            //}
             // TODO: UndoManager doesn't have PropertyChangeEvents for its
             // canUndo/canRedo properties, so we can't easily enable/disable the above buttons
             // at the right time. Would have to make all the involved components
