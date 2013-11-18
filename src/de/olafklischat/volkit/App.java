@@ -281,11 +281,9 @@ public class App {
             mainPane.add(sv3);
             //mainPane.add(new Button(":-("));
 
-            if (isDebugMode()) {
-                new TrackedViewerDraggingController(sv1);
-                new TrackedViewerDraggingController(sv2);
-                new TrackedViewerDraggingController(sv3);
-            }
+            new TrackedViewerDraggingController(sv1);
+            new TrackedViewerDraggingController(sv2);
+            new TrackedViewerDraggingController(sv3);
             
             final VolumeViewer vv = new VolumeViewer(scd);
             mainPane.add(vv);
