@@ -125,6 +125,8 @@ public class VolumeViewer extends Widget {
 
     private float globalAlpha = 1.0f;
     
+    private float sliceCountFactor = 1.0f;  //0.98f; //1.0f; //0.99f; //1.0f;
+
     private boolean isVolBoxVisible = false;
 
     /**
@@ -460,6 +462,7 @@ public class VolumeViewer extends Widget {
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
+                fragShader.addProgramUniform("sliceCountFactor");
                 //fragShader.addProgramUniform("debugColor");
                 //fragShader.addProgramUniform("debugZ");
             } catch (Exception e) {
@@ -471,7 +474,7 @@ public class VolumeViewer extends Widget {
 
         @Override
         protected void paintWidget(GUI gui) {
-            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_COLOR_BUFFER_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_LINE_BIT|GL11.GL_HINT_BIT|GL11.GL_COLOR_BUFFER_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
             ensureInitialized();
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
@@ -479,6 +482,8 @@ public class VolumeViewer extends Widget {
             try {
                 GL11.glDisable(GL11.GL_TEXTURE_2D);
                 GL11.glShadeModel(GL11.GL_FLAT);
+                GL11.glDisable(GL11.GL_LINE_SMOOTH);
+                GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_FASTEST);
                 
                 GL11.glEnable(GL11.GL_DEPTH_TEST);
                 GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);   //clears the complete depth buffer (not just in this widget's area), which might theoretically interact with other widgets in undesired ways
@@ -571,8 +576,10 @@ public class VolumeViewer extends Widget {
                     fragShader.bindUniform("tex", 0);
                     fragShader.bindUniform("scale", pixelTransform[0]);
                     fragShader.bindUniform("offset", pixelTransform[1]);
+                    fragShader.bindUniform("sliceCountFactor", sliceCountFactor);
+                    //TODO: handle sliceCountFactor correctly in the shader
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-                    float sliceCount = sliceCountByDirIdx[dirIdx];
+                    float sliceCount = sliceCountFactor * sliceCountByDirIdx[dirIdx];
                     float step = 2f / sliceCount;
                     int idx = 0;
                     // TODO: may use a vertex buffer for these (but as discussed above, the number of steps may depend on the direction for non-cubic volumes)
