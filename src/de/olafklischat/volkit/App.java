@@ -444,8 +444,10 @@ public class App {
                 DatasetsController dsc = new DatasetsController(new File(appProps.getProperty("dataset.basedir")), datasetsList, slicesController);
             }
             
-            slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
-            //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
+            if (isDebugMode()) {
+                slicesController.loadVolumeDataSet("/home/olaf/oliverdicom/INCISIX", 1);
+                //slicesController.loadVolumeDataSet("/home/olaf/gi/resources/DICOM-Testbilder/00001578", 4);
+            }
 
             loadTheme();
         }
