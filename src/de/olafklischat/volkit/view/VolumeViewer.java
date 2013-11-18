@@ -95,8 +95,10 @@ public class VolumeViewer extends Widget {
      * 
      * (0.9 rad = 51.... degrees)
      */
-    float vpWidthInRadiants = 0.9F;
+    float vpWidthInRadiants = DEFAULT_VP_WIDTH_IN_RADIANTS;
     
+    public static final float DEFAULT_VP_WIDTH_IN_RADIANTS = 0.9F;
+
     /**
      * Side length of the minimum cube around the origin in the world system
      * that the volume will always stay inside of, no matter how it is rotated
@@ -196,6 +198,7 @@ public class VolumeViewer extends Widget {
         sliceBackToFrontTransforms[1][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 90, 1, 0, 0, null);
         sliceBackToFrontTransforms[0][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 0, 1, 0, null);
 
+        //TODO: all the toolbar functions should move into a separate controller (which could also know about undo/redo, SliceViewers synchronization etc.)
         addToolbarAction(new AbstractAction("XY") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -221,6 +224,12 @@ public class VolumeViewer extends Widget {
                 LinAlg.fillRotation(w2e, -90, 1, 0, 0, w2e);
                 LinAlg.fillTranslation(w2e, eyeDistanceInNavCubeLenghts * navigationCubeLength, 0, 0, w2e);
                 setWorldToEyeTransform(w2e);
+            }
+        });
+        addToolbarAction(new AbstractAction("Zoom RST") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setVpWidthInRadiants(DEFAULT_VP_WIDTH_IN_RADIANTS);
             }
         });
         addToolbarAction(new AbstractAction("VolBox") {
@@ -249,7 +258,7 @@ public class VolumeViewer extends Widget {
         setVolumeDataSet(volumeDataSet);
     }
     
-    private void addToolbarAction(final Action a) {
+    public void addToolbarAction(final Action a) {
         Button b = new Button((String) a.getValue(Action.NAME));
         b.setTooltipContent(a.getValue(Action.SHORT_DESCRIPTION));
         b.addCallback(new Runnable() {

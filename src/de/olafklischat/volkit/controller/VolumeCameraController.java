@@ -1,6 +1,5 @@
 package de.olafklischat.volkit.controller;
 
-import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -68,6 +67,19 @@ public class VolumeCameraController {
         
         public void mouseReleased(MouseEvent e) {
             lastPos = null;
+        }
+
+        float vpWidthMin = 0.01f, vpWidthMax = 2.0f;
+        
+        @Override
+        public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+            float scaleChange = (e.getWheelRotation() > 0 ? 1.1f/1f : 1f/1.1f);
+            float vpWidth = controlledViewer.getVpWidthInRadiants();
+            vpWidth *= scaleChange;
+            if (vpWidth < vpWidthMin) { vpWidth = vpWidthMin; }
+            if (vpWidth > vpWidthMax) { vpWidth = vpWidthMax; }
+            controlledViewer.setVpWidthInRadiants(vpWidth);
+            e.consume();
         }
     };
 }
