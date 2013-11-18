@@ -50,6 +50,7 @@ import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.view.SharedContextData;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
+import de.olafklischat.twlawt.ModifiersState;
 import de.olafklischat.twlawt.TwlAwtEventUtil;
 
 public class App {
@@ -152,6 +153,7 @@ public class App {
             // will fail here, of course. Maybe only queue up the mouse events
             // in here and dispatch them in paintGL? Would that incur undesired
             // semantical changes
+            ModifiersState.setModifiers(e.getModifiers());
             boolean wasHandled = false;
             int id = e.getID();
             switch(id) {
@@ -274,7 +276,7 @@ public class App {
             //mainPane.add(new Button(":-|"));
 
             SliceViewer sv3 = new SliceViewer(scd);
-            sv3.setColor(Color.yellow);
+            sv3.setColor(Color.magenta);
             mainPane.add(sv3);
             //mainPane.add(new Button(":-("));
 

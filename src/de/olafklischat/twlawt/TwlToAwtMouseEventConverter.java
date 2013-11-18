@@ -12,8 +12,9 @@ import de.matthiasmann.twl.Event.Type;
  * Class for converting TWL mouse events to AWT mouse events. Can't really use
  * static methods in {@link TwlAwtEventUtil} for this because we need to track
  * some state (the pressed button in case of a mouse drag event, which isn't
- * included in the TWL Event object and thus must be tracked from the preceding
- * mouse press event).
+ * included in the TWL Event object [TODO: or is it? Check the
+ * {@link Event#getModifiers()} bitfield!] and thus must be tracked from the
+ * preceding mouse press event).
  * 
  * @author olaf
  */
@@ -37,6 +38,7 @@ public class TwlToAwtMouseEventConverter {
         }
         int id = TwlAwtEventUtil.mouseEventTypeTwlToAwt(evt.getType());
         int modifiers = TwlAwtEventUtil.modifiersTwlToAwt(evt.getModifiers());
+        modifiers |= ModifiersState.getModifiers();
         long when = System.currentTimeMillis();
         int x = evt.getMouseX();
         int y = evt.getMouseY();
