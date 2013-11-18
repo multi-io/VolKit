@@ -25,6 +25,8 @@ import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
+import de.matthiasmann.twl.Label;
+import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
 import de.olafklischat.volkit.model.VolumeDataSet;
@@ -112,6 +114,8 @@ public class VolumeViewer extends Widget {
     private float shadingPostOffset = 0.0f;
     private float shadingPostScale = 1.0f;
 
+    private float globalAlpha = 1.0f;
+
     /**
      * 6 matrices that transform slices centered on positions -1 to 1 on the z
      * axis to slices centered on vertices on any of the three main axes, in
@@ -182,6 +186,20 @@ public class VolumeViewer extends Widget {
         sliceBackToFrontTransforms[1][0] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 1, 0, 0, null);
         sliceBackToFrontTransforms[1][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 90, 1, 0, 0, null);
         sliceBackToFrontTransforms[0][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 0, 1, 0, null);
+
+        toolPane.add(new Label("transp.:"));
+        final Scrollbar transpSlider = new Scrollbar(Scrollbar.Orientation.HORIZONTAL);
+        transpSlider.setTheme("hslider");
+        transpSlider.setMinMaxValue(0, 10000);
+        //transpSlider.setMinSize(300, 1);
+        toolPane.add(transpSlider);
+        transpSlider.addCallback(new Runnable() {
+            @Override
+            public void run() {
+                setGlobalAlpha((float)transpSlider.getValue()/10000f);
+            }
+        });
+        transpSlider.setValue(10000);
     }
     
     public VolumeViewer(SharedContextData scd, VolumeDataSet volumeDataSet) {
@@ -293,6 +311,15 @@ public class VolumeViewer extends Widget {
     
     public void setShadingPostOffset(float shadingPostOffset) {
         this.shadingPostOffset = shadingPostOffset;
+        refresh();
+    }
+    
+    public float getGlobalAlpha() {
+        return globalAlpha;
+    }
+    
+    public void setGlobalAlpha(float globalAlpha) {
+        this.globalAlpha = globalAlpha;
         refresh();
     }
     
@@ -466,6 +493,7 @@ public class VolumeViewer extends Widget {
                     float[] pixelTransform = new float[]{1,0};
                     LinAlg.matrMult1D(new float[]{texRef.getPreScale(), texRef.getPreOffset()}, pixelTransform, pixelTransform);
                     LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
+                    LinAlg.matrMult1D(new float[]{getGlobalAlpha(), 0}, pixelTransform, pixelTransform);
 
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);

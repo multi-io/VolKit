@@ -22,7 +22,6 @@ import com.sun.opengl.util.BufferUtil;
 import de.olafklischat.volkit.view.SharedContextData;
 import de.sofd.util.ProgressReportage;
 import de.sofd.viskit.image.DicomInputOutput;
-import de.sofd.viskit.model.RawImage;
 
 public class VolumeDataSet {
 
@@ -154,7 +153,7 @@ public class VolumeDataSet {
             case 8:
                 throw new IOException("8-bit DICOM images not supported for now");
             case 16:
-                result.pixelFormat = RawImage.PIXEL_FORMAT_LUMINANCE;
+                result.pixelFormat = PIXEL_FORMAT_LUMINANCE;
                 switch (bitsStored) {
                     case 12:
                         result.pixelType = (isSigned ? PIXEL_TYPE_SIGNED_12BIT : PIXEL_TYPE_UNSIGNED_12BIT);
