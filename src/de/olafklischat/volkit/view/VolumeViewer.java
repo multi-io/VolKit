@@ -25,10 +25,8 @@ import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
-import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
-import de.matthiasmann.twl.Scrollbar.Orientation;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
@@ -153,8 +151,10 @@ public class VolumeViewer extends Widget {
     
     private final Collection<PaintListener<VolumeViewer>> uninitializedSlicePaintListeners = new IdentityHashSet<PaintListener<VolumeViewer>>();
 
-    public static final int PAINT_ZORDER_DEFAULT = 100;
-
+    public static final int ZORDER_START = 0;
+    public static final int ZORDER_BEFORE_VOLUME = 100;
+    public static final int ZORDER_END = 200;
+    
     public VolumeViewer(SharedContextData scd) {
         this.sharedContextData = scd;
         setTheme("");
@@ -425,6 +425,9 @@ public class VolumeViewer extends Widget {
                         GL11.glPopMatrix();
                     }
                     
+
+                    firePaintEvent(new PaintEvent<VolumeViewer>(VolumeViewer.this, sharedContextData.getAttributes()), ZORDER_BEFORE_VOLUME, ZORDER_END - 1);
+                    
                     float[] viewDirInVol =  LinAlg.vminusv(LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0,-1}, null),
                                                            LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0, 0}, null),
                                                            null);
@@ -506,7 +509,7 @@ public class VolumeViewer extends Widget {
 
                     GL11.glPopMatrix(); //worldToEyeTransform
 
-                    firePaintEvent(new PaintEvent<VolumeViewer>(VolumeViewer.this, sharedContextData.getAttributes()));
+                    firePaintEvent(new PaintEvent<VolumeViewer>(VolumeViewer.this, sharedContextData.getAttributes()), ZORDER_END, Integer.MAX_VALUE);
                 } finally {
                     GL11.glPopMatrix();
                 }
@@ -708,11 +711,11 @@ public class VolumeViewer extends Widget {
     }
 
     
-    public void addSlicePaintListener(PaintListener<VolumeViewer> listener) {
-        addSlicePaintListener(PAINT_ZORDER_DEFAULT, listener);
+    public void addPaintListener(PaintListener<VolumeViewer> listener) {
+        addPaintListener(ZORDER_BEFORE_VOLUME, listener);
     }
 
-    public void addSlicePaintListener(int zOrder, PaintListener<VolumeViewer> listener) {
+    public void addPaintListener(int zOrder, PaintListener<VolumeViewer> listener) {
         slicePaintListeners.add(new ListenerRecord<PaintListener<VolumeViewer>>(listener, zOrder));
         uninitializedSlicePaintListeners.add(listener);
     }

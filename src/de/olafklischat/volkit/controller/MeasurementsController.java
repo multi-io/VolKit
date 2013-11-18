@@ -75,6 +75,7 @@ public class MeasurementsController {
             sv.addSlicePaintListener(sliceViewersPaintHandler);
             sliceViewers.add(sv);
         }
+        vv.addPaintListener(VolumeViewer.ZORDER_BEFORE_VOLUME + 1, volumeViewerPaintHandler);
         measurementsTable.getSelectionModel().addListSelectionListener(measurementsSelectionHandler);
         final JPopupMenu ctxMenu = new JPopupMenu();
         final int[] popupClickedRow = new int[1];
@@ -425,6 +426,59 @@ public class MeasurementsController {
         
     };
 
+
+    private PaintListener<VolumeViewer> volumeViewerPaintHandler = new PaintListener<VolumeViewer>() {
+
+        @Override
+        public void glSharedContextDataInitialization(VolumeViewer sv, Map<String, Object> sharedData) {
+        }
+        
+        @Override
+        public void glDrawableInitialized(VolumeViewer sv, Map<String, Object> sharedData) {
+        }
+        
+        @Override
+        public void glDrawableDisposing(VolumeViewer sv, Map<String, Object> sharedData) {
+        }
+
+        @Override
+        public void onPaint(PaintEvent<VolumeViewer> e) {
+            VolumeViewer vv = e.getSource();
+
+            //GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_LIGHTING_BIT|GL11.GL_COLOR_BUFFER_BIT|GL11.GL_POLYGON_BIT|GL11.GL_ENABLE_BIT|GL11.GL_VIEWPORT_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glPushAttrib(GL11.GL_CURRENT_BIT|GL11.GL_COLOR_BUFFER_BIT|GL11.GL_ENABLE_BIT|GL11.GL_TRANSFORM_BIT);
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glPushMatrix();
+            GL11.glMultMatrix(LWJGLTools.toFB(vv.getVolumeToWorldTransform()));
+            if (currentMeasurement != null && currentMeasurement.getPt1InVolume() != null) {
+                paintMeasurement(currentMeasurement);
+            }
+            for (Measurement m : mdb.getMeasurements()) {
+                if (m.getDatasetName().equals(vv.getVolumeDataSet().getDatasetName())) {
+                    paintMeasurement(m);
+                }
+            }
+            GL11.glPopMatrix();
+            GL11.glPopAttrib();
+        }
+        
+        private void paintMeasurement(Measurement m) {
+            if (isSelected(m)) {
+                GL11.glColor3f(1f, 1f, 0f);
+            } else {
+                GL11.glColor3f((float) m.getColor().getRed() / 255F,
+                               (float) m.getColor().getGreen() / 255F,
+                               (float) m.getColor().getBlue() / 255F);
+            }
+            GL11.glBegin(GL11.GL_LINE_STRIP);
+            LWJGLTools.glVertex3fv(m.getPt0InVolume());
+            LWJGLTools.glVertex3fv(m.getPt1InVolume());
+            GL11.glEnd();
+        }
+        
+    };
+
+    
     protected void refreshViewers() {
         for (SliceViewer sv: sliceViewers) {
             sv.refresh();
