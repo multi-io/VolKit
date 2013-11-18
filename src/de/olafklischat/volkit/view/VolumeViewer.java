@@ -1,6 +1,7 @@
 package de.olafklischat.volkit.view;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -17,12 +18,16 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+
 import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
+import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.Label;
@@ -110,11 +115,15 @@ public class VolumeViewer extends Widget {
     private float[] volumeToEyeTransform = new float[16];
     private float[] eyeToVolumeTransform = new float[16];
     private float[] eyeToWorldTransform = new float[16];
+    
+    private static final float eyeDistanceInNavCubeLenghts = 2.1f;
 
     private float shadingPostOffset = 0.0f;
     private float shadingPostScale = 1.0f;
 
     private float globalAlpha = 1.0f;
+    
+    private boolean isVolBoxVisible = false;
 
     /**
      * 6 matrices that transform slices centered on positions -1 to 1 on the z
@@ -187,7 +196,40 @@ public class VolumeViewer extends Widget {
         sliceBackToFrontTransforms[1][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 90, 1, 0, 0, null);
         sliceBackToFrontTransforms[0][1] = LinAlg.fillRotation(sliceBackToFrontTransforms[2][0], 270, 0, 1, 0, null);
 
-        toolPane.add(new Label("transp.:"));
+        addToolbarAction(new AbstractAction("XY") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                float[] w2e = LinAlg.fillIdentity(null);
+                LinAlg.fillTranslation(w2e, 0, 0, - eyeDistanceInNavCubeLenghts * navigationCubeLength, w2e);
+                setWorldToEyeTransform(w2e);
+            }
+        });
+        addToolbarAction(new AbstractAction("XZ") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                float[] w2e = LinAlg.fillIdentity(null);
+                LinAlg.fillMultiplication(w2e, sliceBackToFrontTransforms[1][0], w2e);
+                LinAlg.fillTranslation(w2e, 0, eyeDistanceInNavCubeLenghts * navigationCubeLength, 0, w2e);
+                setWorldToEyeTransform(w2e);
+            }
+        });
+        addToolbarAction(new AbstractAction("YZ") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                float[] w2e = LinAlg.fillIdentity(null);
+                LinAlg.fillMultiplication(w2e, sliceBackToFrontTransforms[0][0], w2e);
+                LinAlg.fillRotation(w2e, -90, 1, 0, 0, w2e);
+                LinAlg.fillTranslation(w2e, eyeDistanceInNavCubeLenghts * navigationCubeLength, 0, 0, w2e);
+                setWorldToEyeTransform(w2e);
+            }
+        });
+        addToolbarAction(new AbstractAction("VolBox") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setVolBoxVisible(!isVolBoxVisible());
+            }
+        });
+        toolPane.add(new Label("  transp.:"));
         final Scrollbar transpSlider = new Scrollbar(Scrollbar.Orientation.HORIZONTAL);
         transpSlider.setTheme("hslider");
         transpSlider.setMinMaxValue(0, 10000);
@@ -207,6 +249,18 @@ public class VolumeViewer extends Widget {
         setVolumeDataSet(volumeDataSet);
     }
     
+    private void addToolbarAction(final Action a) {
+        Button b = new Button((String) a.getValue(Action.NAME));
+        b.setTooltipContent(a.getValue(Action.SHORT_DESCRIPTION));
+        b.addCallback(new Runnable() {
+            @Override
+            public void run() {
+                a.actionPerformed(null);
+            }
+        });
+        toolPane.add(b);
+    }
+
     @Override
     protected void layout() {
         int h = toolPane.getPreferredHeight();
@@ -239,7 +293,7 @@ public class VolumeViewer extends Widget {
         
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToEyeTransform);
-        LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - 2.1f * navigationCubeLength, worldToEyeTransform);
+        LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - eyeDistanceInNavCubeLenghts * navigationCubeLength, worldToEyeTransform);
         
         vpWidthInRadiants = 0.9F;
         recomputeMatrices();
@@ -320,6 +374,15 @@ public class VolumeViewer extends Widget {
     
     public void setGlobalAlpha(float globalAlpha) {
         this.globalAlpha = globalAlpha;
+        refresh();
+    }
+    
+    public boolean isVolBoxVisible() {
+        return isVolBoxVisible;
+    }
+    
+    public void setVolBoxVisible(boolean isVolBoxVisible) {
+        this.isVolBoxVisible = isVolBoxVisible;
         refresh();
     }
     
@@ -429,7 +492,7 @@ public class VolumeViewer extends Widget {
                     GL11.glLoadIdentity();
                     GL11.glMultMatrix(LWJGLTools.toFB(worldToEyeTransform));
                     
-                    {
+                    if (isVolBoxVisible) {
                         GL11.glPushMatrix();
                         GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
                         drawVolumeBounds();

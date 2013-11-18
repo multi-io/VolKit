@@ -80,7 +80,7 @@ public class App {
         Properties appProps = new Properties();
         appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
         
-        f = new JFrame("SliceView");
+        f = new JFrame("VolKit");
         
         f.getContentPane().setBackground(Color.GRAY);
         f.getContentPane().setLayout(new BorderLayout());
