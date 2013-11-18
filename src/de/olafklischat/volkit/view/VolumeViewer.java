@@ -111,6 +111,9 @@ public class VolumeViewer extends Widget {
     private float[] eyeToVolumeTransform = new float[16];
     private float[] eyeToWorldTransform = new float[16];
 
+    private float shadingPostOffset = 0.0f;
+    private float shadingPostScale = 1.0f;
+
     /**
      * 6 matrices that transform slices centered on positions -1 to 1 on the z
      * axis to slices centered on vertices on any of the three main axes, in
@@ -218,10 +221,14 @@ public class VolumeViewer extends Widget {
         
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToEyeTransform);
-        LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - 3 * navigationCubeLength, worldToEyeTransform);
+        LinAlg.fillTranslation(worldToEyeTransform, 0, 0, - 2.1f * navigationCubeLength, worldToEyeTransform);
         
         vpWidthInRadiants = 0.9F;
         recomputeMatrices();
+
+        //shadingPostOffset = 0.0f;
+        //shadingPostScale = 1.0f;
+        
         refresh();
     }
 
@@ -268,6 +275,24 @@ public class VolumeViewer extends Widget {
     public void setVpWidthInRadiants(float value) {
         this.vpWidthInRadiants = value;
         recomputeMatrices(); // not really necessary...
+        refresh();
+    }
+    
+    public float getShadingPostScale() {
+        return shadingPostScale;
+    }
+    
+    public void setShadingPostScale(float shadingPostScale) {
+        this.shadingPostScale = shadingPostScale;
+        refresh();
+    }
+
+    public float getShadingPostOffset() {
+        return shadingPostOffset;
+    }
+    
+    public void setShadingPostOffset(float shadingPostOffset) {
+        this.shadingPostOffset = shadingPostOffset;
         refresh();
     }
     
@@ -373,7 +398,7 @@ public class VolumeViewer extends Widget {
                 GL11.glPushMatrix();
                 try {
                     GL11.glShadeModel(GL11.GL_FLAT);
-                    GL11.glColor3f(0, 1, 0);
+                    GL11.glColor3f(1, 1, 1);
                     GL11.glLoadIdentity();
                     GL11.glMultMatrix(LWJGLTools.toFB(worldToEyeTransform));
                     
@@ -434,10 +459,15 @@ public class VolumeViewer extends Widget {
                     GL11.glMatrixMode(GL11.GL_MODELVIEW);
                     
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
+
+                    float[] pixelTransform = new float[]{1,0};
+                    LinAlg.matrMult1D(new float[]{texRef.getPreScale(), texRef.getPreOffset()}, pixelTransform, pixelTransform);
+                    LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
+
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", texRef.getPreScale());
-                    fragShader.bindUniform("offset", texRef.getPreOffset());
+                    fragShader.bindUniform("scale", pixelTransform[0]);
+                    fragShader.bindUniform("offset", pixelTransform[1]);
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     float sliceCount = sliceCountByDirIdx[dirIdx];
                     float step = 2f / sliceCount;

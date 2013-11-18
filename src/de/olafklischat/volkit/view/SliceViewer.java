@@ -129,6 +129,9 @@ public class SliceViewer extends Widget {
     private float[] sliceToVolumeTransform = new float[16];
     private float[] canvasToSliceTransform = new float[16];
 
+    private float shadingPostOffset = 0.0f;
+    private float shadingPostScale = 1.0f;
+    
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
     private GLShader fragShader;
@@ -202,6 +205,8 @@ public class SliceViewer extends Widget {
         navigationZ = 0;
         recomputeMatrices();
         updateNavZslider();
+        //shadingPostOffset = 0.0f;
+        //shadingPostScale = 1.0f;
         refresh();
     }
 
@@ -273,6 +278,24 @@ public class SliceViewer extends Widget {
     public void setSliceToCanvasTransform(float[] sliceToCanvasTransform) {
         this.sliceToCanvasTransform = sliceToCanvasTransform;
         recomputeMatrices();
+        refresh();
+    }
+    
+    public float getShadingPostOffset() {
+        return shadingPostOffset;
+    }
+    
+    public void setShadingPostOffset(float shadingPostOffset) {
+        this.shadingPostOffset = shadingPostOffset;
+        refresh();
+    }
+    
+    public float getShadingPostScale() {
+        return shadingPostScale;
+    }
+    
+    public void setShadingPostScale(float shadingPostScale) {
+        this.shadingPostScale = shadingPostScale;
         refresh();
     }
 
@@ -385,10 +408,15 @@ public class SliceViewer extends Widget {
                     GL11.glLoadIdentity();
                     
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
+
+                    float[] pixelTransform = new float[]{1,0};
+                    LinAlg.matrMult1D(new float[]{texRef.getPreScale(), texRef.getPreOffset()}, pixelTransform, pixelTransform);
+                    LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
+
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", texRef.getPreScale());
-                    fragShader.bindUniform("offset", texRef.getPreOffset());
+                    fragShader.bindUniform("scale", pixelTransform[0]);
+                    fragShader.bindUniform("offset", pixelTransform[1]);
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     GL11.glBegin(GL11.GL_QUADS);
                     texturedCanvasPoint(-viewWidth/2, -viewHeight/2);

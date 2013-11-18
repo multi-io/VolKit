@@ -43,6 +43,7 @@ import de.matthiasmann.twl.renderer.lwjgl.LWJGLRenderer;
 import de.matthiasmann.twl.theme.ThemeManager;
 import de.olafklischat.volkit.controller.DatasetsController;
 import de.olafklischat.volkit.controller.MeasurementsController;
+import de.olafklischat.volkit.controller.MouseWindowingController;
 import de.olafklischat.volkit.controller.TrackedViewerDraggingController;
 import de.olafklischat.volkit.controller.TripleSliceViewerController;
 import de.olafklischat.volkit.controller.VolumeCameraController;
@@ -266,16 +267,16 @@ public class App {
             
             SharedContextData scd = new SharedContextData();
             
-            SliceViewer sv1 = new SliceViewer(scd);
+            final SliceViewer sv1 = new SliceViewer(scd);
             sv1.setColor(Color.blue);
             mainPane.add(sv1);
 
-            SliceViewer sv2 = new SliceViewer(scd);
+            final SliceViewer sv2 = new SliceViewer(scd);
             sv2.setColor(Color.red);
             mainPane.add(sv2);
             //mainPane.add(new Button(":-|"));
 
-            SliceViewer sv3 = new SliceViewer(scd);
+            final SliceViewer sv3 = new SliceViewer(scd);
             sv3.setColor(Color.magenta);
             mainPane.add(sv3);
             //mainPane.add(new Button(":-("));
@@ -286,7 +287,7 @@ public class App {
                 new TrackedViewerDraggingController(sv3);
             }
             
-            VolumeViewer vv = new VolumeViewer(scd);
+            final VolumeViewer vv = new VolumeViewer(scd);
             mainPane.add(vv);
             
             new VolumeCameraController(vv);
@@ -298,7 +299,8 @@ public class App {
             JTable measurementsTable = new JTable();
             final MeasurementsController measurementsController = new MeasurementsController(mdb, measurementsTable, vv, sv1, sv2, sv3);
 
-
+            new MouseWindowingController(vv, sv1, sv2, sv3);
+            
             addToolbarAction(new AbstractAction("Tx RST") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -309,6 +311,19 @@ public class App {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     slicesController.resetZNavigations();
+                }
+            });
+            addToolbarAction(new AbstractAction("Wnd RST") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    sv1.setShadingPostOffset(0f);
+                    sv1.setShadingPostScale(1f);
+                    sv2.setShadingPostOffset(0f);
+                    sv2.setShadingPostScale(1f);
+                    sv3.setShadingPostOffset(0f);
+                    sv3.setShadingPostScale(1f);
+                    vv.setShadingPostOffset(0f);
+                    vv.setShadingPostScale(1f);
                 }
             });
             if (isDebugMode()) {
