@@ -44,7 +44,8 @@ public class TrackedViewerDraggingController {
                 for (SliceViewer trackedSv : controlledViewer.getTrackedViewers()) {
                     float[] ptInTrackedSliceSystem = LinAlg.mtimesv(trackedSv.getVolumeToSliceTransform(), ptInVolume, null);
                     printPt(ptInTrackedSliceSystem);
-                    float pixelScale = LinAlg.mtimesv(trackedSv.getSliceToCanvasTransform(), new float[]{2,0,0}, null)[0];
+                    float baseHitDistance = trackedSv.getNavigationCubeLength() / 150f;
+                    float pixelScale = LinAlg.mtimesv(trackedSv.getSliceToCanvasTransform(), new float[]{baseHitDistance,0,0}, null)[0];
                     if (Math.abs(ptInTrackedSliceSystem[2]) < pixelScale) {
                         draggedViewers.add(trackedSv);
                         //System.err.println("start dragging viewer " + trackedSv);
