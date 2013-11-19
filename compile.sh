@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 cd "`dirname $0`"
 
-commonbase="/home/olaf/sofd-common"
-twlsrc=/home/olaf/src/twl
+commonbase="$HOME/sofd-common"
+twlsrc="$HOME/src/twl"
 
 utilcp="$commonbase/de.sofd.util/build/classes"
 swingcp="$commonbase/de.sofd.swing/build/classes"
