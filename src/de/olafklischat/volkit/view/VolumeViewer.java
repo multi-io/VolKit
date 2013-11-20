@@ -32,8 +32,10 @@ import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.Label;
 import de.matthiasmann.twl.Scrollbar;
+import de.matthiasmann.twl.ToggleButton;
 import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
+import de.matthiasmann.twl.model.SimpleBooleanModel;
 import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
@@ -182,7 +184,9 @@ public class VolumeViewer extends Widget {
         toolPane = new BoxLayout(Direction.HORIZONTAL);
         this.add(toolPane);
         toolPane.setTheme("panel");
-        ((BoxLayout)toolPane).setAlignment(Alignment.CENTER);
+        // TODO: the following two have no effect -- only the corresponding the theme parameters have. Why?
+        //((BoxLayout)toolPane).setAlignment(Alignment.CENTER);
+        //((BoxLayout)toolPane).setSpacing(20);
 
         LinAlg.fillIdentity(volumeToWorldTransform);
         LinAlg.fillIdentity(worldToEyeTransform);
@@ -234,12 +238,21 @@ public class VolumeViewer extends Widget {
                 setVpWidthInRadiants(DEFAULT_VP_WIDTH_IN_RADIANTS);
             }
         });
-        addToolbarAction(new AbstractAction("VolBox") {
+        
+        final SimpleBooleanModel showVboxModel = new SimpleBooleanModel(false);
+        showVboxModel.addCallback(new Runnable() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                setVolBoxVisible(!isVolBoxVisible());
+            public void run() {
+                setVolBoxVisible(showVboxModel.getValue());
             }
         });
+        ToggleButton vboxButton = new ToggleButton("VolBox");
+        vboxButton.setModel(showVboxModel);
+        //vboxButton.setTheme("checkbox");
+        //vboxButton.setTheme("button");
+        vboxButton.setTheme("togglebutton");
+        toolPane.add(vboxButton);
+        
         toolPane.add(new Label("  transp.:"));
         final Scrollbar transpSlider = new Scrollbar(Scrollbar.Orientation.HORIZONTAL);
         transpSlider.setTheme("hslider");

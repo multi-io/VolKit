@@ -543,8 +543,12 @@
     <theme name="panel" ref="-defaults">
         <param name="background"><image>-borderA</image></param>
         <param name="border"><border>background.border</border></param>
+        <param name="alignment"><enum type="alignment">center</enum></param>
+        <param name="spacing"><int>0</int></param>
         <theme name="label" ref="label" allowWildcard="true"/>
         <theme name="button" ref="button" allowWildcard="true"/>
+        <theme name="togglebutton" ref="togglebutton" allowWildcard="true"/>
+        <theme name="checkbox" ref="checkbox" allowWildcard="true"/>
         <theme name="hslider" ref="hslider" allowWildcard="true"/>
     </theme>
 
