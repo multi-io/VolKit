@@ -125,6 +125,8 @@ public class VolumeViewer extends Widget {
 
     private float globalAlpha = 1.0f;
     
+    private boolean removeSaturatedVoxels = false;
+    
     private float sliceCountFactor = 1.0f;  //0.98f; //1.0f; //0.99f; //1.0f;
 
     private boolean isVolBoxVisible = false;
@@ -238,6 +240,12 @@ public class VolumeViewer extends Widget {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setVolBoxVisible(!isVolBoxVisible());
+            }
+        });
+        addToolbarAction(new AbstractAction("HideSat") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setRemoveSaturatedVoxels(!isRemoveSaturatedVoxels());
             }
         });
         toolPane.add(new Label("  transp.:"));
@@ -388,6 +396,15 @@ public class VolumeViewer extends Widget {
         refresh();
     }
     
+    public boolean isRemoveSaturatedVoxels() {
+        return removeSaturatedVoxels;
+    }
+    
+    public void setRemoveSaturatedVoxels(boolean removeSaturatedVoxels) {
+        this.removeSaturatedVoxels = removeSaturatedVoxels;
+        refresh();
+    }
+    
     public boolean isVolBoxVisible() {
         return isVolBoxVisible;
     }
@@ -462,6 +479,7 @@ public class VolumeViewer extends Widget {
                 fragShader.addProgramUniform("tex");
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
+                fragShader.addProgramUniform("removeSaturatedVoxels");
                 fragShader.addProgramUniform("sliceCountFactor");
                 //fragShader.addProgramUniform("debugColor");
                 //fragShader.addProgramUniform("debugZ");
@@ -576,6 +594,7 @@ public class VolumeViewer extends Widget {
                     fragShader.bindUniform("tex", 0);
                     fragShader.bindUniform("scale", pixelTransform[0]);
                     fragShader.bindUniform("offset", pixelTransform[1]);
+                    fragShader.bindUniform("removeSaturatedVoxels", removeSaturatedVoxels);
                     fragShader.bindUniform("sliceCountFactor", sliceCountFactor);
                     //TODO: handle sliceCountFactor correctly in the shader
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
