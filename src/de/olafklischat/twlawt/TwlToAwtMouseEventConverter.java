@@ -49,7 +49,7 @@ public class TwlToAwtMouseEventConverter {
         MouseEvent result;
         if (evt.isMouseEventNoWheel()) {
             int button = MouseEvent.NOBUTTON;
-            if (evt.getType() == Type.MOUSE_DRAGED) {
+            if (evt.getType() == Type.MOUSE_DRAGGED) {
                 button = lastButton;
             } else {
                 button = TwlAwtEventUtil.mouseButtonTwlToAwt(evt.getMouseButton());

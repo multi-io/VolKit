@@ -40,7 +40,7 @@ public class TwlAwtEventUtil {
             return MouseEvent.MOUSE_RELEASED;
         case MOUSE_CLICKED:
             return MouseEvent.MOUSE_CLICKED;
-        case MOUSE_DRAGED:
+        case MOUSE_DRAGGED:
             return MouseEvent.MOUSE_DRAGGED;
         case MOUSE_MOVED:
             return MouseEvent.MOUSE_MOVED;
