@@ -10,8 +10,10 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
+import org.dcm4che2.util.ByteUtils;
 import org.lwjgl.opengl.ARBTextureFloat;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -191,7 +193,19 @@ public class VolumeDataSet {
         // read pixel data
         int readCount = 0;
         for (DicomObject dobj: dobjs) {
-            Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
+            DicomElement elt = dobj.get(Tag.PixelData);
+            Buffer b = null;
+            //System.err.println("count=" + elt.countItems());
+            if (elt.countItems() == -1) {
+                b = BufferUtil.newShortBuffer(elt.getShorts(true)); // type of buffer may later depend on image metadata
+            } else {
+                // if it's a sequence, get the 2nd item. Seems to be incorrect. What
+                // does it mean for this tag to be a sequence?
+                byte[] bytes = elt.getFragment(1);
+                boolean bigEndian = (0 == dobj.getInt(Tag.HighBit));
+                b = BufferUtil.newShortBuffer(bigEndian  ? ByteUtils.bytesBE2shorts(bytes) : ByteUtils.bytesLE2shorts(bytes));
+            }
+            //Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
             result.xyPixelPlaneBuffers.add(b);
             System.out.println("read " + readCount + "/" + result.zCount + " (" + (100 * readCount/result.zCount) + "%). SL=" + dobj.getFloat(Tag.SliceLocation));
             readCount++;
