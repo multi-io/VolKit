@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableSet;
@@ -111,8 +112,12 @@ public class VolumeDataSet {
     }
     
     public static VolumeDataSet readFromDirectory(String dirName, int stride, ProgressReportage progressReport) throws Exception {  // TODO move I/O into separate class
+        return createFromDicoms(new File(dirName).getName(), DicomInputOutput.readDir(dirName, null, stride, progressReport));
+    }
+    
+    public static VolumeDataSet createFromDicoms(String datasetName, Collection<DicomObject> dicoms) throws Exception {  // TODO move I/O into separate class
         VolumeDataSet result = new VolumeDataSet();
-        result.datasetName = new File(dirName).getName();
+        result.datasetName = datasetName;
         NavigableSet<DicomObject> dobjs = new TreeSet<DicomObject>(new Comparator<DicomObject>() {
             @Override
             public int compare(DicomObject o1, DicomObject o2) {
@@ -124,7 +129,7 @@ public class VolumeDataSet {
             }
         });
         
-        dobjs.addAll(DicomInputOutput.readDir(dirName, null, stride, progressReport));
+        dobjs.addAll(dicoms);
         
         // read metadata
         
