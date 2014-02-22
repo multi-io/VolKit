@@ -258,15 +258,19 @@ public class TripleSliceViewerController {
         sv3.setSliceToCanvasTransform(identity);
     }
     
+    public void setVolumeDataSet(VolumeDataSet vds) {
+        sv1.setVolumeDataSet(vds);
+        sv2.setVolumeDataSet(vds);
+        sv3.setVolumeDataSet(vds);
+        vv.setVolumeDataSet(vds);
+    }
+    
     public void loadVolumeDataSet(String pathName, int stride) throws Exception {
         long t0 = System.currentTimeMillis();
         VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, stride);
         long t1 = System.currentTimeMillis();
         System.out.println("time for reading: " + (t1-t0) + " ms.");
-        sv1.setVolumeDataSet(vds);
-        sv2.setVolumeDataSet(vds);
-        sv3.setVolumeDataSet(vds);
-        vv.setVolumeDataSet(vds);
+        setVolumeDataSet(vds);
     }
     
     public void startLoadingVolumeDataSetInBackground(final String pathName, final int stride) {
@@ -297,10 +301,7 @@ public class TripleSliceViewerController {
                         JOptionPane.showMessageDialog(parentComponent, "Error: "+ ex.getLocalizedMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    sv1.setVolumeDataSet(vds);
-                    sv2.setVolumeDataSet(vds);
-                    sv3.setVolumeDataSet(vds);
-                    vv.setVolumeDataSet(vds);
+                    setVolumeDataSet(vds);
                 }
             }
         };
