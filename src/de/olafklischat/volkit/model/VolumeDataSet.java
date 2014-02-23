@@ -306,10 +306,10 @@ public class VolumeDataSet {
             GL12.glTexImage3D(GL12.GL_TEXTURE_3D,    //target
                             0,                    //level
                             glInternalFormat,     //internalFormat
-                            xCount+2,               //width
-                            yCount+2,               //height
-                            zCount+2,               //depth
-                            1,                    //border
+                            xCount,               //width
+                            yCount,               //height
+                            zCount,               //depth
+                            0,                    //border
                             glPixelFormat,        //format
                             glPixelType,          //type
                             (ShortBuffer)null);                //data
@@ -330,9 +330,9 @@ public class VolumeDataSet {
             }
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER );
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER );
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL13.GL_CLAMP_TO_BORDER );
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP );
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL11.GL_CLAMP );
         }
         GL11.glEnable(GL12.GL_TEXTURE_3D);
         GL13.glActiveTexture(texUnit);
