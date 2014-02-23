@@ -267,6 +267,8 @@ public class VolumeDataSet {
             result.texId = GL11.glGenTextures();
             scd.setAttribute(sharedTexIdKey, result);
 
+            GL13.glActiveTexture(texUnit);
+            
             GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 
             GL11.glBindTexture(GL12.GL_TEXTURE_3D, result.getTexId());
@@ -299,6 +301,7 @@ public class VolumeDataSet {
                 throw new RuntimeException("this DICOM image format is not supported for now");
             }
 
+            System.err.println("creating 3D texture of " + xCount + "x" + yCount + "x" + zCount + " texels");
             //glTexImage3D(int target, int level, int internalFormat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels) {
             GL12.glTexImage3D(GL12.GL_TEXTURE_3D,    //target
                             0,                    //level
@@ -325,14 +328,14 @@ public class VolumeDataSet {
                                      glPixelType,
                                      (ShortBuffer)planeBuffer);  // type of buffer may later depend on image metadata
             }
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER );
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER );
-            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL13.GL_CLAMP_TO_BORDER );
         }
         GL11.glEnable(GL12.GL_TEXTURE_3D);
         GL13.glActiveTexture(texUnit);
+        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER );
+        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER );
+        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL13.GL_CLAMP_TO_BORDER );
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, result.getTexId());
         return result;
     }
