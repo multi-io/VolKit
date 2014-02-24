@@ -67,9 +67,6 @@ public class App {
     }
     
     public App() throws Exception {
-        Properties appProps = new Properties();
-        appProps.load(new InputStreamReader(new FileInputStream("app.properties"), "utf-8"));
-        
         f = new JFrame("VolKit");
         
         f.getContentPane().setBackground(Color.GRAY);
@@ -281,6 +278,18 @@ public class App {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/oliverdicom/BRAINIX/BRAINIX/IRM/T1-3D-FFE-C - 801", 1);
+                    }
+                });
+                addToolbarAction(new AbstractAction("manix") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/sofd-common/voldata/MANIX/MANIX/CER-CT/ANGIO CT", 1);
+                    }
+                });
+                addToolbarAction(new AbstractAction("pelvix") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        slicesController.startLoadingVolumeDataSetInBackground("/home/olaf/sofd-common/voldata/PELVIX/CT1 pelvis, bassin/BASSIN - 8577", 1);
                     }
                 });
                 addToolbarAction(new AbstractAction("312046_14141_3") {
