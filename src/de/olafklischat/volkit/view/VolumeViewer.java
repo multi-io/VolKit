@@ -493,6 +493,7 @@ public class VolumeViewer extends Widget {
                 fragShader.addProgramUniform("scale");
                 fragShader.addProgramUniform("offset");
                 fragShader.addProgramUniform("sliceCountFactor");
+                fragShader.addProgramUniform("cutterPlane");
                 //fragShader.addProgramUniform("debugColor");
                 //fragShader.addProgramUniform("debugZ");
             } catch (Exception e) {
@@ -603,16 +604,47 @@ public class VolumeViewer extends Widget {
                     
                     VolumeDataSet.TextureRef texRef = volumeDataSet.bindTexture(GL13.GL_TEXTURE0, sharedContextData);
 
+                    //windowing
                     float[] pixelTransform = new float[]{1,0};
                     LinAlg.matrMult1D(new float[]{texRef.getPreScale(), texRef.getPreOffset()}, pixelTransform, pixelTransform);
                     LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
                     LinAlg.matrMult1D(new float[]{getGlobalAlpha(), 0}, pixelTransform, pixelTransform);
+                    
+                    //cutter plane 
+                    float[] cutterPlane = new float[4];  // = x,y,z,lambda in dot(vec3(x,y,z), point_on_plane) == lambda
+                    {
+                        //for testing: x=3 plane in world coordinates (i.e. parallel to YZ plane, going through (3,0,0))
+                        //TODO: the math is somewhat unwashed, do it better somehow?
+                        float[] ptOnPlane = new float[]{0,0,0.3f};
+                        float[] normalVec = new float[]{1,0,0};
+                        float[] ptPlusNormal = LinAlg.vplusv(ptOnPlane, normalVec, null);
+                        ptPlusNormal[3] = 1; //correct the w component to make the matrix multiplication work correctly...
+                        
+                        //convert to camera system
+                        //TODO: doesn't work! gl_FragCoord in the fragment shader is in viewport coordinates, i.e.
+                        //      after multiplication with the projection matrix! I'm stupid!
+                        //      => have the vertices in camera system coordinates as an additional varying variables in the shader?
+                        float[] ptOnPlaneInEyeSys = LinAlg.mtimesv(worldToEyeTransform, ptOnPlane, null);
+                        float[] normalInEyeSyst = LinAlg.vminusv(LinAlg.mtimesv(worldToEyeTransform, ptPlusNormal, null),
+                                                                 ptOnPlaneInEyeSys,
+                                                                 null);
+                        normalInEyeSyst[3] = 0; //correct the w component to make the dot multiplication work correctly...
+                        float lambda = LinAlg.dot(ptOnPlaneInEyeSys, normalInEyeSyst);
+                        cutterPlane[0] = normalInEyeSyst[0];
+                        cutterPlane[1] = normalInEyeSyst[1];
+                        cutterPlane[2] = normalInEyeSyst[2];
+                        cutterPlane[3] = lambda;
+                    }
 
+                    //debugging
+                    //cutterPlane = new float[]{0,0,1,0.9F};
+                    
                     fragShader.bind();
                     fragShader.bindUniform("tex", 0);
                     fragShader.bindUniform("scale", pixelTransform[0]);
                     fragShader.bindUniform("offset", pixelTransform[1]);
                     fragShader.bindUniform("sliceCountFactor", sliceCountFactor);
+                    fragShader.bindUniform("cutterPlane", cutterPlane);
                     //TODO: handle sliceCountFactor correctly in the shader
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     float sliceCount = sliceCountFactor * sliceCountByDirIdx[dirIdx];
