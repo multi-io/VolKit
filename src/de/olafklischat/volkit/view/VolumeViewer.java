@@ -45,8 +45,25 @@ import de.olafklischat.math.LinAlg;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
+import de.sofd.viskit.image3D.jogl.view.SliceView;
 
-
+/**
+ * Renders a {@link VolumeDataSet} three-dimensionally (volume rendering). There
+ * are setter methods to choose the camera position/viewing direction in the
+ * "world coordinate system", a transformation (rotation or whatever) of the
+ * volume relative to the world coordinate system, a list of tracked
+ * {@link SliceView}s whose slice planes should be drawn, windowing/level
+ * settings and more.
+ * <p>
+ * Basic implementation strategy: Just render a few hundred slices of the volume
+ * from back to front relative to the camera. The back-to-front direction is
+ * chosen as one of the six directions parallel to the volume axes
+ * (+x,-x,+y,-y,+z-z). (the chosen direction will be the one that currently is
+ * most antiparallel to the viewing direction).
+ * 
+ * @author olaf
+ * 
+ */
 public class VolumeViewer extends Widget {
 
     private static final long serialVersionUID = 3961980093372280907L;
@@ -519,6 +536,7 @@ public class VolumeViewer extends Widget {
                     GL11.glLoadIdentity();
                     GL11.glMultMatrix(LWJGLTools.toFB(worldToEyeTransform));
                     
+                    //// paint Volume box
                     if (isVolBoxVisible) {
                         GL11.glPushMatrix();
                         GL11.glMultMatrix(LWJGLTools.toFB(volumeToWorldTransform));
@@ -526,6 +544,7 @@ public class VolumeViewer extends Widget {
                         GL11.glPopMatrix();
                     }
 
+                    //// paint slice planes of slice viewers tracked by this volume viewer
                     for (SliceViewer trackedViewer : trackedSliceViewers) {
                         Color color = trackedViewer.getColor();
                         GL11.glColor3f((float) color.getRed() / 255F,
@@ -543,8 +562,12 @@ public class VolumeViewer extends Widget {
                     }
                     
 
+                    //// let paint listeners paint something... (some day)
                     firePaintEvent(new PaintEvent<VolumeViewer>(VolumeViewer.this, sharedContextData.getAttributes()), ZORDER_BEFORE_VOLUME, ZORDER_END - 1);
+
                     
+                    //// paint the volume itself
+
                     float[] viewDirInVol =  LinAlg.vminusv(LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0,-1}, null),
                                                            LinAlg.mtimesv(eyeToVolumeTransform, new float[]{0, 0, 0}, null),
                                                            null);
