@@ -8,10 +8,12 @@ uniform vec3 debugColor;
 uniform float debugZ;
 uniform float sliceCountFactor;
 
+varying vec4 fragCoordsInWorld;
+
 uniform vec4 cutterPlane;  // = x,y,z,lambda in dot(vec3(x,y,z), point_on_plane) == lambda
 
 void main() {
-    if (dot(gl_FragCoord.xyz, cutterPlane.xyz) > cutterPlane.w) {
+    if (dot(fragCoordsInWorld.xyz, cutterPlane.xyz) > cutterPlane.w) {
         float intensity = scale * texture3D(tex, gl_TexCoord[0].xyz).r + offset;
         gl_FragColor.rgba = intensity;
         //TODO: handle sliceCountFactor correctly (how?)
