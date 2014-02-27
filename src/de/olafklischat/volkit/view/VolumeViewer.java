@@ -611,7 +611,8 @@ public class VolumeViewer extends Widget {
                     LinAlg.matrMult1D(new float[]{getGlobalAlpha(), 0}, pixelTransform, pixelTransform);
                     
                     //cutter plane 
-                    float[] cutterPlane = new float[4];  // = x,y,z,lambda in dot(vec3(x,y,z), point_on_plane) == lambda
+                    float[] cutterPlane = new float[4];  // = x,y,z,lambda in dot(vec3(x,y,z), point_on_plane) == lambda (in eye coords).
+                                                         //    I.e. (x,y,z)==normal direction, lambda==distance to origin
                     {
                         //for testing: x=3 plane in world coordinates (i.e. parallel to YZ plane, going through (3,0,0))
                         //TODO: the math is somewhat unwashed, do it better somehow?
@@ -620,10 +621,7 @@ public class VolumeViewer extends Widget {
                         float[] ptPlusNormal = LinAlg.vplusv(ptOnPlane, normalVec, null);
                         ptPlusNormal[3] = 1; //correct the w component to make the matrix multiplication work correctly...
                         
-                        //convert to camera system
-                        //TODO: doesn't work! gl_FragCoord in the fragment shader is in viewport coordinates, i.e.
-                        //      after multiplication with the projection matrix! I'm stupid!
-                        //      => have the vertices in camera system coordinates as an additional varying variables in the shader?
+                        //convert to camera (eye) system
                         float[] ptOnPlaneInEyeSys = LinAlg.mtimesv(worldToEyeTransform, ptOnPlane, null);
                         float[] normalInEyeSyst = LinAlg.vminusv(LinAlg.mtimesv(worldToEyeTransform, ptPlusNormal, null),
                                                                  ptOnPlaneInEyeSys,
