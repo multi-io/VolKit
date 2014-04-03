@@ -10,7 +10,7 @@ uniform float sliceCountFactor;
 
 void main() {
     float intensity = scale * texture3D(tex, gl_TexCoord[0].xyz).r + offset;
-    gl_FragColor.rgba = intensity;
+    gl_FragColor.rgba = vec4(intensity,intensity,intensity,intensity);
     //TODO: handle sliceCountFactor correctly (how?)
     //gl_FragColor.a = 1 - (1 - intensity) * sliceCountFactor;
     
