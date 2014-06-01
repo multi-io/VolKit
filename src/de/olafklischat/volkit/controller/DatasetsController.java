@@ -10,6 +10,14 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 
+/**
+ * DatasetsController. Knows a base directory, a JList and a {@link TripleSliceViewerController},
+ * displays all volume datasets below the base directory in the JList, and
+ * if the user clicks on one, loads it asynchronously into the viewers associated
+ * with the TripleSliceViewerController.
+ *
+ * @author Olaf Klischat
+ */
 public class DatasetsController {
 
     private final File baseDir;

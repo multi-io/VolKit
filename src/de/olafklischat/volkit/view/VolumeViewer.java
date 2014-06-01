@@ -61,7 +61,7 @@ import de.sofd.viskit.image3D.jogl.view.SliceView;
  * (+x,-x,+y,-y,+z-z). (the chosen direction will be the one that currently is
  * most antiparallel to the viewing direction).
  * 
- * @author olaf
+ * @author Olaf Klischat
  * 
  */
 public class VolumeViewer extends Widget {

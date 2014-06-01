@@ -9,6 +9,13 @@ import java.util.List;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
 
+/**
+ * Mouse Windowing Controllers. Is associated with any number of slice and/or
+ * volume viewers (really just one volume viewer for now), allows the user to
+ * drag the mouse in any of them to change the windowing parameters in all of them.
+ *
+ * @author Olaf Klischat
+ */
 public class MouseWindowingController {
 
     // TODO: make these parameterizable

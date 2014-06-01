@@ -7,6 +7,14 @@ import java.awt.event.MouseEvent;
 import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.math.LinAlg;
 
+/**
+ * VolumeCameraController. Is associated with a {@link VolumeViewer},
+ * allows the user to rotate the viewer's camera around the origin
+ * (always pointing to the origin) and zoom in or out, all using
+ * mouse (button1) and mouse wheel interactions.
+ *
+ * @author Olaf Klischat
+ */
 public class VolumeCameraController {
     
     // TODO: make these parameterizable

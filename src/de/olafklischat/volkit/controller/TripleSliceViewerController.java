@@ -19,6 +19,20 @@ import de.olafklischat.math.LinAlg;
 import de.sofd.util.ProgressReportage;
 
 
+/**
+ * TripleSliceViewerController. Associated with three slice viewers and
+ * one volume viewer. Initializes the viewers to initially display the
+ * XY/XZ/YZ planes, makes the volume viewer track the slice viewers and
+ * the slice viewers track each other, enables mouse operations to zoom/pan
+ * the slice viewers and rotate the volume around all the axes in the
+ * world coordinate system by dragging the mouse in a corresponding slice
+ * viewer. Provides methods to reset the changes to the initial defaults
+ * and to asynchronously load a new volume dataset into all the viewers.
+ * Can also track its operations in an UndoManager to enable external parties
+ * to undo them.
+ *
+ * @author Olaf Klischat
+ */
 public class TripleSliceViewerController {
 
     // TODO: make these parameterizable
@@ -257,14 +271,26 @@ public class TripleSliceViewerController {
         sv2.setSliceToCanvasTransform(identity);
         sv3.setSliceToCanvasTransform(identity);
     }
-    
+
+    /**
+     * Set a new volume dataset into all viewers.
+     *
+     * @param vds
+     */
     public void setVolumeDataSet(VolumeDataSet vds) {
         sv1.setVolumeDataSet(vds);
         sv2.setVolumeDataSet(vds);
         sv3.setVolumeDataSet(vds);
         vv.setVolumeDataSet(vds);
     }
-    
+
+    /**
+     * Synchronously load&set a new volume dataset into all viewers. Used for debugging only.
+     *
+     * @param pathName
+     * @param stride
+     * @throws Exception
+     */
     public void loadVolumeDataSet(String pathName, int stride) throws Exception {
         long t0 = System.currentTimeMillis();
         VolumeDataSet vds = VolumeDataSet.readFromDirectory(pathName, stride);
@@ -272,7 +298,15 @@ public class TripleSliceViewerController {
         System.out.println("time for reading: " + (t1-t0) + " ms.");
         setVolumeDataSet(vds);
     }
-    
+
+    /**
+     * Starts loading a new volume dataset from the filesystem (base path pathName)
+     * in the background with progress feedback in the UI,
+     * calls {@link #setVolumeDataSet(de.olafklischat.volkit.model.VolumeDataSet) } when done.
+     *
+     * @param pathName
+     * @param stride
+     */
     public void startLoadingVolumeDataSetInBackground(final String pathName, final int stride) {
         final SwingWorker<VolumeDataSet, Void> bkgTask = new SwingWorker<VolumeDataSet, Void>() {
             private void doSetProgress(int p) {  // make doSetProgress callable...

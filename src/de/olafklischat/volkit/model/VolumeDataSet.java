@@ -26,6 +26,13 @@ import de.olafklischat.volkit.view.SharedContextData;
 import de.sofd.util.ProgressReportage;
 import de.sofd.viskit.image.DicomInputOutput;
 
+/**
+ * A VolumeDataSet. Holds a complete volume dataset (3-dimensional array of
+ * grayscale pixels, plus with/height/depth information) in memory can
+ * create a 3D OpenGL texture from it.
+ *
+ * @author Olaf Klischat
+ */
 public class VolumeDataSet {
 
     protected String datasetName;
@@ -259,6 +266,14 @@ public class VolumeDataSet {
         return datasetName;
     }
 
+    /**
+     * Load the VolumeDataSet into a 3D OpenGL texture (current LWJGL context)
+     * and return a reference to it.
+     *
+     * @param texUnit
+     * @param scd
+     * @return
+     */
     public TextureRef bindTexture(int texUnit, SharedContextData scd) {
         final String sharedTexIdKey = "VolumeDataSetTex" + hashCode();
         TextureRef result = (TextureRef) scd.getAttribute(sharedTexIdKey);

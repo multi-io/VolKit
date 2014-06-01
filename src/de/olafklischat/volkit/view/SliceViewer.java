@@ -38,6 +38,19 @@ import de.sofd.util.IdentityHashSet;
 import de.sofd.util.Misc;
 
 
+/**
+ * SliceViewer. Draws an arbitrarily oriented slice through a {@link VolumeDataSet}.
+ * The slice orientation can be changed dynamically at any time.  See the
+ * documentation of the various transformation variables for details.
+ * The SliceViewer allows mouse listeners to be registered with it, as well
+ * as {@link PaintListener}s to be associated with it to allow external
+ * parties to paint onto the viewer's surface without having to modify the viewer itself.
+ * A SliceViewer can also reference ton arbitrary number of other SliceViewers,
+ * called tracked viewers. The SliceViewer will draw the slice plane orientations
+ * of the tracked viewers in its own drawing surface.
+ *
+ * @author Olaf Klischat
+ */
 public class SliceViewer extends Widget {
 
     private static final long serialVersionUID = 3961980093372280907L;

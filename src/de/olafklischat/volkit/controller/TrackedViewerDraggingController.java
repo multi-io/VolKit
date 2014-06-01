@@ -9,6 +9,14 @@ import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.math.LinAlg;
 import de.sofd.util.IdentityHashSet;
 
+/**
+ * TrackedViewerDraggingController. Is associated with a SliceViewer.
+ * Allows the user to click&drag in the SliceViewer to adjust the
+ * navigationZ values (i.e. the slice locations) of the SliceViewer's
+ * tracked SliceViewers (trackedViewers).
+ *
+ * @author Olaf Klischat
+ */
 public class TrackedViewerDraggingController {
     
     // TODO: make these parameterizable

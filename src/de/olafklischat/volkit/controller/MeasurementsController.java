@@ -37,6 +37,23 @@ import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.math.LinAlg;
 
+/**
+ * Measurements controller. Knows the measurements db, the measurements table view,
+ * and all the volume and slice viewers. Displays the measurements in the table
+ * (one per row) and draws them in the viewers. Allows the user to select a measurement
+ * in the table -- it is then drawn in the viewers in a different color. Also
+ * allows the user to add new measurements to the currently
+ * loaded volume dataset by drawing the new measurements in any of the slice viewers
+ * (using Shift + Right mouse button), or to delete measurements using a context menu
+ * on the corresponding table row.
+ * <p>
+ * The viewers must all display the same volume dataset.
+ * <p>
+ * TODO: ability to select measurements by clicking them in the slice and maybe even
+ * volume viewers.
+ *
+ * @author Olaf Klischat
+ */
 public class MeasurementsController {
 
     // TODO: make these parameterizable
