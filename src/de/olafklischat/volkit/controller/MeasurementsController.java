@@ -170,20 +170,11 @@ public class MeasurementsController {
         }
 
         public Measurement getMeasurementAt(int row) {
-            return getAllDisplayedMeasurements().get(row);
+            return mdb.getMeasurements().get(row);
         }
         
         protected int getCurrentRowNumberOf(Measurement m) {
-            //TODO: optimize
-            List<Measurement> ms = getAllDisplayedMeasurements();
-            int i = 0;
-            for (Measurement msm : ms) {
-                if (m.equals(msm)) {
-                    return i;
-                }
-                i++;
-            }
-            return -1;
+            return mdb.getIndexOf(m);
         }
         
         @Override

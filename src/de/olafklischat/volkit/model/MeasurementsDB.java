@@ -10,15 +10,34 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * Measurements database. Automatically persisted sequence containing all measurements.
+ * <p>
+ * The numbers of the measurements are automatically set incrementally as the messages
+ * are added to the DB.
+ * <p>
+ * For methods that take messages and find them in the DB (e.g. remove(Message), getIndexOf(Message)),
+ * messages are identified by identity for the time being (i.e. they must've been obtained
+ * by a previous call to a message getter function).
+ *
+ * @author olaf
+ */
 public class MeasurementsDB {
 
     private List<Measurement> measurements = new ArrayList<Measurement>();
+    private Map<Measurement, Integer> measurementsIndicesMap = new HashMap<Measurement, Integer>();
     private final File baseDir;
     private final String dbFilename = "measurements.db";
     private int lastNumber = 0;
-    
+
+    /**
+     *
+     * @param baseDirName base directory. The DB will be persisted automatically in measurements.db in this directory.
+     */
     public MeasurementsDB(String baseDirName) {
         this.baseDir = new File(baseDirName);
         if (!baseDir.isDirectory()) {
@@ -33,6 +52,7 @@ public class MeasurementsDB {
     public void addMeasurement(Measurement m) {
         m.setNumber(++lastNumber);
         measurements.add(m);
+        measurementsIndicesMap.put(m, measurements.size() - 1);
         try {
             persist();
         } catch (IOException e) {
@@ -41,16 +61,33 @@ public class MeasurementsDB {
     }
     
     public void removeMeasurement(Measurement m) {
-        measurements.remove(m);
-        try {
-            persist();
-        } catch (IOException e) {
-            throw new RuntimeException("I/O error: " + e.getLocalizedMessage(), e);
+        int idx = getIndexOf(m);
+        if (idx != -1) {
+            measurements.remove(idx);
+            rebuildMeasurementsIndicesMap();
+            try {
+                persist();
+            } catch (IOException e) {
+                throw new RuntimeException("I/O error: " + e.getLocalizedMessage(), e);
+            }
+        }
+    }
+
+    protected void rebuildMeasurementsIndicesMap() {
+        measurementsIndicesMap.clear();
+        int count = measurements.size();
+        for (int i = 0; i < count; i++) {
+            measurementsIndicesMap.put(measurements.get(i), i);
         }
     }
 
     public int size() {
         return measurements.size();
+    }
+
+    public int getIndexOf(Measurement m) {
+        Integer result = measurementsIndicesMap.get(m);
+        return result != null ? result : -1;
     }
     
     public void persist() throws IOException {
@@ -108,6 +145,7 @@ public class MeasurementsDB {
     private void loadV1(BufferedReader r) throws IOException {
     	int msCount = readInt(r);
     	List<Measurement> newMs = new ArrayList<Measurement>(msCount);
+        Map<Measurement, Integer> newIndicesMap = new HashMap<Measurement, Integer>();
     	int highestNumber = -1;
     	for (int i=0; i<msCount; i++) {
     		Measurement m = new Measurement();
@@ -119,9 +157,11 @@ public class MeasurementsDB {
             m.setVolumeToWorldTransformation(readFloatArr(16, r));
             m.setNavigationZs(readFloatArr(3, r));
             newMs.add(m);
+            newIndicesMap.put(m, i);
             highestNumber = Math.max(highestNumber, m.getNumber());
     	}
     	this.measurements = newMs;
+        this.measurementsIndicesMap = newIndicesMap;
     	this.lastNumber = highestNumber;
     }
 
