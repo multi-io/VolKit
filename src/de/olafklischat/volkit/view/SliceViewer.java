@@ -25,17 +25,16 @@ import org.lwjgl.opengl.GL13;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
 import de.matthiasmann.twl.Scrollbar;
-import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.Scrollbar.Orientation;
-import de.olafklischat.volkit.model.VolumeDataSet;
+import de.matthiasmann.twl.Widget;
 import de.olafklischat.volkit.lang.Runnable1;
-import de.olafklischat.lwjgl.GLShader;
-import de.olafklischat.lwjgl.LWJGLTools;
-import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.volkit.math.LinAlg;
-import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
+import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.util.IdentityHashSet;
 import de.olafklischat.volkit.util.Misc;
+import de.olafklischat.lwjgl.LWJGLTools;
+import de.olafklischat.lwjgl.ShaderProgram;
+import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 
 
 /**
@@ -59,7 +58,6 @@ public class SliceViewer extends Widget {
 
     static {
         System.setProperty("sun.awt.noerasebackground", "true");
-        ShaderManager.init("shader");
     }
     
     private VolumeDataSet volumeDataSet;
@@ -147,7 +145,7 @@ public class SliceViewer extends Widget {
     
     public static final String PROP_NAVIGATION_Z = "navigationZ";
 
-    private GLShader fragShader;
+    private ShaderProgram shaderProgram;
 
     private Widget canvas;
     private Scrollbar navZslider;
@@ -384,11 +382,11 @@ public class SliceViewer extends Widget {
                 return;
             }
             try {
-                ShaderManager.read("sliceviewer");
-                fragShader = ShaderManager.get("sliceviewer");
-                fragShader.addProgramUniform("tex");
-                fragShader.addProgramUniform("scale");
-                fragShader.addProgramUniform("offset");
+                shaderProgram = new ShaderProgram();
+                shaderProgram.create();
+                shaderProgram.attachShaderFromResource("shader/sliceviewer/sliceviewer.vert");
+                shaderProgram.attachShaderFromResource("shader/sliceviewer/sliceviewer.frag");
+                shaderProgram.link();
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
@@ -428,10 +426,10 @@ public class SliceViewer extends Widget {
                     LinAlg.matrMult1D(new float[]{texRef.getPreScale(), texRef.getPreOffset()}, pixelTransform, pixelTransform);
                     LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
 
-                    fragShader.bind();
-                    fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", pixelTransform[0]);
-                    fragShader.bindUniform("offset", pixelTransform[1]);
+                    shaderProgram.use();
+                    shaderProgram.setUniform("tex", 0);
+                    shaderProgram.setUniform("scale", pixelTransform[0]);
+                    shaderProgram.setUniform("offset", pixelTransform[1]);
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     GL11.glBegin(GL11.GL_QUADS);
                     texturedCanvasPoint(-viewWidth/2, -viewHeight/2);
@@ -441,7 +439,7 @@ public class SliceViewer extends Widget {
                     outputSlicePoint("bottom-left: ", -navigationCubeLength/2, -navigationCubeLength/2);
                     outputSlicePoint("top-right:   ", navigationCubeLength/2,  navigationCubeLength/2);
                     GL11.glEnd();
-                    fragShader.unbind();
+                    shaderProgram.unuse();
                     volumeDataSet.unbindCurrentTexture();
                     GL11.glShadeModel(GL11.GL_FLAT);
                     for (SliceViewer trackedViewer : trackedViewers) {

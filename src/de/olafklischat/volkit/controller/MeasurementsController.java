@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +24,7 @@ import javax.swing.table.AbstractTableModel;
 
 import org.lwjgl.opengl.GL11;
 
+import de.olafklischat.volkit.math.LinAlg;
 import de.olafklischat.volkit.model.Measurement;
 import de.olafklischat.volkit.model.MeasurementsDB;
 import de.olafklischat.volkit.model.VolumeDataSet;
@@ -32,10 +32,8 @@ import de.olafklischat.volkit.view.PaintEvent;
 import de.olafklischat.volkit.view.PaintListener;
 import de.olafklischat.volkit.view.SliceViewer;
 import de.olafklischat.volkit.view.VolumeViewer;
-import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
-import de.olafklischat.lwjgl.ShaderManager;
-import de.olafklischat.volkit.math.LinAlg;
+import de.olafklischat.lwjgl.ShaderProgram;
 
 /**
  * Measurements controller. Knows the measurements db, the measurements table view,
@@ -346,26 +344,10 @@ public class MeasurementsController {
     
     private PaintListener<SliceViewer> sliceViewersPaintHandler = new PaintListener<SliceViewer>() {
 
-        Map<SliceViewer, GLShader> measShaderBySV = new IdentityHashMap<SliceViewer, GLShader>();
+        ShaderProgram measShaderProg;
 
         @Override
         public void glSharedContextDataInitialization(SliceViewer sv, Map<String, Object> sharedData) {
-            /*
-            // TODO: this is how we should initialize measShader (just one, not one per SliceViewer), but it doesn't work for now
-            // because measShader stored the GL object, which won't be usable in other contexts
-            GLShader measShader = (GLShader) sharedData.get("measurementsShader");
-            if (null == measShader) {
-                GL2 gl = gl1.getGL2();
-                try {
-                    ShaderManager.read(gl, "measurements");
-                    measShader = ShaderManager.get("measurements");
-                    //measShader.addProgramUniform("tex");
-                    sharedData.put("measurementsShader", measShader);
-                } catch (Exception e) {
-                    throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
-                }
-            }
-            */
         }
         
         @Override
@@ -379,21 +361,20 @@ public class MeasurementsController {
         @Override
         public void onPaint(PaintEvent<SliceViewer> e) {
             SliceViewer sv = e.getSource();
-            GLShader measShader = measShaderBySV.get(sv);
-            if (null == measShader) {
+            if (null == measShaderProg) {
                 try {
-                    // TODO: this is the wrong place to initialize measShader -- see above
-                    ShaderManager.read("measurements");
-                    measShader = ShaderManager.get("measurements");
-                    measShader.addProgramUniform("transpCoeff");
-                    measShaderBySV.put(sv, measShader);
+                    measShaderProg = new ShaderProgram();
+                    measShaderProg.create();
+                    measShaderProg.attachShaderFromResource("shader/measurements/measurements.vert");
+                    measShaderProg.attachShaderFromResource("shader/measurements/measurements.frag");
+                    measShaderProg.link();
                 } catch (Exception ex) {
                     throw new RuntimeException("couldn't initialize GL shader: " + ex.getLocalizedMessage(), ex);
                 }
             }
             
-            measShader.bind();
-            measShader.bindUniform("transpCoeff", getTransparencyCoeff());
+            measShaderProg.use();
+            measShaderProg.setUniform("transpCoeff", getTransparencyCoeff());
             GL11.glMatrixMode(GL11.GL_MODELVIEW);
             GL11.glPushMatrix();
             GL11.glPushAttrib(GL11.GL_COLOR_BUFFER_BIT);  // b/c we set up alpha blending
@@ -414,7 +395,7 @@ public class MeasurementsController {
             } finally {
                 GL11.glPopAttrib();
                 GL11.glPopMatrix();
-                measShader.unbind();
+                measShaderProg.unuse();
             }
         }
         

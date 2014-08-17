@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
-import de.matthiasmann.twl.Alignment;
 import de.matthiasmann.twl.BoxLayout;
+import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.Button;
 import de.matthiasmann.twl.Event;
 import de.matthiasmann.twl.GUI;
@@ -34,17 +34,15 @@ import de.matthiasmann.twl.Label;
 import de.matthiasmann.twl.Scrollbar;
 import de.matthiasmann.twl.ToggleButton;
 import de.matthiasmann.twl.Widget;
-import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.model.SimpleBooleanModel;
-import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.lang.Runnable1;
-import de.olafklischat.lwjgl.GLShader;
-import de.olafklischat.lwjgl.LWJGLTools;
-import de.olafklischat.lwjgl.ShaderManager;
 import de.olafklischat.volkit.math.LinAlg;
-import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
+import de.olafklischat.volkit.model.VolumeDataSet;
 import de.olafklischat.volkit.util.IdentityHashSet;
 import de.olafklischat.volkit.util.Misc;
+import de.olafklischat.lwjgl.LWJGLTools;
+import de.olafklischat.lwjgl.ShaderProgram;
+import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
 
 /**
  * Renders a {@link VolumeDataSet} three-dimensionally (volume rendering). There
@@ -71,7 +69,6 @@ public class VolumeViewer extends Widget {
 
     static {
         System.setProperty("sun.awt.noerasebackground", "true");
-        ShaderManager.init("shader");
     }
     
     private VolumeDataSet volumeDataSet;
@@ -175,7 +172,7 @@ public class VolumeViewer extends Widget {
      */
     public static final int MAX_SLICE_COUNT = 500;
 
-    private GLShader fragShader;
+    private ShaderProgram shaderProgram;
 
     private Widget canvas;
     private Widget toolPane;
@@ -486,14 +483,11 @@ public class VolumeViewer extends Widget {
                 return;
             }
             try {
-                ShaderManager.read("volumeviewer");
-                fragShader = ShaderManager.get("volumeviewer");
-                fragShader.addProgramUniform("tex");
-                fragShader.addProgramUniform("scale");
-                fragShader.addProgramUniform("offset");
-                fragShader.addProgramUniform("sliceCountFactor");
-                //fragShader.addProgramUniform("debugColor");
-                //fragShader.addProgramUniform("debugZ");
+                shaderProgram = new ShaderProgram();
+                shaderProgram.create();
+                shaderProgram.attachShaderFromResource("shader/volumeviewer/volumeviewer.vert");
+                shaderProgram.attachShaderFromResource("shader/volumeviewer/volumeviewer.frag");
+                shaderProgram.link();
             } catch (Exception e) {
                 throw new RuntimeException("couldn't initialize GL shader: " + e.getLocalizedMessage(), e);
             }
@@ -607,11 +601,11 @@ public class VolumeViewer extends Widget {
                     LinAlg.matrMult1D(new float[]{shadingPostScale, shadingPostOffset}, pixelTransform, pixelTransform);
                     LinAlg.matrMult1D(new float[]{getGlobalAlpha(), 0}, pixelTransform, pixelTransform);
 
-                    fragShader.bind();
-                    fragShader.bindUniform("tex", 0);
-                    fragShader.bindUniform("scale", pixelTransform[0]);
-                    fragShader.bindUniform("offset", pixelTransform[1]);
-                    fragShader.bindUniform("sliceCountFactor", sliceCountFactor);
+                    shaderProgram.use();
+                    shaderProgram.setUniform("tex", 0);
+                    shaderProgram.setUniform("scale", pixelTransform[0]);
+                    shaderProgram.setUniform("offset", pixelTransform[1]);
+                    //shaderProgram.setUniform("sliceCountFactor", sliceCountFactor);
                     //TODO: handle sliceCountFactor correctly in the shader
                     GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
                     float sliceCount = sliceCountFactor * sliceCountByDirIdx[dirIdx];
@@ -640,7 +634,7 @@ public class VolumeViewer extends Widget {
                         GL11.glEnd();
                         idx++;
                     }
-                    fragShader.unbind();
+                    shaderProgram.unuse();
 
                     GL11.glMatrixMode(GL11.GL_TEXTURE);
                     GL11.glPopMatrix();
