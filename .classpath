@@ -17,7 +17,7 @@
 	<classpathentry kind="lib" path="lib/slf4j-api-1.5.0.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.5.0.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/twl"/>
-	<classpathentry kind="lib" path="/twl/elibs/lwjgl.jar" sourcepath="/usr/local/lwjgl/lwjgl-source-2.4.2/src-all"/>
+	<classpathentry kind="lib" path="/twl/elibs/lwjgl.jar" sourcepath="/usr/local/lwjgl/lwjgl-source-2.9.1/src-all"/>
 	<classpathentry kind="lib" path="/twl/elibs/xpp3-1.1.4c.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
