@@ -1,0 +1,13 @@
+*~
+*.[oa]
+*.class
+build/
+dist/
+bin/
+tmp/
+.project
+.classpath
+.settings
+.gradle
+mdb
+

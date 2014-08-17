@@ -1,0 +1,77 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "commons-io:commons-io:2.4"
+    }
+}
+
+import java.net.URL;
+import java.net.URLConnection;
+import org.apache.commons.io.IOUtils;
+
+version = '1.0'
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+
+// TWL -- not available via Maven/Ivy. Download it manually and depend
+//  on it via a flatfile repository. TODO: plain HTTP-download
+//  resolvers? Can the ivy resolver be used for this?
+
+def dlDir = file('tmp')
+def twlLibName = 'TWL'
+def twlUrl = 'http://twl.l33tlabs.org/dist/TWL.jar'
+def twlLibFile = new File(dlDir, "${twlLibName}.jar")
+dlDir.mkdirs()
+
+if (!twlLibFile.exists()) {
+    println "need to download $twlUrl to $twlLibFile ..."
+    def inStr = new URL(twlUrl).openConnection().getInputStream()
+    try {
+        IOUtils.copy(inStr, new FileOutputStream(twlLibFile))
+    } finally {
+        inStr.close()
+    }
+}
+
+repositories {
+    maven {
+        url "http://www.dcm4che.org/maven2"
+    }
+    maven {
+        url "https://swt-repo.googlecode.com/svn/repo"
+    }
+    maven {
+        url "http://maven.springframework.org/release"
+    }
+    flatDir {
+        dirs dlDir
+    }
+    mavenCentral()
+}
+
+dependencies {
+    compile "log4j:log4j:1.2.13"
+    compile 'org.slf4j:slf4j-api:1.5.0'
+    compile 'org.slf4j:slf4j-log4j12:1.6.0'
+    compile "commons-lang:commons-lang:2.5"
+    compile "dcm4che:dcm4che-core:2.0.24"
+    compile "dcm4che:dcm4che-imageio:2.0.24"
+    compile "org.lwjgl.lwjgl:lwjgl:2.8.4"
+    compile ":TWL:1.2.3"
+    compile "xpp3:xpp3:1.1.4c"
+
+    testCompile 'junit:junit:4.11'
+}
+
+
+mainClassName = "de.olafklischat.volkit.App"
+
+// TODO need to manually adapt the path to the LWJGL native components for now. Need to fetch these from
+//    the maven repositories as well
+applicationDefaultJvmArgs = ['-Xmx1024m', '-Xms256m', '-Djava.library.path=/home/olaf/dentapp/twl/elibs/native/linux']
+
