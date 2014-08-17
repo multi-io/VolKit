@@ -2,14 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/de.sofd.viskit"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/de.sofd.draw2d"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/de.sofd.swing"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/de.sofd.util"/>
-	<classpathentry kind="lib" path="lib/jogl/gluegen-rt.jar"/>
-	<classpathentry kind="lib" path="lib/jogl/jogl.all.jar" sourcepath="/de.sofd.viskit/ext-src/jogl2.0b10-src.jar"/>
-	<classpathentry kind="lib" path="lib/jogl/nativewindow.all.jar"/>
-	<classpathentry kind="lib" path="lib/jogl/newt.all.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-audit-2.0.20.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-core-2.0.20.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-filecache-2.0.20.jar"/>
@@ -19,16 +11,13 @@
 	<classpathentry kind="lib" path="lib/dcm4che-imageio-rle-2.0.20.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-iod-2.0.20.jar"/>
 	<classpathentry kind="lib" path="lib/dcm4che-net-2.0.20.jar"/>
-	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang.jar"/>
 	<classpathentry kind="lib" path="lib/jai_imageio.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.5.0.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.5.0.jar"/>
-	<classpathentry kind="lib" path="lib/beans-binding/beansbinding-1.2.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/twl"/>
 	<classpathentry kind="lib" path="/twl/elibs/lwjgl.jar" sourcepath="/usr/local/lwjgl/lwjgl-source-2.4.2/src-all"/>
 	<classpathentry kind="lib" path="/twl/elibs/xpp3-1.1.4c.jar"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/de.olafklischat.twlawt"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

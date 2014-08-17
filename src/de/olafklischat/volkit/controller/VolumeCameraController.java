@@ -5,7 +5,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import de.olafklischat.volkit.view.VolumeViewer;
-import de.olafklischat.math.LinAlg;
+import de.olafklischat.volkit.math.LinAlg;
 
 /**
  * VolumeCameraController. Is associated with a {@link VolumeViewer},

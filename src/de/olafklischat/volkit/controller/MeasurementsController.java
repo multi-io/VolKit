@@ -35,7 +35,7 @@ import de.olafklischat.volkit.view.VolumeViewer;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
-import de.olafklischat.math.LinAlg;
+import de.olafklischat.volkit.math.LinAlg;
 
 /**
  * Measurements controller. Knows the measurements db, the measurements table view,

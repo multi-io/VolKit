@@ -1,6 +1,7 @@
 package de.olafklischat.lwjgl;
 
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -34,6 +35,13 @@ public class LWJGLTools {
         fb.put(arr, 0, n);
         fb.rewind();
         return fb;
+    }
+
+    public static ShortBuffer newShortBuffer(short[] arr) {
+        ShortBuffer b = BufferUtils.createShortBuffer(arr.length);
+        b.put(arr, 0, arr.length);
+        b.rewind();
+        return b;
     }
 
     //23:33 < multi_io> how would you port gl*3fv(arr) calls to lwjgl?

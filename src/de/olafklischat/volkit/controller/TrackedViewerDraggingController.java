@@ -6,8 +6,8 @@ import java.awt.event.MouseEvent;
 import java.util.Set;
 
 import de.olafklischat.volkit.view.SliceViewer;
-import de.olafklischat.math.LinAlg;
-import de.sofd.util.IdentityHashSet;
+import de.olafklischat.volkit.math.LinAlg;
+import de.olafklischat.volkit.util.IdentityHashSet;
 
 /**
  * TrackedViewerDraggingController. Is associated with a SliceViewer.

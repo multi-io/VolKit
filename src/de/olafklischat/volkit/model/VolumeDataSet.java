@@ -20,11 +20,10 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 
-import com.sun.opengl.util.BufferUtil;
-
+import de.olafklischat.volkit.image.DicomInputOutput;
+import de.olafklischat.volkit.util.ProgressReportage;
 import de.olafklischat.volkit.view.SharedContextData;
-import de.sofd.util.ProgressReportage;
-import de.sofd.viskit.image.DicomInputOutput;
+import de.olafklischat.lwjgl.LWJGLTools;
 
 /**
  * A VolumeDataSet. Holds a complete volume dataset (3-dimensional array of
@@ -209,13 +208,13 @@ public class VolumeDataSet {
             Buffer b = null;
             //System.err.println("count=" + elt.countItems());
             if (elt.countItems() == -1) {
-                b = BufferUtil.newShortBuffer(elt.getShorts(true)); // type of buffer may later depend on image metadata
+                b = LWJGLTools.newShortBuffer(elt.getShorts(true)); // type of buffer may later depend on image metadata
             } else {
                 // if it's a sequence, get the 2nd item. Seems to be incorrect. What
                 // does it mean for this tag to be a sequence?
                 byte[] bytes = elt.getFragment(1);
                 boolean bigEndian = (0 == dobj.getInt(Tag.HighBit));
-                b = BufferUtil.newShortBuffer(bigEndian  ? ByteUtils.bytesBE2shorts(bytes) : ByteUtils.bytesLE2shorts(bytes));
+                b = LWJGLTools.newShortBuffer(bigEndian  ? ByteUtils.bytesBE2shorts(bytes) : ByteUtils.bytesLE2shorts(bytes));
             }
             //Buffer b = BufferUtil.newShortBuffer(dobj.getShorts(Tag.PixelData)); // type of buffer may later depend on image metadata
             result.xyPixelPlaneBuffers.add(b);

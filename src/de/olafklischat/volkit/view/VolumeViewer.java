@@ -37,15 +37,14 @@ import de.matthiasmann.twl.Widget;
 import de.matthiasmann.twl.BoxLayout.Direction;
 import de.matthiasmann.twl.model.SimpleBooleanModel;
 import de.olafklischat.volkit.model.VolumeDataSet;
-import de.olafklischat.lang.Runnable1;
+import de.olafklischat.volkit.lang.Runnable1;
 import de.olafklischat.lwjgl.GLShader;
 import de.olafklischat.lwjgl.LWJGLTools;
 import de.olafklischat.lwjgl.ShaderManager;
-import de.olafklischat.math.LinAlg;
+import de.olafklischat.volkit.math.LinAlg;
 import de.olafklischat.twlawt.TwlToAwtMouseEventConverter;
-import de.sofd.util.IdentityHashSet;
-import de.sofd.util.Misc;
-import de.sofd.viskit.image3D.jogl.view.SliceView;
+import de.olafklischat.volkit.util.IdentityHashSet;
+import de.olafklischat.volkit.util.Misc;
 
 /**
  * Renders a {@link VolumeDataSet} three-dimensionally (volume rendering). There
